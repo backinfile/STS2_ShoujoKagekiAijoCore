@@ -1,0 +1,10 @@
+bin/
+obj/
+.godot/
+artifacts/
+dist/
+*.user
+*.log
+local.props
+*.import
+*.uid

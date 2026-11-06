@@ -1,0 +1,7 @@
+<Project>
+ <ItemGroup>
+  <Reference Include="sts2"><HintPath>$(GameDataDir)/sts2.dll</HintPath><Private>false</Private></Reference>
+  <Reference Include="GodotSharp"><HintPath>$(GameDataDir)/GodotSharp.dll</HintPath><Private>false</Private></Reference>
+  <Reference Include="0Harmony"><HintPath>$(GameDataDir)/0Harmony.dll</HintPath><Private>false</Private></Reference>
+ </ItemGroup>
+</Project>
