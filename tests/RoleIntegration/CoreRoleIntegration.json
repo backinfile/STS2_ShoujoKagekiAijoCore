@@ -1,0 +1,14 @@
+{
+  "id": "CoreRoleIntegration",
+  "name": "Core role integration probe",
+  "version": "1.0.0",
+  "has_dll": true,
+  "has_pck": false,
+  "affects_gameplay": true,
+  "dependencies": [
+    {
+      "id": "ShoujoKagekiAijoCore",
+      "min_version": "1.0.0"
+    }
+  ]
+}

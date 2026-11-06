@@ -22,7 +22,7 @@ public sealed class CoreDiscovery : ICoreDiscovery
         Models = Array.AsReadOnly(content.Values.Cast<AbstractModel>().Select(model =>
         {
             var type = model.GetType();
-            var mod = ModManager.Mods.FirstOrDefault(m => Assemblies(m).Contains(type.Assembly));
+            var mod = OwnerOf(type.Assembly);
             var kind = model switch { CardModel => "card", CharacterModel => "character", CardPoolModel => "cardPool", RelicModel => "relic", _ => type.BaseType?.Name ?? "model" };
             var coreOwned = type.Assembly == typeof(RuntimeEntry).Assembly;
             return new CoreModelInfo(model.Id.ToString(), kind, coreOwned ? CoreApi.ModId : mod?.manifest?.id ?? "sts2",
@@ -35,10 +35,22 @@ public sealed class CoreDiscovery : ICoreDiscovery
         if (AccessTools.Field(typeof(Mod), "assemblies")?.GetValue(mod) is IEnumerable<Assembly> assemblies) return assemblies;
         return AccessTools.Field(typeof(Mod), "assembly")?.GetValue(mod) is Assembly assembly ? [assembly] : [];
     }
+    private static Mod? OwnerOf(Assembly assembly)
+    {
+        var associated = ModManager.Mods.FirstOrDefault(mod => Assemblies(mod).Contains(assembly));
+        if (associated != null || assembly.IsDynamic || string.IsNullOrEmpty(assembly.Location)) return associated;
+        // Stable exposes only the loader assembly. Its implementation stays inside the mod directory.
+        var location = Path.GetFullPath(assembly.Location);
+        return ModManager.Mods.Where(mod => !string.IsNullOrEmpty(mod.path))
+            .OrderByDescending(mod => Path.GetFullPath(mod.path).Length)
+            .FirstOrDefault(mod => location.StartsWith(
+                Path.TrimEndingDirectorySeparator(Path.GetFullPath(mod.path)) + Path.DirectorySeparatorChar,
+                OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal));
+    }
     public static bool IsShoujoCharacter(CharacterModel? character)
     {
         if (character == null) return false;
-        var owner = ModManager.Mods.FirstOrDefault(m => Assemblies(m).Contains(character.GetType().Assembly));
+        var owner = OwnerOf(character.GetType().Assembly);
         if (owner?.manifest?.id is not { } modId) return false;
         if (modId is "ShoujoKagekiAijoKaren" or "ShoujoKagekiJunna") return true;
         var requirements = Path.Combine(owner.path, "core.requirements");

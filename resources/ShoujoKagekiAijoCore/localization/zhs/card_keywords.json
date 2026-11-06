@@ -1,4 +1,4 @@
 {
-  "SHOUJO_CORE_SHINE.title": "闪耀",
-  "SHOUJO_CORE_SHINE.description": "每次实际出牌结算消耗1次闪耀。次数归零后，在本次合法结算结束时耗尽。"
+  "SHOUJO_CORE_SHINE.title": "闪耀X",
+  "SHOUJO_CORE_SHINE.description": "打出X次后，从牌组中[red]永久移除[/red]。"
 }

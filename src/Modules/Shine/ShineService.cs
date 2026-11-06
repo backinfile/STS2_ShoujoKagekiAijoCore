@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Reflection.Emit;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using BaseLib.Utils;
@@ -28,6 +30,7 @@ public sealed class ShineService : IShineService, ICoreModule
     private readonly List<Func<CardModel, bool>> _deferred = [];
     private static readonly AsyncLocal<Batch?> ActiveBatch = new();
     private static readonly AsyncLocal<int> SnapshotCopyDepth = new();
+    private static readonly ConditionalWeakTable<CardModel, object> PermanentAcquisitions = new();
     private readonly HashSet<MethodInfo> _hookedMethods = [];
     private readonly Harmony _harmony = new(CoreApi.ModId + ".ActualResolution");
 
@@ -47,7 +50,8 @@ public sealed class ShineService : IShineService, ICoreModule
             else if (attribute != null) { Maximum.Set(card, attribute.Uses); Remaining.Set(card, attribute.Uses); }
         }
         if (Maximum.Get(card) < 0) return null;
-        var temporary = Temporary.Get(card) || card.IsMutable && card.Owner is { } owner
+        var temporary = Temporary.Get(card) || !Depleted.Get(card) && !PermanentAcquisitions.TryGetValue(card, out _)
+            && card.IsMutable && card.Owner is { } owner
             && card.DeckVersion == null && !owner.Deck.Cards.Contains(card);
         return new ShineState(Remaining.Get(card), Maximum.Get(card), temporary, Pending.Get(card));
     }
@@ -57,6 +61,7 @@ public sealed class ShineService : IShineService, ICoreModule
         Maximum.Set(card, maximum);
         Remaining.Set(card, remaining);
         Temporary.Set(card, temporary);
+        if (temporary) PermanentAcquisitions.Remove(card);
         if (remaining > 0) { Pending.Set(card, false); Depleted.Set(card, false); }
     }
     public void ChangeMaximum(CardModel card, int amount)
@@ -133,7 +138,8 @@ public sealed class ShineService : IShineService, ICoreModule
         var ancestorRunning = false;
         for (var ancestor = batch.Parent; ancestor != null; ancestor = ancestor.Parent)
             ancestorRunning |= ancestor.Running.GetValueOrDefault(card) > 0;
-        var counted = running == 0 && !ancestorRunning && kind != CardResolutionKind.Effect
+        var independentNativePlay = kind == CardResolutionKind.NativePlay && ReferenceEquals(batch.NativeCard, card);
+        var counted = running == 0 && (!ancestorRunning || independentNativePlay) && kind != CardResolutionKind.Effect
             && (kind != CardResolutionKind.NativePlay || !IsDeferredResolution(card));
         batch.Running[card] = running + 1;
         if (counted && kind == CardResolutionKind.NativePlay && card.Owner is { } legacyOwner
@@ -185,8 +191,27 @@ public sealed class ShineService : IShineService, ICoreModule
                 await handler.AfterShineResolution(context, play);
         }
     }
+    internal void MarkArchived(CardModel card)
+    {
+        var state = GetState(card);
+        Depleted.Set(card, true);
+        Pending.Set(card, false);
+        Temporary.Set(card, false);
+        if (state != null) Remaining.Set(card, 0);
+    }
+    private static void ResetUninitializedState(CardModel card)
+    {
+        Remaining.Set(card, -1);
+        Maximum.Set(card, -1);
+        LegacyRemaining.Set(card, -1);
+        LegacyMaximum.Set(card, -1);
+        Pending.Set(card, false);
+        Depleted.Set(card, false);
+        Temporary.Set(card, false);
+    }
     internal void ResetLifecycle(CardModel card)
     {
+        PermanentAcquisitions.GetOrCreateValue(card);
         Depleted.Set(card, false);
         Pending.Set(card, false);
         Temporary.Set(card, false);
@@ -203,7 +228,7 @@ public sealed class ShineService : IShineService, ICoreModule
     }
     public CardModel Copy(CardModel card, CardCopyPurpose purpose)
     {
-        if (purpose != CardCopyPurpose.Reacquire && GetState(card) is { Remaining: <= 0 }) return EmptyShellFor(card);
+        if (purpose != CardCopyPurpose.Reacquire && (Depleted.Get(card) || GetState(card) is { Remaining: <= 0 })) return EmptyShellFor(card);
         using var scope = AllowSnapshotCopy();
         var result = CardModel.FromSerializable(card.ToSerializable());
         result.Owner = card.Owner;
@@ -326,7 +351,7 @@ public sealed class ShineService : IShineService, ICoreModule
         private static void Postfix(AbstractModel __instance, ref AbstractModel __result)
         {
             if (__instance is not CardModel source || __result is not CardModel copy || Instance.GetState(source) is not { } state) return;
-            if (source.IsMutable && state.Remaining <= 0 && SnapshotCopyDepth.Value == 0) { __result = EmptyShellFor(source); return; }
+            if (source.IsMutable && (Depleted.Get(source) || state.Remaining <= 0) && SnapshotCopyDepth.Value == 0) { __result = EmptyShellFor(source); return; }
             Instance.SetState(copy, state.Remaining, state.Maximum, state.Temporary);
             Depleted.Set(copy, Depleted.Get(source));
             Pending.Set(copy, Pending.Get(source));
@@ -342,10 +367,17 @@ public sealed class ShineService : IShineService, ICoreModule
         [HarmonyPriority(Priority.Last)]
         private static void Postfix(SerializableCard save, CardModel __result)
         {
-            if (save.Props?.ints?.Any(x => x.name == "CardModel_core_shine_current") == true) return;
-            var oldCurrent = save.Props?.ints?.Where(x => x.name == "CardModel_karen_shine_current").Select(x => (int?)x.value).FirstOrDefault();
-            var oldMaximum = save.Props?.ints?.Where(x => x.name == "CardModel_karen_shine_max").Select(x => (int?)x.value).FirstOrDefault();
-            if (oldCurrent.HasValue && oldMaximum.HasValue && oldMaximum.Value >= 0)
+            var properties = save.Props?.ints;
+            var oldCurrent = properties?.Where(x => x.name == "CardModel_karen_shine_current").Select(x => (int?)x.value).FirstOrDefault();
+            var oldMaximum = properties?.Where(x => x.name == "CardModel_karen_shine_max").Select(x => (int?)x.value).FirstOrDefault();
+            if (properties?.Any(x => x.name is "CardModel_core_shine_current" or "CardModel_core_shine_max") == true)
+            {
+                if (!oldCurrent.HasValue) LegacyRemaining.Set(__result, -1);
+                if (!oldMaximum.HasValue) LegacyMaximum.Set(__result, -1);
+                return;
+            }
+            ResetUninitializedState(__result);
+            if (oldCurrent.HasValue && oldMaximum is >= 0)
                 Instance.SetState(__result, Math.Max(0, oldCurrent.Value), oldMaximum.Value);
         }
     }
@@ -363,15 +395,78 @@ public sealed class ShineService : IShineService, ICoreModule
     {
         private static void Postfix(CardModel __instance) => Instance.RestoreToMaximum(__instance);
     }
-    [HarmonyPatch(typeof(CardModel), nameof(CardModel.OnPlayWrapper))]
+    [HarmonyPatch]
     private static class WrapperPatch
     {
-        private static void Prefix(CardModel __instance, PlayerChoiceContext choiceContext, out Batch __state) => __state = BeginBatch(choiceContext, __instance);
-        private static void Postfix(ref Task __result, Batch __state)
+        private sealed record StateFields(FieldInfo State, FieldInfo Card, FieldInfo Choice);
+        private static readonly ConcurrentDictionary<Type, StateFields> Fields = new();
+        private static MethodBase TargetMethod() => AccessTools.AsyncMoveNext(
+            AccessTools.Method(typeof(CardModel), nameof(CardModel.OnPlayWrapper)));
+
+        private static void Prefix(object __instance, MethodBase __originalMethod, out Batch? __state)
         {
-            __state.Detach();
-            __result = Finish(__result, __state);
+            __state = ActiveBatch.Value;
+            var fields = Fields.GetOrAdd(__originalMethod.DeclaringType!, type => new StateFields(
+                AccessTools.Field(type, "<>1__state"), AccessTools.Field(type, "<>4__this"), AccessTools.Field(type, "choiceContext")));
+            if ((int)fields.State.GetValue(__instance)! == -1)
+                BeginBatch((PlayerChoiceContext?)fields.Choice.GetValue(__instance), (CardModel)fields.Card.GetValue(__instance)!);
         }
-        private static async Task Finish(Task task, Batch batch) { try { await task; } finally { await batch.DisposeAsync(); } }
+        private static void Postfix(Batch? __state) => ActiveBatch.Value = __state;
+        private static Exception? Finalizer(Exception? __exception, Batch? __state)
+        {
+            ActiveBatch.Value = __state;
+            return __exception;
+        }
+        private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            int results = 0, exceptions = 0;
+            foreach (var instruction in instructions)
+            {
+                if (instruction.operand is MethodInfo method && method.DeclaringType == typeof(AsyncTaskMethodBuilder))
+                {
+                    if (method.Name == nameof(AsyncTaskMethodBuilder.SetResult))
+                    {
+                        instruction.opcode = OpCodes.Call;
+                        instruction.operand = AccessTools.Method(typeof(WrapperPatch), nameof(Complete));
+                        results++;
+                    }
+                    else if (method.Name == nameof(AsyncTaskMethodBuilder.SetException))
+                    {
+                        instruction.opcode = OpCodes.Call;
+                        instruction.operand = AccessTools.Method(typeof(WrapperPatch), nameof(Fail));
+                        exceptions++;
+                    }
+                }
+                yield return instruction;
+            }
+            if (results != 1 || exceptions != 1)
+                throw new InvalidOperationException($"Core native resolution completion boundaries changed ({results}, {exceptions}).");
+        }
+        private static void Complete(ref AsyncTaskMethodBuilder builder) => Finish(ref builder, null);
+        private static void Fail(ref AsyncTaskMethodBuilder builder, Exception error) => Finish(ref builder, error);
+        private static void Finish(ref AsyncTaskMethodBuilder builder, Exception? error)
+        {
+            var completion = ActiveBatch.Value?.DisposeAsync() ?? ValueTask.CompletedTask;
+            if (completion.IsCompletedSuccessfully)
+            {
+                completion.GetAwaiter().GetResult();
+                CompleteBuilder(ref builder, error);
+                return;
+            }
+            // Materialize the original task before copying the builder for asynchronous cleanup.
+            _ = builder.Task;
+            _ = FinishAsync(builder, completion, error);
+        }
+        private static async Task FinishAsync(AsyncTaskMethodBuilder builder, ValueTask completion, Exception? error)
+        {
+            try { await completion; }
+            catch (Exception cleanupError) { error = cleanupError; }
+            CompleteBuilder(ref builder, error);
+        }
+        private static void CompleteBuilder(ref AsyncTaskMethodBuilder builder, Exception? error)
+        {
+            if (error == null) builder.SetResult();
+            else builder.SetException(error);
+        }
     }
 }

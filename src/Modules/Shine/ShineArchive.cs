@@ -22,18 +22,21 @@ public static class ShineArchive
     public static CoreRunRules GetRules(Player player) => For(player).Rules;
     public static void SetRules(Player player, CoreRunRules rules) => For(player).Rules = rules;
     public static IReadOnlyList<SerializableCard> Snapshots(Player player) => Array.AsReadOnly(For(player).Cards.ToArray());
-    public static IReadOnlyList<CardModel> Models(Player player) => Snapshots(player).Select(save =>
+    public static IReadOnlyList<CardModel> Models(Player player) => Snapshots(player).Select(save => ArchivedModel(player, save)).ToArray();
+    private static CardModel ArchivedModel(Player player, SerializableCard save)
     {
         using var scope = ShineService.AllowSnapshotCopy();
         var card = CardModel.FromSerializable(save);
         card.Owner = player;
+        ShineService.Instance.MarkArchived(card);
         return card;
-    }).ToArray();
+    }
     public static void Restore(Player player, IEnumerable<SerializableCard> snapshots)
     {
+        var restored = snapshots.Select(save => ArchivedModel(player, save).ToSerializable()).ToArray();
         var archive = For(player);
         archive.Cards.Clear();
-        archive.Cards.AddRange(snapshots);
+        archive.Cards.AddRange(restored);
         archive.Lifecycles.Clear();
         archive.Lifecycles.AddRange(archive.Cards.Select((_, i) => $"{player.NetId}:{i + 1}"));
         Changed?.Invoke(player);
