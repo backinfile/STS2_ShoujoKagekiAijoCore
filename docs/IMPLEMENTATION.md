@@ -1,6 +1,6 @@
 # ShoujoKagekiAijoCore 实现文档
 
-本文面向 Core 开发、部署和维护者，记录 Core 1.0.0 的实现约定，整理日期为 2026-11-06。使用方式与作者接入示例见 [Core 使用说明](../README.md)。
+本文面向 Core 开发、部署和维护者，记录 Core 1.0.1 的实现约定，整理日期为 2026-11-06。使用方式与作者接入示例见 [Core 使用说明](../README.md)。
 
 源码与文档位于 Core 的 GitHub 仓库，SDK 随正式发行提供。工程示例采用相对路径。[GitHub 仓库](https://github.com/backinfile/STS2_ShoujoKagekiAijoCore)
 

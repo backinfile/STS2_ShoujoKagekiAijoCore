@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
 namespace ShoujoKageki.Core.Telemetry;
@@ -22,7 +23,7 @@ internal sealed class ClientErrorBuffer
     private readonly string _build, _version, _platform, _os, _gameCommit;
     private readonly ModInfo[] _mods;
     private readonly bool _modsTruncated;
-    private readonly Func<object>? _coreContext;
+    private readonly JsonNode? _coreContext;
     private DateTimeOffset _window;
     private int _captures, _snapshots;
     private long _suppressed;
@@ -38,7 +39,6 @@ internal sealed class ClientErrorBuffer
     internal ClientErrorBuffer(string build, string version, string platform, Func<DateTimeOffset>? clock = null,
         string os = "unknown", string gameCommit = "unknown", IEnumerable<ModInfo>? mods = null, Func<object>? coreContext = null)
     {
-        _coreContext = coreContext;
         _build = Clean(build, 80); _version = Clean(version, 80); _platform = Clean(platform, 40);
         _os = Clean(os, 40); _gameCommit = Clean(gameCommit, 80);
         var selected = new List<ModInfo>(); int bytes = 2;
@@ -51,6 +51,12 @@ internal sealed class ClientErrorBuffer
             selected.Add(bounded);
         }
         _mods = selected.ToArray();
+        if (coreContext != null)
+        {
+            _coreContext = JsonSerializer.SerializeToNode(coreContext(), JsonOptions)
+                ?? throw new InvalidDataException("Core error context is missing.");
+            _modsTruncated |= BoundCoreContext(_coreContext);
+        }
         _clock = clock ?? (() => DateTimeOffset.UtcNow);
         _window = _clock();
     }
@@ -76,6 +82,35 @@ internal sealed class ClientErrorBuffer
         return text.Length > limit ? text[..limit] : text;
     }
 
+    // Reserve independent byte budgets so the final v2 JSON fits the 64 KiB endpoint.
+    private static string BoundJsonText(string text, int maxBytes)
+    {
+        while (Encoding.UTF8.GetByteCount(JsonSerializer.Serialize(text, JsonOptions)) > maxBytes)
+        {
+            text = text[..(text.Length * 3 / 4)];
+            if (text.Length > 0 && char.IsHighSurrogate(text[^1])) text = text[..^1];
+        }
+        return text;
+    }
+
+    private static bool BoundCoreContext(JsonNode context)
+    {
+        int bytes = Encoding.UTF8.GetByteCount(context.ToJsonString(JsonOptions));
+        bool truncated = false;
+        foreach (string name in new[] { "model_sources", "source_mods" })
+        {
+            if (context[name] is not JsonArray items) continue;
+            while (bytes > 8192 && items.Count > 0)
+            {
+                bytes -= Encoding.UTF8.GetByteCount(items[^1]?.ToJsonString(JsonOptions) ?? "null") + (items.Count > 1 ? 1 : 0);
+                items.RemoveAt(items.Count - 1);
+                truncated = true;
+            }
+        }
+        if (bytes > 8192) throw new InvalidDataException("Core error context metadata exceeds its budget.");
+        return truncated;
+    }
+
     internal static string Normalize(string text)
     {
         text = Replace(text, @"\b[0-9a-f]{8}-[0-9a-f-]{27,}\b|\b0x[0-9a-f]+\b|\b[0-9a-f]{24,}\b|\b\d+\b", "#");
@@ -90,7 +125,8 @@ internal sealed class ClientErrorBuffer
             if (now - _window >= TimeSpan.FromMinutes(1)) { _window = now; _captures = 0; }
             // Apply before regex/hash work; a failing per-frame callback stays cheap.
             if (++_captures > 120) { _suppressed++; return; }
-            message = Clean(message, 2048); stack = Clean(stackFactory?.Invoke() ?? stack, 8192);
+            message = BoundJsonText(Clean(message, 2048), 4096);
+            stack = BoundJsonText(Clean(stackFactory?.Invoke() ?? stack, 8192), 32768);
             if (string.IsNullOrWhiteSpace(message)) return;
             string key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(source + "\n" + Normalize(message) + "\n" + Normalize(stack))));
             if (!_entries.TryGetValue(key, out var entry))
@@ -130,7 +166,7 @@ internal sealed class ClientErrorBuffer
                     source = entry.Source, message = entry.Message, stack = entry.Stack,
                     first_seen = entry.First, last_seen = entry.Last, count = entry.Count,
                 }, JsonOptions)!;
-                if (_coreContext != null) report["core_telemetry"] = JsonSerializer.SerializeToNode(_coreContext());
+                if (_coreContext != null) report["core_telemetry"] = _coreContext.DeepClone();
                 string json = report.ToJsonString(JsonOptions);
                 snapshots.Add((entry, entry.Count, json));
             }

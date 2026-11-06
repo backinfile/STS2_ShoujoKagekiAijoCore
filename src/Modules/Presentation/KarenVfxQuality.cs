@@ -58,7 +58,7 @@ internal static class KarenVfxQuality
         clock.Next = 0;
     }
     private static bool IsEffect(Type type) => type.Assembly == typeof(KarenVfxQuality).Assembly
-        && (type.Name.StartsWith("NKaren", StringComparison.Ordinal) || type.Name.StartsWith("NDisableRelic", StringComparison.Ordinal))
+        && (type.Name.StartsWith("NKaren", StringComparison.Ordinal) && type.Name.EndsWith("Vfx", StringComparison.Ordinal) || type.Name.StartsWith("NDisableRelic", StringComparison.Ordinal))
         && typeof(CanvasItem).IsAssignableFrom(type);
     private static bool IsSiblingLayer(Node node) => node.GetType() == typeof(Node2D)
         && (node.Name.ToString().StartsWith("Karen", StringComparison.Ordinal)

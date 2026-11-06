@@ -3,6 +3,20 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const source = fs.readFileSync(__dirname + '/../../web/telemetry/app.js', 'utf8').split("document.addEventListener('click',event=>{")[0];
+const browserSource = fs.readFileSync(__dirname + '/../../web/telemetry/app.js', 'utf8');
+const restoreCode = browserSource.slice(browserSource.indexOf('const urlState=comparisonURL;'), browserSource.indexOf("if(['cards','runs','compare'].includes(urlState.get('view')))"));
+const restoredControls = Object.fromEntries(['build', 'core_version', 'source_mod'].map(key => [key, {
+  value: 'all', options: [{value: 'all'}], append(option) { this.options.push(option); }
+}]));
+vm.runInNewContext(restoreCode, {
+  comparisonURL: new URLSearchParams('build=test-build&core_version=1.0.1&source_mod=Example'),
+  document: {createElement: () => ({})},
+  $: () => ({elements: {namedItem: key => restoredControls[key]}}),
+});
+assert.equal(restoredControls.build.value, 'test-build');
+assert.equal(restoredControls.core_version.value, '1.0.1');
+assert.equal(restoredControls.source_mod.value, 'Example');
+console.log('PASS dynamic filter URL restoration');
 const nodes = new Map();
 const node = id => {
   if (!nodes.has(id)) nodes.set(id, {

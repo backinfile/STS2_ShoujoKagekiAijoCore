@@ -23,7 +23,10 @@ internal sealed class KarenMusicPlayback : IDisposable
     private int _request;
     private double? _pausedSeek;
     private string? _forcedPath;
-    private bool _disposed, _resumeAfterForm;
+    private bool _disposed;
+    private InterruptedPlayback? _interrupted;
+    private sealed record InterruptedPlayback(AudioStream? Stream, string? Path, int Index, double Position,
+        bool Playing, bool Paused, bool Loading, string Status);
     internal bool FormPriority { get; private set; }
     internal readonly List<string> Tracks = new();
     private readonly Dictionary<string, string> _titles = new();
@@ -209,7 +212,7 @@ internal sealed class KarenMusicPlayback : IDisposable
         _pausedSeek = null;
         _forcedPath = null;
         if (Index < 0 && Tracks.Count > 0) Index = 0;
-        _resumeAfterForm = false;
+        _interrupted = null;
         Loading = false;
         _player.Stop();
         _player.StreamPaused = false;
@@ -222,6 +225,7 @@ internal sealed class KarenMusicPlayback : IDisposable
     private void OnFinished()
     {
         if (CoreModConfig.MusicPlayMode == MusicPlayMode.RepeatOne) _ = _forcedPath != null ? PlayTrack(-1, _forcedPath, true) : Play(Index);
+        else if (FormPriority) { UpdateVolumes(); Changed?.Invoke(); }
         else if (Tracks.Count > 0) Step(1);
         else Stop();
     }
@@ -231,7 +235,10 @@ internal sealed class KarenMusicPlayback : IDisposable
         if (_disposed || FormPriority == active) return;
         if (active)
         {
-            _resumeAfterForm = IsPlaying || Loading;
+            var path = _forcedPath ?? (Index >= 0 && Index < Tracks.Count ? Tracks[Index] : null);
+            _interrupted = new InterruptedPlayback(_player.Stream, path, Index, Position, IsPlaying, IsPaused, Loading, Status);
+            _request++;
+            Loading = false;
             FormPriority = true;
             if (_player.Stream != null) _player.StreamPaused = true;
             Status = "awakening";
@@ -239,13 +246,24 @@ internal sealed class KarenMusicPlayback : IDisposable
         else
         {
             FormPriority = false;
-            if (_resumeAfterForm && CoreModConfig.EnableMusicPlayer && _player.Stream != null)
+            var previous = _interrupted;
+            _interrupted = null;
+            _request++;
+            Loading = false;
+            _player.Stop();
+            _player.StreamPaused = false;
+            _player.Stream = previous?.Stream;
+            _forcedPath = previous?.Index < 0 ? previous.Path : null;
+            Index = previous?.Index ?? (Tracks.Count > 0 ? 0 : -1);
+            _pausedSeek = previous?.Paused == true ? previous.Position : null;
+            Status = previous?.Status ?? (Tracks.Count > 0 ? "ready" : "unset");
+            if (previous?.Stream != null && (previous.Playing || previous.Paused))
             {
-                _player.StreamPaused = false;
-                Status = "playing";
+                _player.Play((float)previous.Position);
+                _player.StreamPaused = previous.Paused || !CoreModConfig.EnableMusicPlayer;
             }
-            else Status = IsPaused ? "paused" : Tracks.Count > 0 ? "ready" : "unset";
-            _resumeAfterForm = false;
+            if (previous is { Loading: true, Path: { } path } && CoreModConfig.EnableMusicPlayer)
+                _ = PlayTrack(previous.Index, path, previous.Index < 0);
         }
         UpdateVolumes();
         Changed?.Invoke();

@@ -187,7 +187,7 @@ function openComparison(){
   root.querySelectorAll('[aria-labelledby]').forEach(node=>node.setAttribute('aria-labelledby',node.getAttribute('aria-labelledby').split(' ').map(id=>controls.get(id)?.id??id).join(' ')));
   const scope={root,$:id=>controls.get(id),cardsOnly:true,state:{...state,view:'cards',stats:null,runs:null,loading:false,fresh:false,loadedQuery:null,historyId:null,page:1}};
   scope.onChange=value=>{scope.saved=value;syncURL();};comparisons[side]=scope;
-  for(const [key,value] of initial){const control=controls.get(key)??scope.$('filters').elements.namedItem(key);if(!control)continue;if(control.tagName==='SELECT'){if((key==='build'&&value.length<=120)||(key==='character'&&/^[A-Z0-9_:-]{1,180}$/.test(value))){if(![...control.options].some(o=>o.value===value))control.add(new Option(key==='character'?characterName(value):value,value));}if([...control.options].some(o=>o.value===value))control.value=value;}else if(key==='search')control.value=value.slice(0,180);}
+  for(const [key,value] of initial){const control=controls.get(key)??scope.$('filters').elements.namedItem(key);if(!control)continue;if(control.tagName==='SELECT'){if((['build','core_version','source_mod'].includes(key)&&value.length<=(key==='source_mod'?180:120))||(key==='character'&&/^[A-Z0-9_:-]{1,180}$/.test(value))){if(![...control.options].some(o=>o.value===value))control.add(new Option(key==='character'?characterName(value):value,value));}if([...control.options].some(o=>o.value===value))control.value=value;}else if(key==='search')control.value=value.slice(0,180);}
   if(['table','chart'].includes(initial.get('display')))scope.state.display=initial.get('display');
   if(Object.hasOwn(CARD_SORTS,initial.get('sort')))scope.state.sort=initial.get('sort');
   scope.state.order=initial.get('order')==='1'?1:-1;scope.state.card=initial.get('card');
@@ -239,7 +239,7 @@ $('refresh').addEventListener('click',()=>state.view==='compare'&&Object.keys(co
 $('history').addEventListener('close',()=>{historyVersion++;state.historyId=null;syncURL();});
 for(let i=0;i<=10;i++){const option=document.createElement('option');option.value=i;option.textContent='进阶 '+i;$('filters').elements.ascension.append(option);}
 const urlState=comparisonURL;
-for(const [key,value] of urlState){const control=$('filters').elements.namedItem(key);if(key==='build'&&value!=='all'&&value.length<=120){const option=document.createElement('option');option.value=value;option.textContent=value;control.append(option);}if(control&&[...control.options].some(o=>o.value===value))control.value=value;}
+for(const [key,value] of urlState){const control=$('filters').elements.namedItem(key);if(['build','core_version','source_mod'].includes(key)&&value!=='all'&&value.length<=(key==='source_mod'?180:120)){const option=document.createElement('option');option.value=value;option.textContent=value;control.append(option);}if(control&&[...control.options].some(o=>o.value===value))control.value=value;}
 if(['cards','runs','compare'].includes(urlState.get('view')))state.view=urlState.get('view');
 if(urlState.get('compareSide')==='right'){$('comparison').dataset.side='right';document.querySelectorAll('[data-compare-side]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.compareSide==='right'));}
 if(['table','chart'].includes(urlState.get('display')))state.display=urlState.get('display');

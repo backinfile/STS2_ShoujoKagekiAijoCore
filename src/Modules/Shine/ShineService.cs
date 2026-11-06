@@ -30,6 +30,7 @@ public sealed class ShineService : IShineService, ICoreModule
     private readonly List<Func<CardModel, bool>> _deferred = [];
     private static readonly AsyncLocal<Batch?> ActiveBatch = new();
     private static readonly AsyncLocal<int> SnapshotCopyDepth = new();
+    [ThreadStatic] private static int _cardReadDepth;
     private static readonly ConditionalWeakTable<CardModel, object> PermanentAcquisitions = new();
     private readonly HashSet<MethodInfo> _hookedMethods = [];
     private readonly Harmony _harmony = new(CoreApi.ModId + ".ActualResolution");
@@ -360,9 +361,15 @@ public sealed class ShineService : IShineService, ICoreModule
     [HarmonyPatch(typeof(CardModel), nameof(CardModel.FromSerializable))]
     private static class LegacyCardStatePatch
     {
-        private static void Prefix(SerializableCard save)
+        private static void Prefix(SerializableCard save, out bool __state)
         {
+            _cardReadDepth++;
+            __state = true;
             if (save.Id?.Entry == "KAREN_EMPTY_SHELL") save.Id = ModelDb.GetId<CoreEmptyShell>();
+        }
+        private static void Finalizer(bool __state)
+        {
+            if (__state) _cardReadDepth--;
         }
         [HarmonyPriority(Priority.Last)]
         private static void Postfix(SerializableCard save, CardModel __result)
@@ -393,7 +400,10 @@ public sealed class ShineService : IShineService, ICoreModule
     [HarmonyPatch(typeof(CardModel), nameof(CardModel.UpgradeInternal))]
     private static class UpgradePatch
     {
-        private static void Postfix(CardModel __instance) => Instance.RestoreToMaximum(__instance);
+        private static void Postfix(CardModel __instance)
+        {
+            if (_cardReadDepth == 0) Instance.RestoreToMaximum(__instance);
+        }
     }
     [HarmonyPatch]
     private static class WrapperPatch

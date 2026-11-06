@@ -81,6 +81,34 @@ using var incompleteJson=JsonDocument.Parse(incompleteBody);
 Check(incompleteJson.RootElement.GetProperty("mods")[0].GetProperty("name").GetString()=="Unversioned" && incompleteJson.RootElement.GetProperty("mods")[0].GetProperty("version").GetString()=="unknown","Incomplete manifests must not reject the report");
 Console.WriteLine("PASS PC/Android, game build and bounded mod inventory");
 
+var coreMods = Enumerable.Range(0, 128).Select(i => new ClientErrorBuffer.ModInfo("Mod_" + i + new string('a', 80), new string('名', 80), new string('v', 40))).ToArray();
+var coreContext = new { schema_version = 2, core_version = "1.0.1", api_version = "1", game_target = "beta", game_version = "0.111.0",
+    source_mods = coreMods.Select(mod => new { mod.id, name = mod.id, mod.version }).ToArray(), model_sources = Array.Empty<object>() };
+var coreBuffer = new ClientErrorBuffer("0.111.0", "unknown", "pc", () => now, mods: coreMods, coreContext: () => coreContext);
+var coreBodies = new List<string>();
+foreach (string content in new[] { new string('错', 8192), new string('\u2028', 8192) })
+{
+    coreBuffer.Capture("game", "failure " + content, content);
+    coreBuffer.Persist(payload => { coreBodies.Add(payload); return true; });
+}
+foreach (string payload in coreBodies)
+{
+    Check(System.Text.Encoding.UTF8.GetByteCount(payload) <= 65536, "Complete v2 JSON must fit the error endpoint");
+    using var report = JsonDocument.Parse(payload);
+    Check(report.RootElement.GetProperty("mods_truncated").GetBoolean(), "Truncated Core inventory must be explicit");
+    Check(report.RootElement.GetProperty("core_telemetry").GetProperty("source_mods").GetArrayLength() > 0, "Bounded Core inventory retains sources");
+}
+coreBuffer.Capture("game", "failure " + new string('错', 8192), new string('错', 8192));
+coreBuffer.Persist(payload => { coreBodies.Add(payload); return true; });
+using (var oldReport = JsonDocument.Parse(coreBodies[0]))
+using (var updatedReport = JsonDocument.Parse(coreBodies[^1]))
+{
+    Check(oldReport.RootElement.GetProperty("core_telemetry").GetRawText() == updatedReport.RootElement.GetProperty("core_telemetry").GetRawText(), "Repeated reports retain the same Core fingerprint context");
+    Check(updatedReport.RootElement.GetProperty("count").GetInt32() == 2, "Bounded reports retain cumulative counts");
+}
+Console.WriteLine("PASS complete v2 byte budget and stable retry context");
+
+
 buffer = Buffer();buffer.Capture("game", "failure", "trace");
 Check(buffer.Persist(_ => false) == 0 && buffer.Persist(_ => true) == 1, "Full queue must preserve unsaved count");
 buffer.Capture("game", "failure", "trace");buffer.Clear();
@@ -91,6 +119,7 @@ Check(buffer.Persist(_ => true) == 0, "Lifetime snapshot bound");
 Console.WriteLine("PASS queue-full, clear and lifetime bounds");
 
 string root = Path.GetFullPath(args[0]);Directory.CreateDirectory(root);
+File.WriteAllText(Path.Combine(root, "core-v2.json"), coreBodies[0]);
 var requests = new List<DateTimeOffset>();int calls=0;
 bool enabled = true;
 using var client = new HttpClient(new TestHandler(_ => {

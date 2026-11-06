@@ -4,7 +4,7 @@ param(
     [string]$Godot = $env:GODOT_BIN,
     [string]$TelemetryEndpointPath = '',
     [string]$OutputDirectory = '',
-    [string]$Version = '1.0.0'
+    [string]$Version = '1.0.1'
 )
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot

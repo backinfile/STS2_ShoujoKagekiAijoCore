@@ -15,13 +15,16 @@ def build(exports, web):
         return json.loads(path.read_text(encoding="utf-8-sig")) if path.exists() else {}
     catalog, relics, characters = read("catalog.json"), read("relics.json"), read("characters.json")
     catalog.update(read("native_catalog.json"))
+    card_alias_sources, relic_alias_sources = {}, {}
     for folder in exports:
         game = json.loads((folder / "game_info.json").read_text(encoding="utf-8-sig"))
         for character in game.get("characters", []):
             characters[character["id"].split(".")[-1].upper()] = character["name"]
         for relic in game.get("relics", []):
             relics[relic["id"]] = {"name": relic["name"], "source_mod": relic.get("sourceMod", "unknown"), "source_version": relic.get("sourceVersion", "unknown")}
-            relics.setdefault(relic["id"].split(".")[-1].upper(), {"name": relic["name"], "source_mod": relic.get("sourceMod", "unknown"), "source_version": relic.get("sourceVersion", "unknown")})
+            alias = relic["id"].split(".")[-1].upper()
+            if relic_alias_sources.setdefault(alias, relic["id"]) == relic["id"]:
+                relics[alias] = relics[relic["id"]]
         manifest = json.loads((folder / "cards.json").read_text(encoding="utf-8-sig"))
         for card in manifest["cards"]:
             cid = card["id"]
@@ -39,7 +42,9 @@ def build(exports, web):
                     bitmap.save(destination, "WEBP", quality=82)
                 item["image"] = "assets/" + destination.name
             catalog[cid] = item
-            catalog.setdefault(cid.split(".")[-1].upper(), item)
+            alias = cid.split(".")[-1].upper()
+            if card_alias_sources.setdefault(alias, cid) == cid:
+                catalog[alias] = item
     for name, value in (("catalog.json", catalog), ("relics.json", relics), ("characters.json", characters)):
         (web / name).write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return len(catalog)

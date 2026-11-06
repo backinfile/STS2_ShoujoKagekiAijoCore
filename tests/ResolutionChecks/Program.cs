@@ -18,6 +18,53 @@ var serviceType = typeof(ShineService);
 Type Patch(string name) => serviceType.GetNestedType(name, BindingFlags.NonPublic)!;
 HarmonyMethod Hook(string patch, string name) => new(AccessTools.Method(Patch(patch), name));
 var wrapper = AccessTools.Method(typeof(ResolutionCard), nameof(ResolutionCard.NativeWrapper));
+if (args.Contains("--save-only"))
+{
+    harmony.CreateClassProcessor(typeof(ShineService).Assembly.GetType("ShoujoKageki.Core.Runtime.Modules.Shine.ShineService+LegacyCardStatePatch")!).Patch();
+    harmony.CreateClassProcessor(Patch("UpgradePatch")).Patch();
+    harmony.CreateClassProcessor(Patch("ClonePatch")).Patch();
+    harmony.CreateClassProcessor(typeof(BaseLib.Utils.SpireField<,>).Assembly.GetType("BaseLib.Patches.Utils.SavedSpireFieldPatch")!).Patch();
+    ModelDb.Inject(typeof(ResolutionCard));
+    ModelDb.Inject(typeof(PlainCard));
+    foreach (int upgrades in new[] { 0, 1, 2 })
+    {
+        var save = new MegaCrit.Sts2.Core.Saves.Runs.SerializableCard
+        {
+            Id = ModelDb.GetId<ResolutionCard>(), CurrentUpgradeLevel = upgrades,
+            Props = new() { ints = [new("CardModel_core_shine_current", 2), new("CardModel_core_shine_max", 6)] }
+        };
+        var restored = CardModel.FromSerializable(save);
+        if (restored.CurrentUpgradeLevel != upgrades || service.GetState(restored) is not { Remaining: 2, Maximum: 6 })
+            throw new InvalidOperationException("Restoring upgrades must preserve the saved Shine budget.");
+        restored.UpgradeInternal();
+        if (service.GetState(restored) is not { Remaining: 6 })
+            throw new InvalidOperationException("A real upgrade must still refill Shine.");
+    }
+    var legacySave = new MegaCrit.Sts2.Core.Saves.Runs.SerializableCard
+    {
+        Id = ModelDb.GetId<ResolutionCard>(), CurrentUpgradeLevel = 1,
+        Props = new() { ints = [new("CardModel_karen_shine_current", 2), new("CardModel_karen_shine_max", 6)] }
+    };
+    if (service.GetState(CardModel.FromSerializable(legacySave)) is not { Remaining: 2, Maximum: 6 })
+        throw new InvalidOperationException("Legacy upgraded cards must preserve their saved budget.");
+    var plainSave = new MegaCrit.Sts2.Core.Saves.Runs.SerializableCard { Id = ModelDb.GetId<PlainCard>(), CurrentUpgradeLevel = 1 };
+    if (service.GetState(CardModel.FromSerializable(plainSave)) != null)
+        throw new InvalidOperationException("An upgraded ordinary card must retain absent Shine state.");
+    legacySave.Props!.ints!.Add(new("CardModel_core_shine_current", 1));
+    legacySave.Props.ints.Add(new("CardModel_core_shine_max", 4));
+    if (service.GetState(CardModel.FromSerializable(legacySave)) is not { Remaining: 1, Maximum: 4 })
+        throw new InvalidOperationException("Core fields must take precedence when legacy fields coexist.");
+    legacySave.CurrentUpgradeLevel = 4;
+    try { CardModel.FromSerializable(legacySave); throw new Exception("Invalid upgrade count was accepted."); }
+    catch (InvalidOperationException) { }
+    var afterFailure = ModelDb.Card<ResolutionCard>().ToMutable();
+    service.SetState(afterFailure, 1, 6);
+    afterFailure.UpgradeInternal();
+    if (service.GetState(afterFailure) is not { Remaining: 6 })
+        throw new InvalidOperationException("A failed read must release the upgrade suppression scope.");
+    Console.WriteLine("Save restoration and real upgrade checks passed.");
+    return;
+}
 if (args.Contains("--legacy-only"))
 {
     ModelDb.Inject(typeof(PlainCard));
@@ -183,6 +230,7 @@ public abstract class ResolutionWrapperBase() : CardModel(0, CardType.Skill, Car
 [ShineCard(3)]
 public sealed class ResolutionCard : ResolutionWrapperBase
 {
+    public override int MaxUpgradeLevel => 3;
     protected override Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
         => Deferred ? Task.CompletedTask : Effect();
     public async Task Effect()
