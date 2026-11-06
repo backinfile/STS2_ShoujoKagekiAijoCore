@@ -1,0 +1,11 @@
+{
+  "CORE_SHINE_CARD_REWARD": "キラめきカード報酬×{Count}",
+  "CORE_SHINE_CARD_REWARD_SELECT": "キラめきカード報酬×{MaxCount}",
+  "CORE_SHINE_LABEL": "[gold]キラめき[/gold]",
+  "CORE_SHINE_SUFFIX": "。",
+  "CORE_DERIVED_CARD_LABEL": "生成カード",
+  "CORE_SHINE_PILE_INFO": "キラめき枯渇カード置き場",
+  "CORE_RUN_HISTORY_SHINE_EXHAUST_HEADER": "[gold][b]キラめき枯渇（{Count}）：[/b][/gold]",
+  "CORE_SHINE_PILE_BUTTON_TITLE": "キラめきカード置き場",
+  "CORE_SHINE_PILE_BUTTON_DESC": "キラめきが尽きたカードを確認する。"
+}

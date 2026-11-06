@@ -1,0 +1,17 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>13</LangVersion>
+    <CoreVersion>1.0.0</CoreVersion>
+    <Version>$(CoreVersion)</Version>
+    <Sts2Api Condition="'$(Sts2Api)' == ''">stable</Sts2Api>
+    <DefineConstants Condition="'$(Sts2Api)' == 'beta'">$(DefineConstants);STS2_BETA</DefineConstants>
+    <GameDataDir>$(GameDir)/data_sts2_windows_x86_64</GameDataDir>
+    <BaseLibPath Condition="'$(BaseLibPath)' == ''">$(GameDir)/mods/BaseLib/BaseLib.dll</BaseLibPath>
+    <Deterministic>true</Deterministic>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+  </PropertyGroup>
+  <Import Project="$(MSBuildThisFileDirectory)local.props" Condition="Exists('$(MSBuildThisFileDirectory)local.props')" />
+</Project>

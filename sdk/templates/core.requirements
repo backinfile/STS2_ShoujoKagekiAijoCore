@@ -1,0 +1,8 @@
+{
+  "format": 1,
+  "modId": "ExampleCharacterMod",
+  "apiMajor": 1,
+  "minimumApiVersion": "1.0.0",
+  "requiredFeatures": ["shine@1"],
+  "optionalFeatures": ["diagnostics@1", "music@1"]
+}

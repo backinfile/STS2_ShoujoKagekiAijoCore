@@ -1,0 +1,92 @@
+[
+  {
+    "file": "p010.ogg",
+    "title": "星のダイアローグ",
+    "source": "https://www.bilibili.com/video/BV1Rb411t7Ws?p=10",
+    "part": 10,
+    "duration": 284.139,
+    "bytes": 1522947,
+    "sha256": "de5da4036d7a6afd2e75e9dc1c54c76f1171a35584d7a3586073b7c2392da313"
+  },
+  {
+    "file": "p001.ogg",
+    "title": "Star Divine",
+    "source": "https://www.bilibili.com/video/BV1Rb411t7Ws?p=1",
+    "part": 1,
+    "duration": 255.419,
+    "bytes": 1425184,
+    "sha256": "175db8370956b10470bfb04072cf7c0abb7f45f5ca582056f362fea25864114c"
+  },
+  {
+    "file": "p155.ogg",
+    "title": "再生讃美曲",
+    "source": "https://www.bilibili.com/video/BV1Rb411t7Ws?p=155",
+    "part": 155,
+    "duration": 316.464,
+    "bytes": 1719383,
+    "sha256": "ef7b8fdef35b9d42deb0539e5333fdc9e869993654d1441b4698320709d23a66"
+  },
+  {
+    "file": "p012.ogg",
+    "title": "Fly Me to the Star",
+    "source": "https://www.bilibili.com/video/BV1Rb411t7Ws?p=12",
+    "part": 12,
+    "duration": 196.395,
+    "bytes": 1013297,
+    "sha256": "1042434ca9487e1649f87b3e6efd6ed16bda5263d1f7515740c2ac8209c537dd"
+  },
+  {
+    "file": "p104.ogg",
+    "title": "Star Diamond",
+    "source": "https://www.bilibili.com/video/BV1Rb411t7Ws?p=104",
+    "part": 104,
+    "duration": 292.757,
+    "bytes": 1704168,
+    "sha256": "977012da190e7417cb40e7ea99dd55b861a222284d5973a1f76359a09ac6a556"
+  },
+  {
+    "file": "p195.ogg",
+    "title": "わがままハイウェイ",
+    "source": "https://www.bilibili.com/video/BV1Rb411t7Ws?p=195",
+    "part": 195,
+    "duration": 486.315,
+    "bytes": 2588960,
+    "sha256": "961cd9bf225739d6fdcb5b2504286cbcffd0779211b140dc6eaff5e1bfbdded3"
+  },
+  {
+    "file": "p011.ogg",
+    "title": "ディスカバリー!",
+    "source": "https://www.bilibili.com/video/BV1Rb411t7Ws?p=11",
+    "part": 11,
+    "duration": 277.504,
+    "bytes": 1556479,
+    "sha256": "9a602eed6cd34520b3df63f42f024235f59673e028f90cd759da4c3caac1145e"
+  },
+  {
+    "file": "p019.ogg",
+    "title": "花咲か唄",
+    "source": "https://www.bilibili.com/video/BV1Rb411t7Ws?p=19",
+    "part": 19,
+    "duration": 306.496,
+    "bytes": 1739527,
+    "sha256": "792b3b47967c064bcd4dd5c0a3df44da0f210fb788d78fea388756ca12cf8107"
+  },
+  {
+    "file": "p018.ogg",
+    "title": "恋の魔球",
+    "source": "https://www.bilibili.com/video/BV1Rb411t7Ws?p=18",
+    "part": 18,
+    "duration": 411.477,
+    "bytes": 2317146,
+    "sha256": "79180355b0e7156a59f7273e400a8d82b9d27305a0407bbd828ed503136781d2"
+  },
+  {
+    "file": "p017.ogg",
+    "title": "誇りと驕り",
+    "source": "https://www.bilibili.com/video/BV1Rb411t7Ws?p=17",
+    "part": 17,
+    "duration": 348.907,
+    "bytes": 1776542,
+    "sha256": "3d1fd6398510b6b5090ceebcbb3166a66a95609d2337431ef9acc37555c8241a"
+  }
+]
