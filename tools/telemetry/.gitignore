@@ -1,0 +1,8 @@
+__pycache__/
+data/
+bin/
+obj/
+*.sqlite3*
+raw-submissions/
+.local/
+.test-data/

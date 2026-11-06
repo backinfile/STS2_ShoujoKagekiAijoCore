@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer"><title>报错 · Core</title>
+  <link rel="icon" href="assets/character_icon_karen.webp"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="errors.css">
+  <script src="errors.js" defer></script>
+</head>
+<body>
+<header class="topbar"><a class="brand" href="./"><img src="assets/character_icon_karen.webp" alt="">Core<span>对局观察</span></a><nav aria-label="主导航"><a href="./#view=cards">卡牌统计</a><a href="./#view=compare">对比模式</a><a href="./#view=runs">对局记录</a><a href="errors.html" aria-current="page">报错</a></nav><span class="connection" id="connection" role="status">连接中</span><button id="refresh">刷新</button></header>
+<main>
+  <div class="page-heading"><h1>报错</h1><span id="total" role="status"></span></div>
+  <form id="errorFilters" class="filters">
+    <label>游戏版本<select name="build" id="build"><option value="all">全部版本</option></select></label>
+    <label>Mod 版本<select name="mod_version" id="modVersion"><option value="all">全部版本</option></select></label>
+    <label>Core 版本<select name="core_version" id="coreVersion"><option value="all">全部版本</option></select></label>
+    <label>Mod 来源<select name="source_mod" id="sourceMod"><option value="all">全部来源</option></select></label>
+    <label>游戏目标<select name="game_target"><option value="all">全部</option><option value="stable">正式版</option><option value="beta">测试版</option></select></label>
+    <label>平台<select name="platform"><option value="all">全部平台</option><option value="pc">PC</option><option value="android">安卓</option></select></label>
+    <label>来源<select name="source"><option value="all">全部来源</option><option value="game">游戏</option><option value="engine">引擎</option><option value="shader">着色器</option><option value="managed">托管异常</option><option value="stderr">标准错误</option></select></label>
+    <label>排序<select name="sort"><option value="recent">最近出现</option><option value="count">累计次数</option><option value="sessions">影响会话</option></select></label>
+    <label>搜索<input name="search" type="search" maxlength="120" aria-label="搜索错误或调用栈"></label><button type="submit">查询</button>
+  </form>
+  <div id="error" class="error" role="alert" hidden></div>
+  <div class="workbench errors-workbench"><section id="errors" class="data-panel" aria-label="报错列表"></section><aside id="detail" class="inspector" aria-live="polite"></aside></div>
+  <div id="pagination" class="pagination"></div>
+  <footer><span id="capacity"></span><span id="updated">等待数据</span></footer>
+</main>
+</body></html>

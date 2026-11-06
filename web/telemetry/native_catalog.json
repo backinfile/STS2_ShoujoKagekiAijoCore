@@ -1,0 +1,5375 @@
+{
+  "ABRASIVE": {
+    "name": "磨蚀",
+    "cost": 3,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_abrasive.webp"
+  },
+  "ACCELERANT": {
+    "name": "触媒",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_accelerant.webp"
+  },
+  "ACCURACY": {
+    "name": "精准",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_accuracy.webp"
+  },
+  "ACROBATICS": {
+    "name": "杂技",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_acrobatics.webp"
+  },
+  "ADAPTIVE_STRIKE": {
+    "name": "适应打击",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_adaptive_strike.webp"
+  },
+  "ADRENALINE": {
+    "name": "肾上腺素",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_adrenaline.webp"
+  },
+  "AFTERIMAGE": {
+    "name": "余像",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_afterimage.webp"
+  },
+  "AFTERLIFE": {
+    "name": "来生",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_afterlife.webp"
+  },
+  "AGGRESSION": {
+    "name": "好勇斗狠",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_aggression.webp"
+  },
+  "ALCHEMIZE": {
+    "name": "炼制药水",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_alchemize.webp"
+  },
+  "ALIGNMENT": {
+    "name": "星位序列",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_alignment.webp"
+  },
+  "ALL_FOR_ONE": {
+    "name": "万物一心",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_all_for_one.webp"
+  },
+  "ANGER": {
+    "name": "愤怒",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_anger.webp"
+  },
+  "ANOINTED": {
+    "name": "天选",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_anointed.webp"
+  },
+  "ANTICIPATE": {
+    "name": "预判",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_anticipate.webp"
+  },
+  "APOTHEOSIS": {
+    "name": "神化",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "先古",
+    "owner": "event",
+    "owner_name": "特殊",
+    "image": "assets/native_apotheosis.webp"
+  },
+  "APPARITION": {
+    "name": "灵体",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "先古",
+    "owner": "event",
+    "owner_name": "特殊",
+    "image": "assets/native_apparition.webp"
+  },
+  "ARMAMENTS": {
+    "name": "武装",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_armaments.webp"
+  },
+  "ARSENAL": {
+    "name": "武器库",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_arsenal.webp"
+  },
+  "ASCENDERS_BANE": {
+    "name": "进阶之灾",
+    "cost": -1,
+    "type": "诅咒",
+    "rarity": "诅咒",
+    "owner": "curse",
+    "owner_name": "诅咒",
+    "image": "assets/native_ascenders_bane.webp"
+  },
+  "ASHEN_STRIKE": {
+    "name": "灰烬打击",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_ashen_strike.webp"
+  },
+  "ASSASSINATE": {
+    "name": "刺杀",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_assassinate.webp"
+  },
+  "ASTRAL_PULSE": {
+    "name": "星界脉冲",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_astral_pulse.webp"
+  },
+  "AUTOMATION": {
+    "name": "自动化",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_automation.webp"
+  },
+  "BACKFLIP": {
+    "name": "后空翻",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_backflip.webp"
+  },
+  "BACKSTAB": {
+    "name": "背刺",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_backstab.webp"
+  },
+  "BAD_LUCK": {
+    "name": "霉运",
+    "cost": -1,
+    "type": "诅咒",
+    "rarity": "诅咒",
+    "owner": "curse",
+    "owner_name": "诅咒",
+    "image": "assets/native_bad_luck.webp"
+  },
+  "BALL_LIGHTNING": {
+    "name": "球状闪电",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_ball_lightning.webp"
+  },
+  "BANSHEES_CRY": {
+    "name": "女妖之嚎",
+    "cost": 9,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_banshees_cry.webp"
+  },
+  "BARRAGE": {
+    "name": "弹幕齐射",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_barrage.webp"
+  },
+  "BARRICADE": {
+    "name": "壁垒",
+    "cost": 3,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_barricade.webp"
+  },
+  "BASH": {
+    "name": "痛击",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "基础",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_bash.webp"
+  },
+  "BATTLE_TRANCE": {
+    "name": "战斗专注",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_battle_trance.webp"
+  },
+  "BEACON_OF_HOPE": {
+    "name": "希望灯塔",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_beacon_of_hope.webp"
+  },
+  "BEAM_CELL": {
+    "name": "光束射线",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_beam_cell.webp"
+  },
+  "BEAT_DOWN": {
+    "name": "狠揍",
+    "cost": 3,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_beat_down.webp"
+  },
+  "BEAT_INTO_SHAPE": {
+    "name": "锻打成型",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_beat_into_shape.webp"
+  },
+  "BECKON": {
+    "name": "呼唤",
+    "cost": 1,
+    "type": "状态",
+    "rarity": "状态",
+    "owner": "status",
+    "owner_name": "状态",
+    "image": "assets/native_beckon.webp"
+  },
+  "BEGONE": {
+    "name": "下去！",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_begone.webp"
+  },
+  "BELIEVE_IN_YOU": {
+    "name": "相信着你",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_believe_in_you.webp"
+  },
+  "BIASED_COGNITION": {
+    "name": "偏差认知",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "先古",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_biased_cognition.webp"
+  },
+  "BIG_BANG": {
+    "name": "大爆炸",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_big_bang.webp"
+  },
+  "BLACK_HOLE": {
+    "name": "黑洞",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_black_hole.webp"
+  },
+  "BLADE_DANCE": {
+    "name": "刀刃之舞",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_blade_dance.webp"
+  },
+  "BLADE_OF_INK": {
+    "name": "墨之刃",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_blade_of_ink.webp"
+  },
+  "BLIGHT_STRIKE": {
+    "name": "荒疫打击",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_blight_strike.webp"
+  },
+  "BLOODLETTING": {
+    "name": "放血",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_bloodletting.webp"
+  },
+  "BLOOD_WALL": {
+    "name": "血墙",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_blood_wall.webp"
+  },
+  "BLUDGEON": {
+    "name": "重锤",
+    "cost": 3,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_bludgeon.webp"
+  },
+  "BLUR": {
+    "name": "残影",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_blur.webp"
+  },
+  "BODYGUARD": {
+    "name": "护卫",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "基础",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_bodyguard.webp"
+  },
+  "BODY_SLAM": {
+    "name": "全身撞击",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_body_slam.webp"
+  },
+  "BOLAS": {
+    "name": "流星锤",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_bolas.webp"
+  },
+  "BOMBARDMENT": {
+    "name": "轰击",
+    "cost": 3,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_bombardment.webp"
+  },
+  "BONE_SHARDS": {
+    "name": "碎骨",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_bone_shards.webp"
+  },
+  "BOOST_AWAY": {
+    "name": "高速脱离",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_boost_away.webp"
+  },
+  "BOOT_SEQUENCE": {
+    "name": "启动流程",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_boot_sequence.webp"
+  },
+  "BORROWED_TIME": {
+    "name": "预借时间",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_borrowed_time.webp"
+  },
+  "BOUNCING_FLASK": {
+    "name": "弹跳药瓶",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_bouncing_flask.webp"
+  },
+  "BRAND": {
+    "name": "烙印",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_brand.webp"
+  },
+  "BREAK": {
+    "name": "破击",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "先古",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_break.webp"
+  },
+  "BREAKTHROUGH": {
+    "name": "突破",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_breakthrough.webp"
+  },
+  "BRIGHTEST_FLAME": {
+    "name": "至亮之焰",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "先古",
+    "owner": "event",
+    "owner_name": "特殊",
+    "image": "assets/native_brightest_flame.webp"
+  },
+  "BUBBLE_BUBBLE": {
+    "name": "咕嘟冒泡",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_bubble_bubble.webp"
+  },
+  "BUFFER": {
+    "name": "缓冲",
+    "cost": 2,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_buffer.webp"
+  },
+  "BULK_UP": {
+    "name": "暴涨",
+    "cost": 2,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_bulk_up.webp"
+  },
+  "BULLET_TIME": {
+    "name": "子弹时间",
+    "cost": 3,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_bullet_time.webp"
+  },
+  "BULLY": {
+    "name": "欺凌",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_bully.webp"
+  },
+  "BULWARK": {
+    "name": "铸墙",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_bulwark.webp"
+  },
+  "BUNDLE_OF_JOY": {
+    "name": "新生之喜",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_bundle_of_joy.webp"
+  },
+  "BURN": {
+    "name": "灼伤",
+    "cost": -1,
+    "type": "状态",
+    "rarity": "状态",
+    "owner": "status",
+    "owner_name": "状态",
+    "image": "assets/native_burn.webp"
+  },
+  "BURNING_PACT": {
+    "name": "燃烧契约",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_burning_pact.webp"
+  },
+  "BURST": {
+    "name": "爆发",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_burst.webp"
+  },
+  "BURY": {
+    "name": "埋葬",
+    "cost": 4,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_bury.webp"
+  },
+  "BYRDONIS_EGG": {
+    "name": "多尼斯异鸟蛋",
+    "cost": -1,
+    "type": "任务",
+    "rarity": "任务",
+    "owner": "quest",
+    "owner_name": "任务",
+    "image": "assets/native_byrdonis_egg.webp"
+  },
+  "BYRD_SWOOP": {
+    "name": "异鸟扑击",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "特殊",
+    "owner": "event",
+    "owner_name": "特殊",
+    "image": "assets/native_byrd_swoop.webp"
+  },
+  "CALAMITY": {
+    "name": "劫难",
+    "cost": 3,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_calamity.webp"
+  },
+  "CALCIFY": {
+    "name": "钙化",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_calcify.webp"
+  },
+  "CALCULATED_GAMBLE": {
+    "name": "计算下注",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_calculated_gamble.webp"
+  },
+  "CALL_OF_THE_VOID": {
+    "name": "虚空之唤",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_call_of_the_void.webp"
+  },
+  "CALTROPS": {
+    "name": "铁蒺藜",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "特殊",
+    "owner": "event",
+    "owner_name": "特殊",
+    "image": "assets/native_caltrops.webp"
+  },
+  "CAPACITOR": {
+    "name": "扩容",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_capacitor.webp"
+  },
+  "CAPTURE_SPIRIT": {
+    "name": "捕捉灵魂",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_capture_spirit.webp"
+  },
+  "CASCADE": {
+    "name": "倾泻",
+    "cost": -1,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_cascade.webp"
+  },
+  "CATASTROPHE": {
+    "name": "横祸",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_catastrophe.webp"
+  },
+  "CELESTIAL_MIGHT": {
+    "name": "天穹之力",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_celestial_might.webp"
+  },
+  "CHAOS": {
+    "name": "混沌",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_chaos.webp"
+  },
+  "CHARGE": {
+    "name": "冲锋！！",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_charge.webp"
+  },
+  "CHARGE_BATTERY": {
+    "name": "充电",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_charge_battery.webp"
+  },
+  "CHILD_OF_THE_STARS": {
+    "name": "群星之子",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_child_of_the_stars.webp"
+  },
+  "CHILL": {
+    "name": "冰寒",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_chill.webp"
+  },
+  "CINDER": {
+    "name": "余烬",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_cinder.webp"
+  },
+  "CLASH": {
+    "name": "交锋",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "特殊",
+    "owner": "event",
+    "owner_name": "特殊",
+    "image": "assets/native_clash.webp"
+  },
+  "CLAW": {
+    "name": "爪击",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_claw.webp"
+  },
+  "CLEANSE": {
+    "name": "洁净",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_cleanse.webp"
+  },
+  "CLOAK_AND_DAGGER": {
+    "name": "斗篷与匕首",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_cloak_and_dagger.webp"
+  },
+  "CLOAK_OF_STARS": {
+    "name": "群星斗篷",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_cloak_of_stars.webp"
+  },
+  "CLUMSY": {
+    "name": "笨拙",
+    "cost": -1,
+    "type": "诅咒",
+    "rarity": "诅咒",
+    "owner": "curse",
+    "owner_name": "诅咒",
+    "image": "assets/native_clumsy.webp"
+  },
+  "COLD_SNAP": {
+    "name": "寒流",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_cold_snap.webp"
+  },
+  "COLLISION_COURSE": {
+    "name": "碰撞轨迹",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_collision_course.webp"
+  },
+  "COLOSSUS": {
+    "name": "巨像",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_colossus.webp"
+  },
+  "COMET": {
+    "name": "彗星",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_comet.webp"
+  },
+  "COMPACT": {
+    "name": "压缩",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_compact.webp"
+  },
+  "COMPILE_DRIVER": {
+    "name": "编译冲击",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_compile_driver.webp"
+  },
+  "CONFLAGRATION": {
+    "name": "焚烧",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_conflagration.webp"
+  },
+  "CONQUEROR": {
+    "name": "征服者",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_conqueror.webp"
+  },
+  "CONSUMING_SHADOW": {
+    "name": "吞噬暗影",
+    "cost": 2,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_consuming_shadow.webp"
+  },
+  "CONVERGENCE": {
+    "name": "汇流",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_convergence.webp"
+  },
+  "COOLANT": {
+    "name": "冷却剂",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_coolant.webp"
+  },
+  "COOLHEADED": {
+    "name": "冷静头脑",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_coolheaded.webp"
+  },
+  "COORDINATE": {
+    "name": "协同配合",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_coordinate.webp"
+  },
+  "CORROSIVE_WAVE": {
+    "name": "腐蚀波",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_corrosive_wave.webp"
+  },
+  "CORRUPTION": {
+    "name": "腐化",
+    "cost": 3,
+    "type": "能力",
+    "rarity": "先古",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_corruption.webp"
+  },
+  "COSMIC_INDIFFERENCE": {
+    "name": "宇宙冷漠",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_cosmic_indifference.webp"
+  },
+  "COUNTDOWN": {
+    "name": "倒数计时",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_countdown.webp"
+  },
+  "CRASH_LANDING": {
+    "name": "迫降",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_crash_landing.webp"
+  },
+  "CREATIVE_AI": {
+    "name": "创造性AI",
+    "cost": 3,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_creative_ai.webp"
+  },
+  "CRESCENT_SPEAR": {
+    "name": "新月长矛",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_crescent_spear.webp"
+  },
+  "CRIMSON_MANTLE": {
+    "name": "绯红披风",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_crimson_mantle.webp"
+  },
+  "CRUELTY": {
+    "name": "残酷",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_cruelty.webp"
+  },
+  "CRUSH_UNDER": {
+    "name": "下砸",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_crush_under.webp"
+  },
+  "CURSE_OF_THE_BELL": {
+    "name": "铃铛的诅咒",
+    "cost": -1,
+    "type": "诅咒",
+    "rarity": "诅咒",
+    "owner": "curse",
+    "owner_name": "诅咒",
+    "image": "assets/native_curse_of_the_bell.webp"
+  },
+  "DAGGER_SPRAY": {
+    "name": "匕首雨",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_dagger_spray.webp"
+  },
+  "DAGGER_THROW": {
+    "name": "投掷匕首",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_dagger_throw.webp"
+  },
+  "DANSE_MACABRE": {
+    "name": "死亡之舞",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_danse_macabre.webp"
+  },
+  "DARKNESS": {
+    "name": "漆黑",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_darkness.webp"
+  },
+  "DARK_EMBRACE": {
+    "name": "黑暗之拥",
+    "cost": 2,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_dark_embrace.webp"
+  },
+  "DARK_SHACKLES": {
+    "name": "黑暗镣铐",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_dark_shackles.webp"
+  },
+  "DASH": {
+    "name": "冲刺",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_dash.webp"
+  },
+  "DAZED": {
+    "name": "晕眩",
+    "cost": -1,
+    "type": "状态",
+    "rarity": "状态",
+    "owner": "status",
+    "owner_name": "状态",
+    "image": "assets/native_dazed.webp"
+  },
+  "DEADLY_POISON": {
+    "name": "致命毒药",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_deadly_poison.webp"
+  },
+  "DEATHBRINGER": {
+    "name": "死亡使者",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_deathbringer.webp"
+  },
+  "DEATHS_DOOR": {
+    "name": "死亡之门",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_deaths_door.webp"
+  },
+  "DEATH_MARCH": {
+    "name": "死亡行军",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_death_march.webp"
+  },
+  "DEBILITATE": {
+    "name": "摧残",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_debilitate.webp"
+  },
+  "DEBRIS": {
+    "name": "碎屑",
+    "cost": 1,
+    "type": "状态",
+    "rarity": "状态",
+    "owner": "status",
+    "owner_name": "状态",
+    "image": "assets/native_debris.webp"
+  },
+  "DEBT": {
+    "name": "债务",
+    "cost": -1,
+    "type": "诅咒",
+    "rarity": "诅咒",
+    "owner": "curse",
+    "owner_name": "诅咒",
+    "image": "assets/native_debt.webp"
+  },
+  "DECAY": {
+    "name": "腐朽",
+    "cost": -1,
+    "type": "诅咒",
+    "rarity": "诅咒",
+    "owner": "curse",
+    "owner_name": "诅咒",
+    "image": "assets/native_decay.webp"
+  },
+  "DECISIONS_DECISIONS": {
+    "name": "抉择，抉择",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_decisions_decisions.webp"
+  },
+  "DEFEND_DEFECT": {
+    "name": "防御",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "基础",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_defend_defect.webp"
+  },
+  "DEFEND_IRONCLAD": {
+    "name": "防御",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "基础",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_defend_ironclad.webp"
+  },
+  "DEFEND_NECROBINDER": {
+    "name": "防御",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "基础",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_defend_necrobinder.webp"
+  },
+  "DEFEND_REGENT": {
+    "name": "防御",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "基础",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_defend_regent.webp"
+  },
+  "DEFEND_SILENT": {
+    "name": "防御",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "基础",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_defend_silent.webp"
+  },
+  "DEFILE": {
+    "name": "玷污",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_defile.webp"
+  },
+  "DEFLECT": {
+    "name": "偏折",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_deflect.webp"
+  },
+  "DEFRAGMENT": {
+    "name": "碎片整理",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_defragment.webp"
+  },
+  "DEFY": {
+    "name": "违逆",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_defy.webp"
+  },
+  "DELAY": {
+    "name": "拖延",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_delay.webp"
+  },
+  "DEMESNE": {
+    "name": "领域",
+    "cost": 3,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_demesne.webp"
+  },
+  "DEMONIC_SHIELD": {
+    "name": "恶魔护盾",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_demonic_shield.webp"
+  },
+  "DEMON_FORM": {
+    "name": "恶魔形态",
+    "cost": 3,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_demon_form.webp"
+  },
+  "DEPRECATED_CARD": {
+    "name": "弃用卡牌",
+    "cost": 0,
+    "type": "状态",
+    "rarity": "状态",
+    "owner": "unknown",
+    "owner_name": "其他",
+    "image": "assets/native_deprecated_card.webp"
+  },
+  "DEVASTATE": {
+    "name": "葬送",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_devastate.webp"
+  },
+  "DEVOUR_LIFE": {
+    "name": "吞噬生命",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_devour_life.webp"
+  },
+  "DIRGE": {
+    "name": "挽歌",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_dirge.webp"
+  },
+  "DISCOVERY": {
+    "name": "发现",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_discovery.webp"
+  },
+  "DISINTEGRATION": {
+    "name": "瓦解",
+    "cost": -1,
+    "type": "状态",
+    "rarity": "状态",
+    "owner": "token",
+    "owner_name": "衍生",
+    "image": "assets/native_disintegration.webp"
+  },
+  "DISMANTLE": {
+    "name": "拆卸",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_dismantle.webp"
+  },
+  "DISTRACTION": {
+    "name": "声东击西",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "特殊",
+    "owner": "event",
+    "owner_name": "特殊",
+    "image": "assets/native_distraction.webp"
+  },
+  "DODGE_AND_ROLL": {
+    "name": "闪躲翻滚",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_dodge_and_roll.webp"
+  },
+  "DOMINATE": {
+    "name": "主宰",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_dominate.webp"
+  },
+  "DOUBLE_ENERGY": {
+    "name": "双倍能量",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_double_energy.webp"
+  },
+  "DOUBT": {
+    "name": "疑虑",
+    "cost": -1,
+    "type": "诅咒",
+    "rarity": "诅咒",
+    "owner": "curse",
+    "owner_name": "诅咒",
+    "image": "assets/native_doubt.webp"
+  },
+  "DRAIN_POWER": {
+    "name": "能量汲取",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_drain_power.webp"
+  },
+  "DRAMATIC_ENTRANCE": {
+    "name": "闪亮登场",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_dramatic_entrance.webp"
+  },
+  "DREDGE": {
+    "name": "清淤",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_dredge.webp"
+  },
+  "DRUM_OF_BATTLE": {
+    "name": "战鼓",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_drum_of_battle.webp"
+  },
+  "DUALCAST": {
+    "name": "双重释放",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "基础",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_dualcast.webp"
+  },
+  "DUAL_WIELD": {
+    "name": "双持",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "特殊",
+    "owner": "event",
+    "owner_name": "特殊",
+    "image": "assets/native_dual_wield.webp"
+  },
+  "DYING_STAR": {
+    "name": "星灭",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_dying_star.webp"
+  },
+  "ECHOING_SLASH": {
+    "name": "回响斩击",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_echoing_slash.webp"
+  },
+  "ECHO_FORM": {
+    "name": "回响形态",
+    "cost": 3,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_echo_form.webp"
+  },
+  "EIDOLON": {
+    "name": "幻景",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_eidolon.webp"
+  },
+  "END_OF_DAYS": {
+    "name": "末日降临",
+    "cost": 3,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_end_of_days.webp"
+  },
+  "ENERGY_SURGE": {
+    "name": "能量涌动",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_energy_surge.webp"
+  },
+  "ENFEEBLING_TOUCH": {
+    "name": "弱化之触",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_enfeebling_touch.webp"
+  },
+  "ENLIGHTENMENT": {
+    "name": "开悟",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "特殊",
+    "owner": "event",
+    "owner_name": "特殊",
+    "image": "assets/native_enlightenment.webp"
+  },
+  "ENTHRALLED": {
+    "name": "执迷",
+    "cost": 2,
+    "type": "诅咒",
+    "rarity": "诅咒",
+    "owner": "curse",
+    "owner_name": "诅咒",
+    "image": "assets/native_enthralled.webp"
+  },
+  "ENTRENCH": {
+    "name": "巩固",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "特殊",
+    "owner": "event",
+    "owner_name": "特殊",
+    "image": "assets/native_entrench.webp"
+  },
+  "ENTROPY": {
+    "name": "熵",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_entropy.webp"
+  },
+  "ENVENOM": {
+    "name": "涂毒",
+    "cost": 2,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_envenom.webp"
+  },
+  "EQUILIBRIUM": {
+    "name": "均衡",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_equilibrium.webp"
+  },
+  "ERADICATE": {
+    "name": "根除",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_eradicate.webp"
+  },
+  "ESCAPE_PLAN": {
+    "name": "逃脱计划",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_escape_plan.webp"
+  },
+  "ETERNAL_ARMOR": {
+    "name": "永恒铠甲",
+    "cost": 3,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_eternal_armor.webp"
+  },
+  "EVIL_EYE": {
+    "name": "邪眼",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_evil_eye.webp"
+  },
+  "EXPECT_A_FIGHT": {
+    "name": "跃跃欲试",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_expect_a_fight.webp"
+  },
+  "EXPERTISE": {
+    "name": "独门技术",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_expertise.webp"
+  },
+  "EXPOSE": {
+    "name": "暴露",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_expose.webp"
+  },
+  "EXTERMINATE": {
+    "name": "杀灭",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "特殊",
+    "owner": "event",
+    "owner_name": "特殊",
+    "image": "assets/native_exterminate.webp"
+  },
+  "FALLING_STAR": {
+    "name": "陨星",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "基础",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_falling_star.webp"
+  },
+  "FAN_OF_KNIVES": {
+    "name": "刀扇",
+    "cost": 2,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_fan_of_knives.webp"
+  },
+  "FASTEN": {
+    "name": "勒紧",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_fasten.webp"
+  },
+  "FEAR": {
+    "name": "恐惧",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_fear.webp"
+  },
+  "FEED": {
+    "name": "狂宴",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_feed.webp"
+  },
+  "FEEDING_FRENZY": {
+    "name": "疯狂进食",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "特殊",
+    "owner": "event",
+    "owner_name": "特殊",
+    "image": "assets/native_feeding_frenzy.webp"
+  },
+  "FEEL_NO_PAIN": {
+    "name": "无惧疼痛",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_feel_no_pain.webp"
+  },
+  "FERAL": {
+    "name": "野性",
+    "cost": 2,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_feral.webp"
+  },
+  "FETCH": {
+    "name": "取回",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_fetch.webp"
+  },
+  "FIEND_FIRE": {
+    "name": "恶魔之焰",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_fiend_fire.webp"
+  },
+  "FIGHT_ME": {
+    "name": "与我一战！",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_fight_me.webp"
+  },
+  "FIGHT_THROUGH": {
+    "name": "强撑",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_fight_through.webp"
+  },
+  "FINESSE": {
+    "name": "妙计",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_finesse.webp"
+  },
+  "FINISHER": {
+    "name": "终结技",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_finisher.webp"
+  },
+  "FISTICUFFS": {
+    "name": "拳斗",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_fisticuffs.webp"
+  },
+  "FLAK_CANNON": {
+    "name": "散射炮",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_flak_cannon.webp"
+  },
+  "FLAME_BARRIER": {
+    "name": "火焰屏障",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_flame_barrier.webp"
+  },
+  "FLANKING": {
+    "name": "夹击",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_flanking.webp"
+  },
+  "FLASH_OF_STEEL": {
+    "name": "亮剑",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_flash_of_steel.webp"
+  },
+  "FLATTEN": {
+    "name": "重压",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_flatten.webp"
+  },
+  "FLECHETTES": {
+    "name": "飞镖",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_flechettes.webp"
+  },
+  "FLICK_FLACK": {
+    "name": "翻越撑击",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_flick_flack.webp"
+  },
+  "FOCUSED_STRIKE": {
+    "name": "集中打击",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_focused_strike.webp"
+  },
+  "FOLLY": {
+    "name": "愚行",
+    "cost": -1,
+    "type": "诅咒",
+    "rarity": "诅咒",
+    "owner": "curse",
+    "owner_name": "诅咒",
+    "image": "assets/native_folly.webp"
+  },
+  "FOOTWORK": {
+    "name": "灵动步法",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_footwork.webp"
+  },
+  "FORBIDDEN_GRIMOIRE": {
+    "name": "禁忌魔典",
+    "cost": 2,
+    "type": "能力",
+    "rarity": "先古",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_forbidden_grimoire.webp"
+  },
+  "FOREGONE_CONCLUSION": {
+    "name": "既定事项",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_foregone_conclusion.webp"
+  },
+  "FORGOTTEN_RITUAL": {
+    "name": "被遗忘的仪式",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_forgotten_ritual.webp"
+  },
+  "FRANTIC_ESCAPE": {
+    "name": "狂乱逃离",
+    "cost": 1,
+    "type": "状态",
+    "rarity": "状态",
+    "owner": "status",
+    "owner_name": "状态",
+    "image": "assets/native_frantic_escape.webp"
+  },
+  "FRIENDSHIP": {
+    "name": "友谊",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_friendship.webp"
+  },
+  "FTL": {
+    "name": "超越光速",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_ftl.webp"
+  },
+  "FUEL": {
+    "name": "燃料",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "衍生",
+    "owner": "token",
+    "owner_name": "衍生",
+    "image": "assets/native_fuel.webp"
+  },
+  "FURNACE": {
+    "name": "熔炉",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_furnace.webp"
+  },
+  "FUSION": {
+    "name": "聚变",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_fusion.webp"
+  },
+  "GAMMA_BLAST": {
+    "name": "伽马爆破",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_gamma_blast.webp"
+  },
+  "GANG_UP": {
+    "name": "群起攻之",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_gang_up.webp"
+  },
+  "GATHER_LIGHT": {
+    "name": "收集光辉",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_gather_light.webp"
+  },
+  "GENESIS": {
+    "name": "创世纪",
+    "cost": 2,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_genesis.webp"
+  },
+  "GENETIC_ALGORITHM": {
+    "name": "遗传算法",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_genetic_algorithm.webp"
+  },
+  "GIANT_ROCK": {
+    "name": "巨石",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "衍生",
+    "owner": "token",
+    "owner_name": "衍生",
+    "image": "assets/native_giant_rock.webp"
+  },
+  "GLACIER": {
+    "name": "冰川",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_glacier.webp"
+  },
+  "GLASSWORK": {
+    "name": "玻璃工艺",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_glasswork.webp"
+  },
+  "GLIMMER": {
+    "name": "微光",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_glimmer.webp"
+  },
+  "GLIMPSE_BEYOND": {
+    "name": "彼岸一瞥",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_glimpse_beyond.webp"
+  },
+  "GLITTERSTREAM": {
+    "name": "流光溢彩",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_glitterstream.webp"
+  },
+  "GLOW": {
+    "name": "辉光",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_glow.webp"
+  },
+  "GOLD_AXE": {
+    "name": "金斧",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_gold_axe.webp"
+  },
+  "GO_FOR_THE_EYES": {
+    "name": "眼部攻击",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_go_for_the_eyes.webp"
+  },
+  "GRAND_FINALE": {
+    "name": "华丽收场",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_grand_finale.webp"
+  },
+  "GRAVEBLAST": {
+    "name": "坟冢爆射",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_graveblast.webp"
+  },
+  "GRAVE_WARDEN": {
+    "name": "守墓人",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_grave_warden.webp"
+  },
+  "GREED": {
+    "name": "贪婪",
+    "cost": -1,
+    "type": "诅咒",
+    "rarity": "诅咒",
+    "owner": "curse",
+    "owner_name": "诅咒",
+    "image": "assets/native_greed.webp"
+  },
+  "GUARDS": {
+    "name": "护驾！！！",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_guards.webp"
+  },
+  "GUIDING_STAR": {
+    "name": "引导之星",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_guiding_star.webp"
+  },
+  "GUILTY": {
+    "name": "愧疚",
+    "cost": -1,
+    "type": "诅咒",
+    "rarity": "诅咒",
+    "owner": "curse",
+    "owner_name": "诅咒",
+    "image": "assets/native_guilty.webp"
+  },
+  "GUNK_UP": {
+    "name": "污秽攻击",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_gunk_up.webp"
+  },
+  "HAILSTORM": {
+    "name": "冰雹风暴",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_hailstorm.webp"
+  },
+  "HAMMER_TIME": {
+    "name": "锤子时间",
+    "cost": 2,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_hammer_time.webp"
+  },
+  "HAND_OF_GREED": {
+    "name": "贪婪之手",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_hand_of_greed.webp"
+  },
+  "HAND_TRICK": {
+    "name": "手上技法",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_hand_trick.webp"
+  },
+  "HANG": {
+    "name": "吊杀",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_hang.webp"
+  },
+  "HAUNT": {
+    "name": "纠缠",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_haunt.webp"
+  },
+  "HAVOC": {
+    "name": "破灭",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_havoc.webp"
+  },
+  "HAZE": {
+    "name": "迷雾",
+    "cost": 3,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_haze.webp"
+  },
+  "HEADBUTT": {
+    "name": "头槌",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_headbutt.webp"
+  },
+  "HEAVENLY_DRILL": {
+    "name": "天际钻头",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_heavenly_drill.webp"
+  },
+  "HEGEMONY": {
+    "name": "霸权",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_hegemony.webp"
+  },
+  "HEIRLOOM_HAMMER": {
+    "name": "传承之锤",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_heirloom_hammer.webp"
+  },
+  "HELIX_DRILL": {
+    "name": "螺旋钻击",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_helix_drill.webp"
+  },
+  "HELLO_WORLD": {
+    "name": "你好世界",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "特殊",
+    "owner": "event",
+    "owner_name": "特殊",
+    "image": "assets/native_hello_world.webp"
+  },
+  "HELLRAISER": {
+    "name": "地狱狂徒",
+    "cost": 2,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_hellraiser.webp"
+  },
+  "HEMOKINESIS": {
+    "name": "御血术",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_hemokinesis.webp"
+  },
+  "HIDDEN_CACHE": {
+    "name": "隐秘藏品",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_hidden_cache.webp"
+  },
+  "HIDDEN_DAGGERS": {
+    "name": "隐秘匕首",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_hidden_daggers.webp"
+  },
+  "HIDDEN_GEM": {
+    "name": "未掘宝石",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_hidden_gem.webp"
+  },
+  "HIGH_FIVE": {
+    "name": "击掌",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_high_five.webp"
+  },
+  "HOLOGRAM": {
+    "name": "全息影像",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_hologram.webp"
+  },
+  "HOTFIX": {
+    "name": "热修复",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_hotfix.webp"
+  },
+  "HOWL_FROM_BEYOND": {
+    "name": "彼岸咆哮",
+    "cost": 3,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_howl_from_beyond.webp"
+  },
+  "HUDDLE_UP": {
+    "name": "抱团",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_huddle_up.webp"
+  },
+  "HYPERBEAM": {
+    "name": "超能光束",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_hyperbeam.webp"
+  },
+  "ICE_LANCE": {
+    "name": "冰之长枪",
+    "cost": 3,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_ice_lance.webp"
+  },
+  "IGNITION": {
+    "name": "引火",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_ignition.webp"
+  },
+  "IMPATIENCE": {
+    "name": "急躁",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_impatience.webp"
+  },
+  "IMPERVIOUS": {
+    "name": "岿然不动",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_impervious.webp"
+  },
+  "INFECTION": {
+    "name": "感染",
+    "cost": -1,
+    "type": "状态",
+    "rarity": "状态",
+    "owner": "status",
+    "owner_name": "状态",
+    "image": "assets/native_infection.webp"
+  },
+  "INFERNAL_BLADE": {
+    "name": "地狱之刃",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_infernal_blade.webp"
+  },
+  "INFERNO": {
+    "name": "狱火",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_inferno.webp"
+  },
+  "INFINITE_BLADES": {
+    "name": "无尽刀刃",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_infinite_blades.webp"
+  },
+  "INFLAME": {
+    "name": "燃烧",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_inflame.webp"
+  },
+  "INJURY": {
+    "name": "受伤",
+    "cost": -1,
+    "type": "诅咒",
+    "rarity": "诅咒",
+    "owner": "curse",
+    "owner_name": "诅咒",
+    "image": "assets/native_injury.webp"
+  },
+  "INTERCEPT": {
+    "name": "拦截",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_intercept.webp"
+  },
+  "INVOKE": {
+    "name": "唤起",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_invoke.webp"
+  },
+  "IRON_WAVE": {
+    "name": "铁斩波",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_iron_wave.webp"
+  },
+  "ITERATION": {
+    "name": "迭代",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_iteration.webp"
+  },
+  "I_AM_INVINCIBLE": {
+    "name": "所向无敌",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_i_am_invincible.webp"
+  },
+  "JACKPOT": {
+    "name": "大奖",
+    "cost": 3,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_jackpot.webp"
+  },
+  "JACK_OF_ALL_TRADES": {
+    "name": "花样百出",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_jack_of_all_trades.webp"
+  },
+  "JUGGERNAUT": {
+    "name": "势不可当",
+    "cost": 2,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_juggernaut.webp"
+  },
+  "JUGGLING": {
+    "name": "杂耍",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_juggling.webp"
+  },
+  "KINGLY_KICK": {
+    "name": "王者之踢",
+    "cost": 4,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_kingly_kick.webp"
+  },
+  "KINGLY_PUNCH": {
+    "name": "王者之拳",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_kingly_punch.webp"
+  },
+  "KNIFE_TRAP": {
+    "name": "刀刃陷阱",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_knife_trap.webp"
+  },
+  "KNOCKDOWN": {
+    "name": "击倒",
+    "cost": 3,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_knockdown.webp"
+  },
+  "KNOCKOUT_BLOW": {
+    "name": "决胜一击",
+    "cost": 3,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_knockout_blow.webp"
+  },
+  "KNOW_THY_PLACE": {
+    "name": "何人僭越",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_know_thy_place.webp"
+  },
+  "LANTERN_KEY": {
+    "name": "灯火钥匙",
+    "cost": -1,
+    "type": "任务",
+    "rarity": "任务",
+    "owner": "quest",
+    "owner_name": "任务",
+    "image": "assets/native_lantern_key.webp"
+  },
+  "LARGESSE": {
+    "name": "慷慨捐助",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_largesse.webp"
+  },
+  "LEADING_STRIKE": {
+    "name": "先制打击",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_leading_strike.webp"
+  },
+  "LEAP": {
+    "name": "飞跃",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_leap.webp"
+  },
+  "LEGION_OF_BONE": {
+    "name": "骸骨军团",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_legion_of_bone.webp"
+  },
+  "LEG_SWEEP": {
+    "name": "扫腿",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_leg_sweep.webp"
+  },
+  "LETHALITY": {
+    "name": "致死性",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_lethality.webp"
+  },
+  "LIFT": {
+    "name": "托举",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_lift.webp"
+  },
+  "LIGHTNING_ROD": {
+    "name": "引雷针",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_lightning_rod.webp"
+  },
+  "LOOP": {
+    "name": "循环",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_loop.webp"
+  },
+  "LUMINESCE": {
+    "name": "冷光",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "衍生",
+    "owner": "token",
+    "owner_name": "衍生",
+    "image": "assets/native_luminesce.webp"
+  },
+  "LUNAR_BLAST": {
+    "name": "月面射击",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_lunar_blast.webp"
+  },
+  "MACHINE_LEARNING": {
+    "name": "机器学习",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_machine_learning.webp"
+  },
+  "MAD_SCIENCE": {
+    "name": "疯狂科学",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "特殊",
+    "owner": "event",
+    "owner_name": "特殊",
+    "image": "assets/native_mad_science.webp"
+  },
+  "MAKE_IT_SO": {
+    "name": "如此甚好",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_make_it_so.webp"
+  },
+  "MALAISE": {
+    "name": "萎靡",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_malaise.webp"
+  },
+  "MANGLE": {
+    "name": "凌虐",
+    "cost": 3,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_mangle.webp"
+  },
+  "MANIFEST_AUTHORITY": {
+    "name": "君权自授",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_manifest_authority.webp"
+  },
+  "MASTER_OF_STRATEGY": {
+    "name": "战略大师",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_master_of_strategy.webp"
+  },
+  "MASTER_PLANNER": {
+    "name": "谋划专家",
+    "cost": 2,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_master_planner.webp"
+  },
+  "MAUL": {
+    "name": "撕咬",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "先古",
+    "owner": "event",
+    "owner_name": "特殊",
+    "image": "assets/native_maul.webp"
+  },
+  "MAYHEM": {
+    "name": "乱战",
+    "cost": 2,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_mayhem.webp"
+  },
+  "MELANCHOLY": {
+    "name": "忧郁",
+    "cost": 3,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_melancholy.webp"
+  },
+  "MEMENTO_MORI": {
+    "name": "铭记死亡",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_memento_mori.webp"
+  },
+  "METAMORPHOSIS": {
+    "name": "羽化",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "特殊",
+    "owner": "event",
+    "owner_name": "特殊",
+    "image": "assets/native_metamorphosis.webp"
+  },
+  "METEOR_SHOWER": {
+    "name": "流星雨",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "先古",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_meteor_shower.webp"
+  },
+  "METEOR_STRIKE": {
+    "name": "陨石打击",
+    "cost": 5,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_meteor_strike.webp"
+  },
+  "MIMIC": {
+    "name": "拟态",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_mimic.webp"
+  },
+  "MIND_BLAST": {
+    "name": "心灵震慑",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_mind_blast.webp"
+  },
+  "MIND_ROT": {
+    "name": "心灵腐化",
+    "cost": -1,
+    "type": "状态",
+    "rarity": "状态",
+    "owner": "token",
+    "owner_name": "衍生",
+    "image": "assets/native_mind_rot.webp"
+  },
+  "MINION_DIVE_BOMB": {
+    "name": "仆从俯冲",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "衍生",
+    "owner": "token",
+    "owner_name": "衍生",
+    "image": "assets/native_minion_dive_bomb.webp"
+  },
+  "MINION_SACRIFICE": {
+    "name": "仆从捐躯",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "衍生",
+    "owner": "token",
+    "owner_name": "衍生",
+    "image": "assets/native_minion_sacrifice.webp"
+  },
+  "MINION_STRIKE": {
+    "name": "仆从打击",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "衍生",
+    "owner": "token",
+    "owner_name": "衍生",
+    "image": "assets/native_minion_strike.webp"
+  },
+  "MIRAGE": {
+    "name": "蜃景",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_mirage.webp"
+  },
+  "MISERY": {
+    "name": "苦难",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_misery.webp"
+  },
+  "MODDED": {
+    "name": "模组改造",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_modded.webp"
+  },
+  "MOLTEN_FIST": {
+    "name": "熔融之拳",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_molten_fist.webp"
+  },
+  "MOMENTUM_STRIKE": {
+    "name": "趁势打击",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_momentum_strike.webp"
+  },
+  "MONARCHS_GAZE": {
+    "name": "王之凝视",
+    "cost": 2,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_monarchs_gaze.webp"
+  },
+  "MONOLOGUE": {
+    "name": "独白",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_monologue.webp"
+  },
+  "MULTI_CAST": {
+    "name": "多重释放",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_multi_cast.webp"
+  },
+  "MURDER": {
+    "name": "谋杀",
+    "cost": 3,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_murder.webp"
+  },
+  "NECRO_MASTERY": {
+    "name": "亡灵精通",
+    "cost": 2,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_necro_mastery.webp"
+  },
+  "NEGATIVE_PULSE": {
+    "name": "负能量脉冲",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_negative_pulse.webp"
+  },
+  "NEOWS_FURY": {
+    "name": "涅奥之怒",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "先古",
+    "owner": "event",
+    "owner_name": "特殊",
+    "image": "assets/native_neows_fury.webp"
+  },
+  "NEUROSURGE": {
+    "name": "精神过载",
+    "cost": 0,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_neurosurge.webp"
+  },
+  "NEUTRALIZE": {
+    "name": "中和",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "基础",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_neutralize.webp"
+  },
+  "NEUTRON_AEGIS": {
+    "name": "中子护盾",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_neutron_aegis.webp"
+  },
+  "NIGHTMARE": {
+    "name": "夜魇",
+    "cost": 3,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_nightmare.webp"
+  },
+  "NORMALITY": {
+    "name": "凡庸",
+    "cost": -1,
+    "type": "诅咒",
+    "rarity": "诅咒",
+    "owner": "curse",
+    "owner_name": "诅咒",
+    "image": "assets/native_normality.webp"
+  },
+  "NOSTALGIA": {
+    "name": "怀旧",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_nostalgia.webp"
+  },
+  "NOT_YET": {
+    "name": "时候未到",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_not_yet.webp"
+  },
+  "NOXIOUS_FUMES": {
+    "name": "毒雾",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_noxious_fumes.webp"
+  },
+  "NO_ESCAPE": {
+    "name": "无处可逃",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_no_escape.webp"
+  },
+  "NULL": {
+    "name": "空值",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_null.webp"
+  },
+  "OBLIVION": {
+    "name": "湮灭",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_oblivion.webp"
+  },
+  "OFFERING": {
+    "name": "祭品",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_offering.webp"
+  },
+  "OMNISLICE": {
+    "name": "万向斩",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_omnislice.webp"
+  },
+  "ONE_TWO_PUNCH": {
+    "name": "连环拳",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_one_two_punch.webp"
+  },
+  "ORBIT": {
+    "name": "环绕轨道",
+    "cost": 2,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_orbit.webp"
+  },
+  "OUTBREAK": {
+    "name": "毒性爆发",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_outbreak.webp"
+  },
+  "OUTMANEUVER": {
+    "name": "抢占先机",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "特殊",
+    "owner": "event",
+    "owner_name": "特殊",
+    "image": "assets/native_outmaneuver.webp"
+  },
+  "OVERCLOCK": {
+    "name": "超频",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_overclock.webp"
+  },
+  "PACTS_END": {
+    "name": "契约终结",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_pacts_end.webp"
+  },
+  "PAGESTORM": {
+    "name": "书页风暴",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_pagestorm.webp"
+  },
+  "PALE_BLUE_DOT": {
+    "name": "暗淡蓝点",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_pale_blue_dot.webp"
+  },
+  "PANACHE": {
+    "name": "神气制胜",
+    "cost": 0,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_panache.webp"
+  },
+  "PANIC_BUTTON": {
+    "name": "应急按钮",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_panic_button.webp"
+  },
+  "PARRY": {
+    "name": "招架",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_parry.webp"
+  },
+  "PARSE": {
+    "name": "领会",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_parse.webp"
+  },
+  "PARTICLE_WALL": {
+    "name": "粒子墙",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_particle_wall.webp"
+  },
+  "PATTER": {
+    "name": "星星点点",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_patter.webp"
+  },
+  "PECK": {
+    "name": "啄击",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "特殊",
+    "owner": "event",
+    "owner_name": "特殊",
+    "image": "assets/native_peck.webp"
+  },
+  "PERFECTED_STRIKE": {
+    "name": "完美打击",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_perfected_strike.webp"
+  },
+  "PHANTOM_BLADES": {
+    "name": "幻影之刃",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_phantom_blades.webp"
+  },
+  "PHOTON_CUT": {
+    "name": "光子切割",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_photon_cut.webp"
+  },
+  "PIERCING_WAIL": {
+    "name": "尖啸",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_piercing_wail.webp"
+  },
+  "PILLAGE": {
+    "name": "劫掠",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_pillage.webp"
+  },
+  "PILLAR_OF_CREATION": {
+    "name": "创世之柱",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_pillar_of_creation.webp"
+  },
+  "PINPOINT": {
+    "name": "精密瞄准",
+    "cost": 3,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_pinpoint.webp"
+  },
+  "POISONED_STAB": {
+    "name": "带毒刺击",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_poisoned_stab.webp"
+  },
+  "POKE": {
+    "name": "戳击",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_poke.webp"
+  },
+  "POMMEL_STRIKE": {
+    "name": "剑柄打击",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_pommel_strike.webp"
+  },
+  "POOR_SLEEP": {
+    "name": "睡眠不佳",
+    "cost": -1,
+    "type": "诅咒",
+    "rarity": "诅咒",
+    "owner": "curse",
+    "owner_name": "诅咒",
+    "image": "assets/native_poor_sleep.webp"
+  },
+  "POUNCE": {
+    "name": "猛扑",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_pounce.webp"
+  },
+  "PRECISE_CUT": {
+    "name": "精确切击",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_precise_cut.webp"
+  },
+  "PREDATOR": {
+    "name": "猎杀者",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_predator.webp"
+  },
+  "PREPARED": {
+    "name": "早有准备",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_prepared.webp"
+  },
+  "PREP_TIME": {
+    "name": "准备时间",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_prep_time.webp"
+  },
+  "PRIMAL_FORCE": {
+    "name": "原始力量",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_primal_force.webp"
+  },
+  "PRODUCTION": {
+    "name": "生产制造",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_production.webp"
+  },
+  "PROLONG": {
+    "name": "延伸",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_prolong.webp"
+  },
+  "PROPHESIZE": {
+    "name": "预言",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_prophesize.webp"
+  },
+  "PROTECTOR": {
+    "name": "守护者",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "先古",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_protector.webp"
+  },
+  "PROWESS": {
+    "name": "非凡技艺",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_prowess.webp"
+  },
+  "PULL_AGGRO": {
+    "name": "吸引仇恨",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_pull_aggro.webp"
+  },
+  "PULL_FROM_BELOW": {
+    "name": "亡魂牵引",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_pull_from_below.webp"
+  },
+  "PURITY": {
+    "name": "净化",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_purity.webp"
+  },
+  "PUTREFY": {
+    "name": "腐败",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_putrefy.webp"
+  },
+  "PYRE": {
+    "name": "薪火之源",
+    "cost": 2,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_pyre.webp"
+  },
+  "QUADCAST": {
+    "name": "四重释放",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "先古",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_quadcast.webp"
+  },
+  "QUASAR": {
+    "name": "类星体",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_quasar.webp"
+  },
+  "RADIATE": {
+    "name": "辐射",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_radiate.webp"
+  },
+  "RAGE": {
+    "name": "狂怒",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_rage.webp"
+  },
+  "RAINBOW": {
+    "name": "彩虹",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_rainbow.webp"
+  },
+  "RALLY": {
+    "name": "集结",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_rally.webp"
+  },
+  "RAMPAGE": {
+    "name": "暴走",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_rampage.webp"
+  },
+  "RATTLE": {
+    "name": "猛晃",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_rattle.webp"
+  },
+  "REANIMATE": {
+    "name": "死者苏生",
+    "cost": 3,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_reanimate.webp"
+  },
+  "REAP": {
+    "name": "收割",
+    "cost": 3,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_reap.webp"
+  },
+  "REAPER_FORM": {
+    "name": "死神形态",
+    "cost": 3,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_reaper_form.webp"
+  },
+  "REAVE": {
+    "name": "剥夺",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_reave.webp"
+  },
+  "REBOOT": {
+    "name": "重启",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_reboot.webp"
+  },
+  "REBOUND": {
+    "name": "弹回",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "特殊",
+    "owner": "event",
+    "owner_name": "特殊",
+    "image": "assets/native_rebound.webp"
+  },
+  "REFINE_BLADE": {
+    "name": "淬炼刀刃",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_refine_blade.webp"
+  },
+  "REFLECT": {
+    "name": "倒映",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_reflect.webp"
+  },
+  "REFLEX": {
+    "name": "本能反应",
+    "cost": 3,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_reflex.webp"
+  },
+  "REFRACT": {
+    "name": "折射",
+    "cost": 3,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_refract.webp"
+  },
+  "REGRET": {
+    "name": "悔恨",
+    "cost": -1,
+    "type": "诅咒",
+    "rarity": "诅咒",
+    "owner": "curse",
+    "owner_name": "诅咒",
+    "image": "assets/native_regret.webp"
+  },
+  "RELAX": {
+    "name": "放松",
+    "cost": 3,
+    "type": "技能",
+    "rarity": "先古",
+    "owner": "event",
+    "owner_name": "特殊",
+    "image": "assets/native_relax.webp"
+  },
+  "REND": {
+    "name": "撕碎",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_rend.webp"
+  },
+  "RESONANCE": {
+    "name": "共鸣",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_resonance.webp"
+  },
+  "RESTLESSNESS": {
+    "name": "心神不宁",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_restlessness.webp"
+  },
+  "RICOCHET": {
+    "name": "连续反弹",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_ricochet.webp"
+  },
+  "RIGHT_HAND_HAND": {
+    "name": "得力助手",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_right_hand_hand.webp"
+  },
+  "RIP_AND_TEAR": {
+    "name": "狂乱撕扯",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "特殊",
+    "owner": "event",
+    "owner_name": "特殊",
+    "image": "assets/native_rip_and_tear.webp"
+  },
+  "ROCKET_PUNCH": {
+    "name": "火箭飞拳",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_rocket_punch.webp"
+  },
+  "ROLLING_BOULDER": {
+    "name": "滚石",
+    "cost": 3,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_rolling_boulder.webp"
+  },
+  "ROYALTIES": {
+    "name": "王国资产",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_royalties.webp"
+  },
+  "ROYAL_GAMBLE": {
+    "name": "胜券在王",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_royal_gamble.webp"
+  },
+  "RUPTURE": {
+    "name": "撕裂",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_rupture.webp"
+  },
+  "SACRIFICE": {
+    "name": "牺牲",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_sacrifice.webp"
+  },
+  "SALVO": {
+    "name": "箭雨",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_salvo.webp"
+  },
+  "SCARE": {
+    "name": "恫吓",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_scare.webp"
+  },
+  "SCAVENGE": {
+    "name": "内存清理",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_scavenge.webp"
+  },
+  "SCOURGE": {
+    "name": "鞭打",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_scourge.webp"
+  },
+  "SCRAPE": {
+    "name": "刮削",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_scrape.webp"
+  },
+  "SCRAWL": {
+    "name": "潦草急就",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_scrawl.webp"
+  },
+  "SCULPTING_STRIKE": {
+    "name": "雕琢打击",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_sculpting_strike.webp"
+  },
+  "SEANCE": {
+    "name": "降灵",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_seance.webp"
+  },
+  "SECOND_WIND": {
+    "name": "重振精神",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_second_wind.webp"
+  },
+  "SECRET_TECHNIQUE": {
+    "name": "秘密技法",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_secret_technique.webp"
+  },
+  "SECRET_WEAPON": {
+    "name": "秘密武器",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_secret_weapon.webp"
+  },
+  "SEEKER_STRIKE": {
+    "name": "探寻打击",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_seeker_strike.webp"
+  },
+  "SEEKING_EDGE": {
+    "name": "追踪之刃",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_seeking_edge.webp"
+  },
+  "SENTRY_MODE": {
+    "name": "哨卫模式",
+    "cost": 2,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_sentry_mode.webp"
+  },
+  "SERPENT_FORM": {
+    "name": "群蛇形态",
+    "cost": 3,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_serpent_form.webp"
+  },
+  "SETUP_STRIKE": {
+    "name": "预备打击",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_setup_strike.webp"
+  },
+  "SEVEN_STARS": {
+    "name": "七星",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_seven_stars.webp"
+  },
+  "SEVERANCE": {
+    "name": "切断",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_severance.webp"
+  },
+  "SHADOWMELD": {
+    "name": "融入暗影",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_shadowmeld.webp"
+  },
+  "SHADOW_SHIELD": {
+    "name": "暗影之盾",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_shadow_shield.webp"
+  },
+  "SHADOW_STEP": {
+    "name": "暗影步",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_shadow_step.webp"
+  },
+  "SHAME": {
+    "name": "羞耻",
+    "cost": -1,
+    "type": "诅咒",
+    "rarity": "诅咒",
+    "owner": "curse",
+    "owner_name": "诅咒",
+    "image": "assets/native_shame.webp"
+  },
+  "SHARED_FATE": {
+    "name": "命运同担",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_shared_fate.webp"
+  },
+  "SHATTER": {
+    "name": "打碎",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_shatter.webp"
+  },
+  "SHINING_STRIKE": {
+    "name": "明耀打击",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_shining_strike.webp"
+  },
+  "SHIV": {
+    "name": "小刀",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "衍生",
+    "owner": "token",
+    "owner_name": "衍生",
+    "image": "assets/native_shiv.webp"
+  },
+  "SHOCKWAVE": {
+    "name": "震荡波",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_shockwave.webp"
+  },
+  "SHROUD": {
+    "name": "厄运之衣",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_shroud.webp"
+  },
+  "SHRUG_IT_OFF": {
+    "name": "耸肩无视",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_shrug_it_off.webp"
+  },
+  "SIC_EM": {
+    "name": "紧追不放",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_sic_em.webp"
+  },
+  "SIGNAL_BOOST": {
+    "name": "信号增强",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_signal_boost.webp"
+  },
+  "SKEWER": {
+    "name": "串刺",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_skewer.webp"
+  },
+  "SKIM": {
+    "name": "快速检索",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_skim.webp"
+  },
+  "SLEIGHT_OF_FLESH": {
+    "name": "血肉戏法",
+    "cost": 2,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_sleight_of_flesh.webp"
+  },
+  "SLICE": {
+    "name": "切割",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_slice.webp"
+  },
+  "SLIMED": {
+    "name": "黏液",
+    "cost": 1,
+    "type": "状态",
+    "rarity": "状态",
+    "owner": "status",
+    "owner_name": "状态",
+    "image": "assets/native_slimed.webp"
+  },
+  "SLOTH": {
+    "name": "懒惰",
+    "cost": -1,
+    "type": "状态",
+    "rarity": "状态",
+    "owner": "token",
+    "owner_name": "衍生",
+    "image": "assets/native_sloth.webp"
+  },
+  "SMOKESTACK": {
+    "name": "烟囱",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_smokestack.webp"
+  },
+  "SNAKEBITE": {
+    "name": "蛇咬",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_snakebite.webp"
+  },
+  "SNAP": {
+    "name": "响指",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_snap.webp"
+  },
+  "SNEAKY": {
+    "name": "鬼祟",
+    "cost": 2,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_sneaky.webp"
+  },
+  "SOLAR_STRIKE": {
+    "name": "太阳打击",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_solar_strike.webp"
+  },
+  "SOOT": {
+    "name": "煤灰",
+    "cost": -1,
+    "type": "状态",
+    "rarity": "状态",
+    "owner": "status",
+    "owner_name": "状态",
+    "image": "assets/native_soot.webp"
+  },
+  "SOUL": {
+    "name": "灵魂",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "衍生",
+    "owner": "token",
+    "owner_name": "衍生",
+    "image": "assets/native_soul.webp"
+  },
+  "SOUL_STORM": {
+    "name": "灵魂风暴",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_soul_storm.webp"
+  },
+  "SOVEREIGN_BLADE": {
+    "name": "君王之剑",
+    "cost": 10,
+    "type": "技能",
+    "rarity": "基础",
+    "owner": "token",
+    "owner_name": "衍生",
+    "image": "assets/native_sovereign_blade.webp"
+  },
+  "SOW": {
+    "name": "播种",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_sow.webp"
+  },
+  "SPECTRUM_SHIFT": {
+    "name": "光谱偏移",
+    "cost": 2,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_spectrum_shift.webp"
+  },
+  "SPEEDSTER": {
+    "name": "速行者",
+    "cost": 2,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_speedster.webp"
+  },
+  "SPINNER": {
+    "name": "旋转工艺",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_spinner.webp"
+  },
+  "SPIRIT_OF_ASH": {
+    "name": "灰烬之灵",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_spirit_of_ash.webp"
+  },
+  "SPITE": {
+    "name": "怨恨",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_spite.webp"
+  },
+  "SPLASH": {
+    "name": "飞溅",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_splash.webp"
+  },
+  "SPOILS_MAP": {
+    "name": "藏宝图",
+    "cost": -1,
+    "type": "未知",
+    "rarity": "特殊",
+    "owner": "quest",
+    "owner_name": "任务",
+    "image": "assets/native_spoils_map.webp"
+  },
+  "SPOILS_OF_BATTLE": {
+    "name": "战利品",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_spoils_of_battle.webp"
+  },
+  "SPORE_MIND": {
+    "name": "孢子心灵",
+    "cost": 1,
+    "type": "诅咒",
+    "rarity": "诅咒",
+    "owner": "curse",
+    "owner_name": "诅咒",
+    "image": "assets/native_spore_mind.webp"
+  },
+  "SPUR": {
+    "name": "增生",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_spur.webp"
+  },
+  "SQUASH": {
+    "name": "压扁",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "特殊",
+    "owner": "event",
+    "owner_name": "特殊",
+    "image": "assets/native_squash.webp"
+  },
+  "SQUEEZE": {
+    "name": "榨取",
+    "cost": 3,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_squeeze.webp"
+  },
+  "STACK": {
+    "name": "堆栈",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "特殊",
+    "owner": "event",
+    "owner_name": "特殊",
+    "image": "assets/native_stack.webp"
+  },
+  "STAMPEDE": {
+    "name": "惊逃",
+    "cost": 2,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_stampede.webp"
+  },
+  "STARDUST": {
+    "name": "星尘",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_stardust.webp"
+  },
+  "STOKE": {
+    "name": "添柴",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_stoke.webp"
+  },
+  "STOMP": {
+    "name": "踩踏",
+    "cost": 3,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_stomp.webp"
+  },
+  "STONE_ARMOR": {
+    "name": "岩石铠甲",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_stone_armor.webp"
+  },
+  "STORM": {
+    "name": "雷暴",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_storm.webp"
+  },
+  "STORM_OF_STEEL": {
+    "name": "钢铁风暴",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_storm_of_steel.webp"
+  },
+  "STRANGLE": {
+    "name": "紧勒",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_strangle.webp"
+  },
+  "STRATAGEM": {
+    "name": "计策",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_stratagem.webp"
+  },
+  "STRIKE_DEFECT": {
+    "name": "打击",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "基础",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_strike_defect.webp"
+  },
+  "STRIKE_IRONCLAD": {
+    "name": "打击",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "基础",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_strike_ironclad.webp"
+  },
+  "STRIKE_NECROBINDER": {
+    "name": "打击",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "基础",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_strike_necrobinder.webp"
+  },
+  "STRIKE_REGENT": {
+    "name": "打击",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "基础",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_strike_regent.webp"
+  },
+  "STRIKE_SILENT": {
+    "name": "打击",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "基础",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_strike_silent.webp"
+  },
+  "SUBROUTINE": {
+    "name": "子程序",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_subroutine.webp"
+  },
+  "SUCKER_PUNCH": {
+    "name": "突然一拳",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_sucker_punch.webp"
+  },
+  "SUMMON_FORTH": {
+    "name": "征召上前",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_summon_forth.webp"
+  },
+  "SUNDER": {
+    "name": "分离",
+    "cost": 3,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_sunder.webp"
+  },
+  "SUPERCRITICAL": {
+    "name": "超临界态",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_supercritical.webp"
+  },
+  "SUPERMASSIVE": {
+    "name": "超质量体",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_supermassive.webp"
+  },
+  "SUPPRESS": {
+    "name": "压制",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "先古",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_suppress.webp"
+  },
+  "SURVIVOR": {
+    "name": "生存者",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "基础",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_survivor.webp"
+  },
+  "SWEEPING_BEAM": {
+    "name": "扫荡射线",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_sweeping_beam.webp"
+  },
+  "SWEEPING_GAZE": {
+    "name": "扫荡凝视",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "衍生",
+    "owner": "token",
+    "owner_name": "衍生",
+    "image": "assets/native_sweeping_gaze.webp"
+  },
+  "SWORD_BOOMERANG": {
+    "name": "飞剑回旋镖",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_sword_boomerang.webp"
+  },
+  "SWORD_SAGE": {
+    "name": "剑圣",
+    "cost": 2,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_sword_sage.webp"
+  },
+  "SYNCHRONIZE": {
+    "name": "同步",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_synchronize.webp"
+  },
+  "SYNTHESIS": {
+    "name": "人工合成",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_synthesis.webp"
+  },
+  "TACTICIAN": {
+    "name": "战术大师",
+    "cost": 3,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_tactician.webp"
+  },
+  "TAG_TEAM": {
+    "name": "双打组合",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_tag_team.webp"
+  },
+  "TANK": {
+    "name": "肉盾",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_tank.webp"
+  },
+  "TAUNT": {
+    "name": "挑衅",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_taunt.webp"
+  },
+  "TEAR_ASUNDER": {
+    "name": "扯碎",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_tear_asunder.webp"
+  },
+  "TEMPEST": {
+    "name": "暴风雨",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_tempest.webp"
+  },
+  "TERRAFORMING": {
+    "name": "地形改造",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_terraforming.webp"
+  },
+  "TESLA_COIL": {
+    "name": "特斯拉线圈",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_tesla_coil.webp"
+  },
+  "THE_BOMB": {
+    "name": "炸弹",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_the_bomb.webp"
+  },
+  "THE_GAMBIT": {
+    "name": "孤注一掷",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_the_gambit.webp"
+  },
+  "THE_HUNT": {
+    "name": "狩猎",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_the_hunt.webp"
+  },
+  "THE_SCYTHE": {
+    "name": "巨镰",
+    "cost": 13,
+    "type": "技能",
+    "rarity": "基础",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_the_scythe.webp"
+  },
+  "THE_SEALED_THRONE": {
+    "name": "封印王座",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "先古",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_the_sealed_throne.webp"
+  },
+  "THE_SMITH": {
+    "name": "铸剑者",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_the_smith.webp"
+  },
+  "THINKING_AHEAD": {
+    "name": "深谋远虑",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_thinking_ahead.webp"
+  },
+  "THRASH": {
+    "name": "痛殴",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_thrash.webp"
+  },
+  "THRUMMING_HATCHET": {
+    "name": "无休手斧",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_thrumming_hatchet.webp"
+  },
+  "THUNDER": {
+    "name": "雷霆",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_thunder.webp"
+  },
+  "THUNDERCLAP": {
+    "name": "闪电霹雳",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_thunderclap.webp"
+  },
+  "TIMES_UP": {
+    "name": "大限已至",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_times_up.webp"
+  },
+  "TOOLS_OF_THE_TRADE": {
+    "name": "必备工具",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_tools_of_the_trade.webp"
+  },
+  "TORIC_TOUGHNESS": {
+    "name": "坚韧之环",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "特殊",
+    "owner": "event",
+    "owner_name": "特殊",
+    "image": "assets/native_toric_toughness.webp"
+  },
+  "TOXIC": {
+    "name": "毒素",
+    "cost": 1,
+    "type": "状态",
+    "rarity": "状态",
+    "owner": "status",
+    "owner_name": "状态",
+    "image": "assets/native_toxic.webp"
+  },
+  "TRACKING": {
+    "name": "跟踪",
+    "cost": 2,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_tracking.webp"
+  },
+  "TRANSFIGURE": {
+    "name": "重构",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_transfigure.webp"
+  },
+  "TRASH_TO_TREASURE": {
+    "name": "化废为宝",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_trash_to_treasure.webp"
+  },
+  "TREMBLE": {
+    "name": "战栗",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_tremble.webp"
+  },
+  "TRUE_GRIT": {
+    "name": "坚毅",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_true_grit.webp"
+  },
+  "TURBO": {
+    "name": "内核加速",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_turbo.webp"
+  },
+  "TWIN_STRIKE": {
+    "name": "双重打击",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_twin_strike.webp"
+  },
+  "TYRANNY": {
+    "name": "暴政",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_tyranny.webp"
+  },
+  "ULTIMATE_DEFEND": {
+    "name": "究极防御",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_ultimate_defend.webp"
+  },
+  "ULTIMATE_STRIKE": {
+    "name": "究极打击",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_ultimate_strike.webp"
+  },
+  "UNDEATH": {
+    "name": "不死",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_undeath.webp"
+  },
+  "UNLEASH": {
+    "name": "出击",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "基础",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_unleash.webp"
+  },
+  "UNMOVABLE": {
+    "name": "坚定不移",
+    "cost": 2,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_unmovable.webp"
+  },
+  "UNRELENTING": {
+    "name": "无情猛攻",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_unrelenting.webp"
+  },
+  "UNTOUCHABLE": {
+    "name": "触不可及",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_untouchable.webp"
+  },
+  "UPPERCUT": {
+    "name": "上勾拳",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_uppercut.webp"
+  },
+  "UPROAR": {
+    "name": "骚动",
+    "cost": 2,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_uproar.webp"
+  },
+  "UP_MY_SLEEVE": {
+    "name": "袖里乾坤",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_up_my_sleeve.webp"
+  },
+  "VEILPIERCER": {
+    "name": "刺破帷幕",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_veilpiercer.webp"
+  },
+  "VENERATE": {
+    "name": "崇拜",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "基础",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_venerate.webp"
+  },
+  "VICIOUS": {
+    "name": "凶恶",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_vicious.webp"
+  },
+  "VOID": {
+    "name": "虚空",
+    "cost": -1,
+    "type": "状态",
+    "rarity": "状态",
+    "owner": "status",
+    "owner_name": "状态",
+    "image": "assets/native_void.webp"
+  },
+  "VOID_FORM": {
+    "name": "虚空形态",
+    "cost": 3,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_void_form.webp"
+  },
+  "VOLLEY": {
+    "name": "连射",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_volley.webp"
+  },
+  "VOLTAIC": {
+    "name": "电流相生",
+    "cost": 3,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_voltaic.webp"
+  },
+  "WASTE_AWAY": {
+    "name": "衰朽",
+    "cost": -1,
+    "type": "状态",
+    "rarity": "状态",
+    "owner": "token",
+    "owner_name": "衍生",
+    "image": "assets/native_waste_away.webp"
+  },
+  "WELL_LAID_PLANS": {
+    "name": "计划妥当",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_well_laid_plans.webp"
+  },
+  "WHIRLWIND": {
+    "name": "旋风斩",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_whirlwind.webp"
+  },
+  "WHISTLE": {
+    "name": "吹哨",
+    "cost": 3,
+    "type": "攻击",
+    "rarity": "先古",
+    "owner": "event",
+    "owner_name": "特殊",
+    "image": "assets/native_whistle.webp"
+  },
+  "WHITE_NOISE": {
+    "name": "白噪声",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_white_noise.webp"
+  },
+  "WISH": {
+    "name": "许愿",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "先古",
+    "owner": "event",
+    "owner_name": "特殊",
+    "image": "assets/native_wish.webp"
+  },
+  "WISP": {
+    "name": "鬼火",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "普通",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_wisp.webp"
+  },
+  "WITHER": {
+    "name": "凋萎",
+    "cost": -1,
+    "type": "状态",
+    "rarity": "状态",
+    "owner": "status",
+    "owner_name": "状态",
+    "image": "assets/native_wither.webp"
+  },
+  "WOUND": {
+    "name": "伤口",
+    "cost": -1,
+    "type": "状态",
+    "rarity": "状态",
+    "owner": "status",
+    "owner_name": "状态",
+    "image": "assets/native_wound.webp"
+  },
+  "WRAITH_FORM": {
+    "name": "幽魂形态",
+    "cost": 3,
+    "type": "能力",
+    "rarity": "先古",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_wraith_form.webp"
+  },
+  "WRITHE": {
+    "name": "苦恼",
+    "cost": -1,
+    "type": "诅咒",
+    "rarity": "诅咒",
+    "owner": "curse",
+    "owner_name": "诅咒",
+    "image": "assets/native_writhe.webp"
+  },
+  "WROUGHT_IN_WAR": {
+    "name": "战火铸就",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "普通",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_wrought_in_war.webp"
+  },
+  "ZAP": {
+    "name": "电击",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "基础",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_zap.webp"
+  },
+  "ABUNDANCE": {
+    "name": "富足",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "先古",
+    "owner": "event",
+    "owner_name": "特殊",
+    "image": "assets/native_abundance.webp"
+  },
+  "BLADE_SYMPHONY": {
+    "name": "刀刃交响曲",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_blade_symphony.webp"
+  },
+  "BLAZE": {
+    "name": "炽焰",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_blaze.webp"
+  },
+  "CACOPHONY": {
+    "name": "不谐合曲",
+    "cost": 2,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_cacophony.webp"
+  },
+  "CONCOCT": {
+    "name": "调制",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_concoct.webp"
+  },
+  "CONSTELLATION": {
+    "name": "群星荟萃",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_constellation.webp"
+  },
+  "DOWSING": {
+    "name": "探寻",
+    "cost": -1,
+    "type": "任务",
+    "rarity": "任务",
+    "owner": "quest",
+    "owner_name": "任务",
+    "image": "assets/native_dowsing.webp"
+  },
+  "FADE": {
+    "name": "消影",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_fade.webp"
+  },
+  "HIBERNATE": {
+    "name": "休眠",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_hibernate.webp"
+  },
+  "IMITATION_LEARNING": {
+    "name": "模仿学习",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_imitation_learning.webp"
+  },
+  "MIDNIGHT": {
+    "name": "午夜",
+    "cost": 12,
+    "type": "攻击",
+    "rarity": "稀有",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_midnight.webp"
+  },
+  "ONE_FOR_ALL": {
+    "name": "一心化万",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "稀有",
+    "owner": "defect",
+    "owner_name": "故障机器人",
+    "image": "assets/native_one_for_all.webp"
+  },
+  "OUTRAGE": {
+    "name": "群情激愤",
+    "cost": 0,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "ironclad",
+    "owner_name": "铁甲战士",
+    "image": "assets/native_outrage.webp"
+  },
+  "PLOT": {
+    "name": "筹划",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_plot.webp"
+  },
+  "SIDESTEP": {
+    "name": "侧步",
+    "cost": 0,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "silent",
+    "owner_name": "静默猎手",
+    "image": "assets/native_sidestep.webp"
+  },
+  "SOULBOUND": {
+    "name": "灵魂绑定",
+    "cost": 1,
+    "type": "能力",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_soulbound.webp"
+  },
+  "THE_BALL": {
+    "name": "魔球",
+    "cost": 1,
+    "type": "攻击",
+    "rarity": "罕见",
+    "owner": "colorless",
+    "owner_name": "无色",
+    "image": "assets/native_the_ball.webp"
+  },
+  "TUTOR": {
+    "name": "指导",
+    "cost": 1,
+    "type": "技能",
+    "rarity": "稀有",
+    "owner": "regent",
+    "owner_name": "储君",
+    "image": "assets/native_tutor.webp"
+  },
+  "UNDERWORLD": {
+    "name": "幽冥之界",
+    "cost": 2,
+    "type": "技能",
+    "rarity": "罕见",
+    "owner": "necrobinder",
+    "owner_name": "亡灵契约师",
+    "image": "assets/native_underworld.webp"
+  }
+}
