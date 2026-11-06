@@ -48,7 +48,6 @@ namespace ShoujoKageki.Core.Exports
         private const int FramesAfterVisualApply = 2;
         private const int FramesAfterHoverLayout = 2;
         private const int FramesAfterHoverResize = 2;
-        private const int FramesAfterRender = 5;
         private const int FramesBeforeTeardown = 1;
 
         // ---- JSON 序列化选项 ----
@@ -675,7 +674,10 @@ namespace ShoujoKageki.Core.Exports
                     return false;
 
                 built.Viewport.RenderTargetUpdateMode = SubViewport.UpdateMode.Once;
-                await WaitFrames(FramesAfterRender);
+                // Subscribe first because ForceDraw can finish the frame synchronously.
+                var drawCompleted = game.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+                RenderingServer.ForceDraw(swapBuffers: false);
+                await drawCompleted;
 
                 if (!GodotObject.IsInstanceValid(built.Viewport))
                     return false;
@@ -687,10 +689,10 @@ namespace ShoujoKageki.Core.Exports
                     return false;
                 }
 
-                using var image = tex.GetImage()?.Duplicate() as Image;
-                if (image == null)
+                using var image = tex.GetImage();
+                if (image == null || image.IsEmpty() || image.IsInvisible())
                 {
-                    GD.PushError("[CardPngExportUtil] viewport image was null.");
+                    GD.PushError("[CardPngExportUtil] viewport image had no visible pixels.");
                     return false;
                 }
 

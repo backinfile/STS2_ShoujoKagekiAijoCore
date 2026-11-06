@@ -73,3 +73,28 @@
 
 - 最终组装目录已通过独立加载检查，使用包内 web 并在临时 SQLite 与随机端口成功提供健康、页面和查询端点。
 - 提交前只读核对原集成分支仍为 96103f4，merge-base 与该 HEAD 相同，原检出保持干净。自动审批拒绝了包含分支同步合并的组合命令，理由为需要总装明确合并确认，该命令未执行。后续检查与提交单独进行，分支合并由 03 集中请求确认。
+
+
+## ExportSingleAsync 实测修复
+
+### Original user input
+
+> 最终组合beta已在真实游戏正常启动，Telemetry日志采集已实际上传启动错误到本地隔离SQLite（Core版本/角色归属正确）。Exports实测发现问题，需要补可复验修复commit。通过最终Runtime公共ExportSingleAsync(KarenShineStrike, path,1,true) 返回true，但PNG752x492全RGBA=(0,0,0,0)，distinct colors=1。游戏按约定最小化，Frame等待继续运行。当前代码RenderTargetUpdateMode.Once + WaitFrames不会保证真实绘制，建议显式ForceDraw并等待FramePostDraw，验证非透明真实内容和生命周期。我会配合重测，请在你工作树修复该最小实际入口，勿自行启动游戏。
+
+坏图及游戏日志由 03 保管于 <role-integration-test-artifacts>，读取原坏图进行像素断言。此次修复继续使用已有隔离任务分支，新增一个后续修复提交。
+
+### Brief task plan
+
+1. 以真实坏图建立可复验像素检查。
+2. 修正最小化状态下的实际绘制边界和图像所有权，拒绝全透明成功结果。
+3. 执行双游戏引用的定向编译，将提交及同入口复验命令交 03 集中实测。
+
+### Result and changes
+
+- tools/telemetry/check_export_png.py 在原坏图上输出 width 752、height 492、visible_pixels 0、distinct_colors 1，并抛出 export_png_has_no_visible_pixels。可复验命令为 python tools/telemetry/check_export_png.py <exported-png>。可见像素正向控制通过。
+- ExportSingleAsync 在设置 UpdateMode.Once 后先建立 FramePostDraw 等待，再调用主线程 RenderingServer.ForceDraw(false)，绘制结束后才读回纹理。保留原有布局等待与 finally 节点释放路径。
+- 直接持有并 Dispose GetImage 返回的 Image，去掉额外 Duplicate 及其遗留原始 Image。空图或所有 alpha 为零时返回 false，不写入成功 PNG。
+- 原因与 Godot 4.5 定义一致，进程帧与绘制帧分别推进，ForceDraw 可在渲染关闭时强制绘制，FramePostDraw 在视口更新结束后发出。订阅发生于 ForceDraw 之前，覆盖同步发出信号的情况。[Godot RenderingServer](https://docs.godotengine.org/en/4.5/classes/class_renderingserver.html)
+- 正式版 0.107.1 与测试版 0.111.0 的独立模块定向编译均为 0 警告、0 错误，使用 03 已集成 API 与 Runtime 模块契约，历史编译接缝同前。
+- 03 已确认 Telemetry 在 beta 真实游戏向本地隔离 SQLite 上传启动错误，Core 版本与角色归属正确。
+- 真实最小化游戏中的新 PNG 和导出节点释放待 03 复测同一公开入口。此次不启动游戏，原分支合并与清理继续由总装统一确认。
