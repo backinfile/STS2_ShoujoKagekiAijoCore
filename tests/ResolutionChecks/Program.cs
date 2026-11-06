@@ -18,6 +18,35 @@ var serviceType = typeof(ShineService);
 Type Patch(string name) => serviceType.GetNestedType(name, BindingFlags.NonPublic)!;
 HarmonyMethod Hook(string patch, string name) => new(AccessTools.Method(Patch(patch), name));
 var wrapper = AccessTools.Method(typeof(ResolutionCard), nameof(ResolutionCard.NativeWrapper));
+if (args.Contains("--presentation-only"))
+{
+    ModelDb.Inject(typeof(ResolutionCard));
+    ModelDb.Inject(typeof(PlainCard));
+    var canonical = ModelDb.Card<ResolutionCard>();
+    var preview = (ResolutionCard)canonical.MutableClone();
+    var ordinary = (PlainCard)ModelDb.Card<PlainCard>().MutableClone();
+    void CheckWarning(bool expected, string name, CardModel model, bool alreadyDecreased = false)
+    {
+        if (ShoujoKageki.Core.Runtime.Modules.Presentation.ShineVfx.WillDeplete(model, alreadyDecreased) != expected)
+            throw new InvalidOperationException(name);
+    }
+    CheckWarning(false, "Canonical previews have no warning", canonical);
+    CheckWarning(false, "Ordinary cards have no warning", ordinary);
+    service.SetState(preview, 2, 3);
+    CheckWarning(false, "Two remaining uses have no warning", preview);
+    service.SetState(preview, 1, 3);
+    CheckWarning(true, "The final use warns before deduction", preview);
+    CheckWarning(false, "A deducted use waits until zero", preview, true);
+    service.SetState(preview, 0, 3);
+    CheckWarning(true, "Zero remaining uses warn", preview, true);
+    service.SetState(preview, 2, 3);
+    service.DepleteAfterCurrentResolution(preview);
+    CheckWarning(true, "Pending depletion warns with remaining uses", preview, true);
+    preview.AddKeyword(CardKeyword.Eternal);
+    CheckWarning(false, "Eternal cards suppress the warning", preview);
+    Console.WriteLine("Shine warning checks passed: 8");
+    return;
+}
 if (args.Contains("--save-only"))
 {
     harmony.CreateClassProcessor(typeof(ShineService).Assembly.GetType("ShoujoKageki.Core.Runtime.Modules.Shine.ShineService+LegacyCardStatePatch")!).Patch();

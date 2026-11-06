@@ -13,9 +13,9 @@ namespace ShoujoKageki.Core.Runtime.Modules.Presentation;
 public static class ShineVfx
 {
     // Canonical preview cards have no combat depletion state; their Owner getter requires mutability.
-    public static bool WillDeplete(CardModel card, bool shineAlreadyDecreased = false) => card.IsMutable && card.IsShineCard() && !card.IsDupe
-        && (card.GetShineValue() <= (shineAlreadyDecreased ? 0 : 1) || card.ShouldEnterShinePileAfterPlay()
-            )
+    public static bool WillDeplete(CardModel card, bool shineAlreadyDecreased = false) => card.IsMutable
+        && V1.Shine.GetState(card) is { } state && !card.IsDupe
+        && (state.Remaining <= (shineAlreadyDecreased ? 0 : 1) || state.PendingDepletion)
         && !card.Keywords.Contains(CardKeyword.Eternal);
 
     private static readonly SpireField<NCard, NKarenShineWarningVfx?> Warnings = new(() => null);

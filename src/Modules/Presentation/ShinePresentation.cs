@@ -40,9 +40,6 @@ internal static class ShineExtension
 {
     public static bool IsShineCard(this CardModel card) => V1.Shine.IsShineCard(card);
     public static bool HasShine(this CardModel card) => V1.Shine.GetState(card)?.Remaining > 0;
-    public static int GetShineValue(this CardModel card) => V1.Shine.GetState(card)?.Remaining ?? -1;
-    public static int GetShineMaxValue(this CardModel card) => V1.Shine.GetState(card)?.Maximum ?? -1;
-    public static bool ShouldEnterShinePileAfterPlay(this CardModel card) => V1.Shine.GetState(card)?.PendingDepletion == true;
 }
 internal static class ShinePileManager
 {
@@ -59,7 +56,7 @@ internal static class ShinePileManager
         pile.Clear();
         foreach (var card in ShineArchive.Models(player)) pile.AddInternal(card);
     }
-    public static int GetShinePileCount(Player player) => ShineArchive.Snapshots(player).Count;
+    public static int GetShinePileCount(Player player) => ShineArchive.Count(player);
     public static NCardPileScreen ShowScreen(Player player)
     {
         var pile = new CardPile(PileType.None);

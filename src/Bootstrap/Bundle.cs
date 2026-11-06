@@ -111,19 +111,16 @@ public static class BundleSelection
                 throw new InvalidDataException($"Core {release.Key} 存在同版本内容冲突，请重新安装官方发行包。");
         var game = SemVersion.Parse(gameVersion);
         var baselib = SemVersion.Parse(baseLibVersion);
-        var compatible = complete.Where(x => x.Bundle.ApiMajor == 1
+        var selected = complete.Where(x => x.Bundle.ApiMajor == 1
             && SemVersion.Parse(x.Bundle.ReleaseVersion).CompareTo(SemVersion.Parse(minimumRelease)) >= 0
             && baselib.CompareTo(SemVersion.Parse(x.Bundle.BaseLibMinimumVersion)) >= 0
             && x.Bundle.Targets.Values.Any(t => game.CompareTo(SemVersion.Parse(t.MinimumGameVersion)) >= 0 && game.CompareTo(SemVersion.Parse(t.MaximumGameVersion)) <= 0)
             && requirements.All(r => r.Format == 1 && r.ApiMajor == x.Bundle.ApiMajor
                 && SemVersion.Parse(x.Bundle.ApiVersion).CompareTo(SemVersion.Parse(r.MinimumApiVersion)) >= 0
                 && r.RequiredFeatures.All(f => x.Bundle.Features.Contains(f, StringComparer.Ordinal))))
-            .OrderByDescending(x => SemVersion.Parse(x.Bundle.ReleaseVersion)).ThenBy(x => x.Source, StringComparer.Ordinal).ThenBy(x => x.Root, StringComparer.Ordinal).ToArray();
-        if (compatible.Length == 0) throw new InvalidOperationException("没有共同兼容的 Core。请更新角色包，检查游戏版本、BaseLib、API 与必需功能。" +
+            .OrderByDescending(x => SemVersion.Parse(x.Bundle.ReleaseVersion)).ThenBy(x => x.Source, StringComparer.Ordinal).ThenBy(x => x.Root, StringComparer.Ordinal).FirstOrDefault();
+        if (selected == null) throw new InvalidOperationException("没有共同兼容的 Core。请更新角色包，检查游戏版本、BaseLib、API 与必需功能。" +
             string.Join(" ", requirements.Select(r => $"{r.ModId}: API {r.ApiMajor}/{r.MinimumApiVersion}, {string.Join(',', r.RequiredFeatures)}")));
-        var selected = compatible[0];
-        if (compatible.Any(x => x.Bundle.ReleaseVersion == selected.Bundle.ReleaseVersion && x.Fingerprint != selected.Fingerprint))
-            throw new InvalidDataException($"Core {selected.Bundle.ReleaseVersion} 存在同版本内容冲突，请重新安装官方发行包。");
         return selected;
     }
 }
