@@ -20,14 +20,18 @@ $coreDependency = @($manifest.dependencies | Where-Object { $_.id -eq 'ShoujoKag
 if ($coreDependency.Count -ne 1 -or -not $coreDependency[0].min_version) { throw 'Character manifest must declare the Core minimum version.' }
 if ([Version]($bundle.releaseVersion.Split('-')[0]) -lt [Version]($coreDependency[0].min_version.Split('-')[0])) { throw 'Core package is older than the character dependency.' }
 if (@($manifest.dependencies | Where-Object { $_.id -eq 'BaseLib' }).Count -ne 1) { throw 'Character manifest must declare BaseLib.' }
+$embedCore = $ModId -eq 'ShoujoKagekiAijoKaren'
+$destination = Join-Path $upload 'ShoujoKagekiAijoCore'
+if (-not $embedCore -and (Test-Path -LiteralPath $destination)) {
+    throw 'Only Karen embeds Core. Use a fresh upload directory and declare the Core Workshop dependency for this mod.'
+}
 New-Item -ItemType Directory -Force -Path $upload | Out-Null
 $character = Join-Path $upload $ModId
 if (-not $source.Equals([IO.Path]::GetFullPath($character), [StringComparison]::OrdinalIgnoreCase)) {
     if (Test-Path -LiteralPath $character) { throw 'Character output already exists. Use its directory for in-place metadata generation.' }
     Copy-Item -LiteralPath $source -Destination $character -Recurse
 }
-$destination = Join-Path $upload 'ShoujoKagekiAijoCore'
-if (-not $checked.Root.Equals([IO.Path]::GetFullPath($destination), [StringComparison]::OrdinalIgnoreCase)) {
+if ($embedCore -and -not $checked.Root.Equals([IO.Path]::GetFullPath($destination), [StringComparison]::OrdinalIgnoreCase)) {
     if (Test-Path -LiteralPath $destination) {
         $installed = & (Join-Path $PSScriptRoot 'validate-package.ps1') -CorePackage $destination
         if ((Get-FileHash -LiteralPath (Join-Path $installed.Root 'core.bundle')).Hash -ne (Get-FileHash -LiteralPath (Join-Path $checked.Root 'core.bundle')).Hash) {
@@ -40,10 +44,11 @@ if (-not $CharacterFamily -and $ModId.StartsWith('ShoujoKageki', [StringComparis
 if ($CharacterFamily) { $requirements['characterFamily'] = $CharacterFamily }
 $requirements | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $character 'core.requirements') -Encoding UTF8
 $lockFiles = [ordered]@{}
-Get-ChildItem -LiteralPath $destination -Recurse -File | Sort-Object FullName | ForEach-Object {
-    $relative = [IO.Path]::GetRelativePath($destination, $_.FullName).Replace('\','/')
+Get-ChildItem -LiteralPath $checked.Root -Recurse -File | Sort-Object FullName | ForEach-Object {
+    $relative = [IO.Path]::GetRelativePath($checked.Root, $_.FullName).Replace('\','/')
     $lockFiles[$relative] = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 [ordered]@{ format=1; releaseVersion=$bundle.releaseVersion; files=$lockFiles } | ConvertTo-Json -Depth 10 |
     Set-Content -LiteralPath (Join-Path $character 'core.package.lock') -Encoding UTF8
-Write-Host "Packaged $ModId with Core $($bundle.releaseVersion)"
+$distribution = if ($embedCore) { 'embedded Core' } else { 'Core Workshop dependency' }
+Write-Host "Packaged $ModId with $distribution (SDK $($bundle.releaseVersion))"

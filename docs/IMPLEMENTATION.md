@@ -1,31 +1,30 @@
 # ShoujoKagekiAijoCore 实现文档
 
-本文面向 Core 开发、部署和维护者，记录 Core 1.0.1 的实现约定，整理日期为 2026-11-06。使用方式与作者接入示例见 [Core 使用说明](../README.md)。
+本文面向 Core 开发、部署和维护者，记录 Core 1.0.1 的实现约定，整理日期为 2026-11-07。使用方式与作者接入示例见 [Core 使用说明](../README.md)。
 
 源码与文档位于 Core 的 GitHub 仓库，SDK 随正式发行提供。工程示例采用相对路径。[GitHub 仓库](https://github.com/backinfile/STS2_ShoujoKagekiAijoCore)
 
 ## 1. 项目定位与发布决策
 
-Core 作为一个真正的游戏 Mod 独立维护，通过各角色现有的创意工坊发布包分发。玩家更新已订阅的角色包时，一并取得 Core。
+Core 作为独立游戏 Mod 维护并发布到创意工坊。仅 Karen 的角色工坊包内嵌完整 Core；Junna 及其他 Mod 声明独立 Core 条目的工坊依赖，玩家订阅对应必需物品。
 
 共同约定如下。
 
 - 逻辑 Mod ID 固定为 `ShoujoKagekiAijoCore`。
-- 各角色携带 Core 官方发布产物，构建时记录所采用的发行版本与文件摘要。
+- 角色使用官方 Core SDK，构建时记录所采用的发行版本与文件摘要；仅 Karen 随包携带完整 Core。
 - 一个游戏进程使用一份已选定的 Core 业务实现、一份公共配置和一组共享机制状态。
 - 引导 DLL 维持固定加载协议，业务代码、配置界面、资源和游戏版本适配在外置业务包中更新。
 - 角色作者通过版本化公开接口接入。Core 发布以旧角色 DLL 的二进制兼容和旧存档兼容为验收条件。
 - 正式版、测试版作为两个独立适配目标，随同一个 Core 发行包交付。
 
-一个工坊条目可以包含多个游戏 Mod。游戏递归读取条目目录中的清单，并为读到的各 Mod 记录同一个工坊条目来源。因此角色目录和 Core 目录可以并列放在一个上传目录中。
+独立 Core 条目只包含 Core Mod。Karen 条目将角色目录和 Core 目录并列放在上传内容目录中，游戏递归读取清单并记录对应工坊来源。
 
-| 发布方式 | 配置与更新维护 | 对现有玩家的影响 | 本项目采用方式 |
-| --- | --- | --- | --- |
-| 单独的 Core 工坊订阅 | Core 集中更新 | 玩家增加订阅步骤 | 供未来发行渠道评估 |
-| 每个角色附带 Core Mod | Core 独立维护，角色携带发行包 | 随原有角色订阅更新，游戏列表出现 Core | 主方案 |
-| 每个角色内置共享 DLL | 配置归属和加载协调由角色处理 | 随原角色更新 | 保留架构比较记录 |
+| 发布方式 | 更新来源 | 适用对象 |
+| --- | --- | --- |
+| 独立 Core 工坊条目 | Core 自身订阅 | Junna 及其他依赖 Core 的 Mod |
+| Karen 内嵌完整 Core | Karen 订阅 | Karen 玩家 |
 
-工坊依赖声明可以在页面展示必需物品。Steamworks 将普通条目之间的依赖描述为软依赖，实际取得依赖的流程由客户端和游戏接入决定。本方案以角色包实际携带 Core 文件完成交付。[Steamworks 文档](https://partner.steamgames.com/doc/api/isteamugc#AddDependency)
+角色游戏清单用 Mod ID 声明加载依赖；工坊配置用条目数字 ID 声明必需物品。Core 的工坊配置依赖 BaseLib，其他角色的工坊配置同时依赖 BaseLib 与独立 Core 条目。官方 ModUploader 读取 `workshop.json` 并同步条目依赖。[ModUploader 文档](https://github.com/megacrit/sts2-mod-uploader/tree/main/template)
 
 ## 2. 本体行为与 Core 需要补充的能力
 
@@ -52,6 +51,11 @@ Core 作为一个真正的游戏 Mod 独立维护，通过各角色现有的创�
 
 ```text
 STS2_ShoujoKagekiAijoCore/
+  ShoujoKagekiAijoCore.json  正式 Mod 清单
+  workshop.json            独立 Core 工坊配置
+  build.ps1                双版本构建与完整 Mod 目录
+  prepare-release.ps1      ZIP、哈希与工坊工作区
+  publish-workshop.ps1     官方 ModUploader 上传入口
   src/
     Bootstrap/             固定入口、候选发现、版本选择、启动诊断
     Api.V1/                面向角色作者的第一版公开接口
@@ -69,30 +73,53 @@ STS2_ShoujoKagekiAijoCore/
   tests/                   引导、二进制兼容、存档与游戏内验收
 ```
 
-工程目录按以上模块职责组织。各角色仓库通过固定发行版本或仓库引用取得产物，发布包携带同一官方构建生成的文件。Core 仓库同时维护游戏客户端、独立服务端和 Web 页。角色工坊包携带游戏客户端，服务端与 Web 页通过独立部署产物发布。
+工程目录按以上模块职责组织。各角色仓库通过固定发行版本或仓库引用取得 SDK。独立 Core 条目和 Karen 内嵌包使用同一官方构建产物。Core 仓库同时维护游戏客户端、独立服务端和 Web 页，服务端与 Web 页通过独立部署产物发布。
 
-### 3.2 角色工坊上传目录
+### 3.2 独立 Core 工坊工作区
 
 ```text
-WorkshopUpload/
+workshop/
+  workshop.json
+  image.png
+  mod_id.txt                 首次成功上传后生成，更新时沿用
+  content/
+    ShoujoKagekiAijoCore/
+      ShoujoKagekiAijoCore.json
+      ShoujoKagekiAijoCore.dll
+      core.bundle
+      lib/1.2.0/
+        api/ShoujoKagekiAijoCore.Api.V1.dll
+        stable/ShoujoKagekiAijoCore.Runtime.Stable.dll
+        beta/ShoujoKagekiAijoCore.Runtime.Beta.dll
+      resources/1.2.0/Core.Resources.pck
+      sdk/...
+```
+
+目录中的 `1.2.0` 为格式示例。Core 清单与引导 DLL 放在同一目录，业务文件按发行版本分组。`build.ps1` 生成完整 Core Mod，`prepare-release.ps1` 生成以上工作区、ZIP 和哈希，上传使用 `publish-workshop.ps1`。命令与首次发布、更新步骤见 [发布说明](RELEASING.md)。
+
+### 3.3 角色工坊上传内容
+
+```text
+KarenWorkshop/content/
+  ShoujoKagekiAijoKaren/
+    ShoujoKagekiAijoKaren.json
+    ShoujoKagekiAijoKaren.dll
+    ShoujoKagekiAijoKaren.pck
+    core.requirements
+    core.package.lock
+  ShoujoKagekiAijoCore/        与独立条目相同的完整官方发行包
+
+OtherRoleWorkshop/content/
   ShoujoKagekiJunna/
     ShoujoKagekiJunna.json
     ShoujoKagekiJunna.dll
     ShoujoKagekiJunna.pck
     core.requirements
+    core.package.lock
     lib/...
-  ShoujoKagekiAijoCore/
-    ShoujoKagekiAijoCore.json
-    ShoujoKagekiAijoCore.dll
-    core.bundle
-    lib/1.2.0/
-      api/ShoujoKagekiAijoCore.Api.V1.dll
-      stable/ShoujoKagekiAijoCore.Runtime.Stable.dll
-      beta/ShoujoKagekiAijoCore.Runtime.Beta.dll
-    resources/1.2.0/Core.Resources.pck
 ```
 
-目录中的 `1.2.0` 为格式示例。Core 清单与引导 DLL 放在同一目录，业务文件按发行版本分组。Karen 或其他角色采用同样的并列分发方式。
+`sdk/pack-character.ps1` 仅在 Mod ID 为 `ShoujoKagekiAijoKaren` 时复制 Core。其他 Mod 的工坊配置声明独立 Core 条目依赖。`core.package.lock` 记录构建输入，运行时依照清单与能力要求选择兼容 Core。
 
 `core.bundle` 与 `core.requirements` 使用 JSON 内容和上述固定扩展名。游戏递归扫描 `.json` 作为潜在 Mod 清单，这两类元数据使用专用扩展名以表达各自用途。
 
@@ -102,7 +129,7 @@ Core 的游戏清单声明 `has_dll`，公共资源包由选中版本的引导�
 
 ```mermaid
 flowchart TD
-    Packages[各角色工坊包携带 Core 发行包] --> Bootstrap[固定 Bootstrap DLL]
+    Packages[独立 Core 工坊条目与 Karen 内嵌包] --> Bootstrap[固定 Bootstrap DLL]
     Bootstrap --> Selection[选择兼容发行包并收敛重复条目]
     Selection --> Runtime[选中的业务 Runtime]
     Runtime --> Api[版本化作者接口]
@@ -120,7 +147,7 @@ flowchart TD
 | --- | --- | --- |
 | Bootstrap | 发现候选、读取元数据、选择发行包、去重、加载、早期失败报告 | 加载协议长期固定 |
 | Api.V1 | 作者可使用的公开类型、方法、事件和数据传输类型 | 同一接口主版本保持二进制兼容 |
-| Runtime | 模块生命周期、共享状态、规则调度、业务实现 | 通过角色包携带的发行包更新 |
+| Runtime | 模块生命周期、共享状态、规则调度、业务实现 | 通过独立 Core 订阅或 Karen 内嵌发行包更新 |
 | GameAdapter | 游戏与 BaseLib 的版本差异、反射扫描、序列化和原生钩子接入 | 正式版与测试版分别验证 |
 | Patches | 公共兼容补丁、玩法约束、适用范围及旧补丁交接 | 通过 GameAdapter 获取对应版本目标，集中注册与撤销 |
 | Modules | 配置、统计、诊断、启动画面、共享机制与工具 | 各自声明功能版本与存档格式 |
@@ -201,12 +228,13 @@ Core 发行包中的 `core.bundle` 至少包含引导协议、发行版本、公
 | 安装情况 | 选择结果 |
 | --- | --- |
 | 只装附带 Core 1.0 的 Karen | 采用 1.0 |
-| Karen 附带 1.0，Junna 附带 1.2，两个角色都使用接口 V1 | 采用共同兼容的 1.2 |
-| 两包均附带内容一致的 1.2 | 一份逻辑 Core 使用该发行包 |
+| 仅安装独立 Core 1.2 与依赖它的 Junna | 采用 1.2 |
+| Karen 附带 1.0，独立 Core 为 1.2，两个角色都使用接口 V1 | 采用共同兼容的 1.2 |
+| Karen 内嵌与独立条目均为内容一致的 1.2 | 一份逻辑 Core 使用该发行包 |
 | 较新包缺少当前正式版适配，旧包包含正式版适配 | 在覆盖当前目标的兼容候选中选择，并显示实际版本 |
 | 新角色需要新增功能，所有候选均缺少该功能 | 在角色进入模型初始化前报告所缺功能和要求版本 |
 
-每个角色发行包都应携带满足自身需求的完整 Core 发行包。角色作者可以单独更新自己的包，旧角色继续通过已发布接口使用被选中的兼容实现。
+Karen 发行包携带满足自身需求的完整 Core。其他角色通过独立 Core 工坊依赖取得兼容版本。角色作者更新自己的包时同步最低版本与能力要求，旧角色继续通过已发布接口使用被选中的兼容实现。
 
 ### 5.5 加载顺序与初始化前检查
 
@@ -282,7 +310,7 @@ Core 1.2 可以继续提供接口 V1。未来提供 V2 时，发行包同时保�
 
 旧版角色通过原接口运行。尚未接入 Core 的旧角色按自身实现处理其卡牌，共享闪耀以自动发现的次数声明、动态共享状态和已验证迁移适配为接入依据。
 
-Core 对普通玩家的更新流程为更新原角色包、重启游戏、由引导器选择兼容版本。业务代码在本次进程中保持固定。
+Core 对普通玩家的更新流程为更新独立 Core 订阅或 Karen 包、重启游戏、由引导器选择兼容版本。业务代码在本次进程中保持固定。
 
 ## 8. Core 内容清单
 
@@ -525,7 +553,7 @@ Core 配置升级、游戏对局存档迁移和服务端数据库迁移分别管
 
 Core 工程统一维护客户端采集器、数据接收服务、报错收集器和对应 Web 页。服务端采用现行 Python 3.12+ 与 SQLite 实现作为迁移基础。
 
-客户端随角色包分发。服务端与 Web 页单独部署，沿用 Karen 当前部署地址和生产数据。Core 默认建立公共日志观察点、持久队列和请求任务，从本体清单和模型归属读取角色身份与版本。
+客户端通过独立 Core 订阅或 Karen 内嵌包分发。服务端与 Web 页单独部署，沿用 Karen 当前部署地址和生产数据。Core 默认建立公共日志观察点、持久队列和请求任务，从本体清单和模型归属读取角色身份与版本。
 
 ### 10.2 地址与协议兼容
 
@@ -866,7 +894,7 @@ Core 按功能建立发现范围和健康状态。表现、导出、统计等功
 
 每个版本列出 Core 发行号、接口兼容范围、引导协议、两版游戏支持范围、BaseLib 要求、规则与格式版本、迁移内容、受影响模块和回退条件。
 
-角色作者携带新发行包前验证自己的已发布 DLL 与新业务包组合。Core 仓库保存受支持旧作者示例的编译产物或可重现构建引用，用于持续兼容检查。
+角色作者提高 Core 要求前验证自己的已发布 DLL 与新业务包组合；Karen 同时更新内嵌发行包。Core 仓库保存受支持旧作者示例的编译产物或可重现构建引用，用于持续兼容检查。
 
 文档中的验收表为后续实现与发布要求。本稿完成的是架构和接入规范整理，相关实现与实机兼容结果在各阶段交付时记录。
 

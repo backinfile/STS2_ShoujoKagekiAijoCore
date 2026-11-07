@@ -119,7 +119,7 @@ public static class BundleSelection
                 && SemVersion.Parse(x.Bundle.ApiVersion).CompareTo(SemVersion.Parse(r.MinimumApiVersion)) >= 0
                 && r.RequiredFeatures.All(f => x.Bundle.Features.Contains(f, StringComparer.Ordinal))))
             .OrderByDescending(x => SemVersion.Parse(x.Bundle.ReleaseVersion)).ThenBy(x => x.Source, StringComparer.Ordinal).ThenBy(x => x.Root, StringComparer.Ordinal).FirstOrDefault();
-        if (selected == null) throw new InvalidOperationException("没有共同兼容的 Core。请更新角色包，检查游戏版本、BaseLib、API 与必需功能。" +
+        if (selected == null) throw new InvalidOperationException("没有共同兼容的 Core。请更新 Core 工坊订阅或 Karen 包，检查游戏版本、BaseLib、API 与必需功能。" +
             string.Join(" ", requirements.Select(r => $"{r.ModId}: API {r.ApiMajor}/{r.MinimumApiVersion}, {string.Join(',', r.RequiredFeatures)}")));
         return selected;
     }

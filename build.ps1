@@ -34,7 +34,7 @@ foreach ($api in @('stable','beta')) {
 }
 Build-Core 'src/Bootstrap/ShoujoKagekiAijoCore.Bootstrap.csproj' $StableGameDir 'stable'
 Copy-Item -LiteralPath (Join-Path $root 'src/Bootstrap/bin/ExportRelease/net9.0/ShoujoKagekiAijoCore.dll') -Destination $staging
-$manifest = Get-Content -LiteralPath (Join-Path $root 'sdk/templates/ShoujoKagekiAijoCore.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+$manifest = Get-Content -LiteralPath (Join-Path $root 'ShoujoKagekiAijoCore.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 $manifest.version = $Version
 $manifest | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $staging 'ShoujoKagekiAijoCore.json') -Encoding UTF8
 New-Item -ItemType Directory -Force -Path (Join-Path $staging "resources/$Version"), (Join-Path $staging 'sdk') | Out-Null

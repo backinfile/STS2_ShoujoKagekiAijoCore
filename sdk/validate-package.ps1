@@ -1,4 +1,4 @@
-param([Parameter(Mandatory)][string]$CorePackage)
+param([Parameter(Mandatory)][string]$CorePackage, [switch]$Strict)
 $ErrorActionPreference = 'Stop'
 $root = [IO.Path]::GetFullPath($CorePackage).TrimEnd([IO.Path]::DirectorySeparatorChar)
 $bundle = Get-Content -LiteralPath (Join-Path $root 'core.bundle') -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -25,4 +25,14 @@ $manifest = Get-Content -LiteralPath (Join-Path $root 'ShoujoKagekiAijoCore.json
 if ($manifest.id -ne 'ShoujoKagekiAijoCore' -or $manifest.version -ne $bundle.releaseVersion) { throw 'Core manifest and bundle release identity differ.' }
 $api = [Reflection.AssemblyName]::GetAssemblyName((Join-Path $root $bundle.apiAssembly))
 if ($api.Name -ne 'ShoujoKagekiAijoCore.Api.V1' -or $api.Version -ne [Version]'1.0.0.0') { throw 'Unexpected Core API identity.' }
+if ($Strict) {
+    foreach ($file in Get-ChildItem -LiteralPath $root -Recurse -Force) {
+        if ($file.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Core package contains a link.' }
+        if ($file.PSIsContainer) { continue }
+        $relative = [IO.Path]::GetRelativePath($root, $file.FullName).Replace('\','/')
+        if ($relative -ne 'core.bundle' -and -not $bundle.files.PSObject.Properties[$relative]) {
+            throw "Core package contains an unlisted file: $relative"
+        }
+    }
+}
 [pscustomobject]@{ Root = $root; Bundle = $bundle }

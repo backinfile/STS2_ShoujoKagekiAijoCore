@@ -1,0 +1,10 @@
+{
+  "title": "ShoujoKagekiAijoCore",
+  "description": "少女歌剧系列 Mod 共用的基础 Mod，提供闪耀、公共配置、音乐播放器和数据服务。",
+  "visibility": "public",
+  "changeNote": null,
+  "tags": ["Tools & APIs"],
+  "dependencies": [3737335127],
+  "minBranch": null,
+  "maxBranch": null
+}

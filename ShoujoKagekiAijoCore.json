@@ -2,7 +2,7 @@
   "id": "ShoujoKagekiAijoCore",
   "name": "ShoujoKagekiAijoCore",
   "author": "ShoujoKageki Mod Team",
-  "description": "少女歌剧共享机制",
+  "description": "少女歌剧系列 Mod 共用的基础 Mod",
   "version": "1.0.1",
   "has_dll": true,
   "has_pck": false,

@@ -37,7 +37,7 @@
 - `ShoujoKagekiAijoCore` 是少女歌剧系列 Mod 共用的基础 Mod，逻辑 Mod ID 固定为 `ShoujoKagekiAijoCore`。
 - 仓库地址为 https://github.com/backinfile/STS2_ShoujoKagekiAijoCore 。文档中的项目入口使用 GitHub 地址，工作路径使用仓库相对路径。
 - 技术栈为 C# / .NET 9、Godot 4.5.1（MegaDot）、Harmony、BaseLib 3.4.7。当前适配正式版 v0.107.1 和测试版 v0.111.0。
-- Core 独立维护，由角色 Mod 随包携带。玩家更新原有角色订阅即可取得 Core。
+- Core 独立维护并作为创意工坊 Mod 发布。仅 Karen 内嵌完整 Core；Junna 及其他 Mod 通过创意工坊依赖独立 Core 条目。
 - 读取与修改源码、本地化和文档统一使用 UTF-8。机制扩展优先复用游戏原生 Model、Hook、Cmd 和 BaseLib。
 
 ## 阅读与代码入口
@@ -54,7 +54,7 @@
 | `src/Modules/` | 闪耀、公共配置、表现、音乐、遥测和导出 |
 | `src/Patches/` | 五轮书等公共兼容补丁 |
 | `resources/ShoujoKagekiAijoCore/` | 公共资源与各语言本地化 |
-| `sdk/` | 包校验、角色接入与随包分发工具 |
+| `sdk/` | 包校验、角色接入与 Karen 内嵌打包工具 |
 | `services/telemetry/` | Python / SQLite 对局与报错服务 |
 | `web/telemetry/`、`deploy/telemetry/` | Web 页面及部署文件 |
 | `tools/telemetry/` | 数据整理、资料与导出校验工具 |
@@ -92,7 +92,7 @@
 - 对局与报错上传、服务端处理和对应 Web 页面在本仓库维护。修改协议时保留旧记录读取、重试幂等及队列恢复行为。
 - 使用隔离数据库和回环接收地址验证上传，读取凭据由本地环境提供。服务运行与部署说明见 `services/telemetry/README.md`。
 
-## 构建与随包发布
+## 构建与发布
 
 ```powershell
 ./build.ps1 -StableGameDir <stable-game> -BetaGameDir <beta-game> -Godot <megadot-console> -TelemetryEndpointPath <local-endpoint-config>
@@ -100,8 +100,10 @@
 
 也可使用 `SHOUJO_STABLE_GAME`、`SHOUJO_BETA_GAME`、`GODOT_BIN` 提供环境路径。完整产物默认位于 `dist/ShoujoKagekiAijoCore/`，包括引导、API、双版本 Runtime、PCK、校验清单和 SDK。
 
-- 使用 `sdk/validate-package.ps1` 校验完整发行目录。角色通过 `sdk/pack-character.ps1` 随包携带官方 Core，维护声明及锁文件。
-- 一个工坊内容目录并列放置角色与 Core 两个 Mod 目录。检查角色清单、依赖顺序及两角色携带的 Core 文件哈希。
+- 根目录 `ShoujoKagekiAijoCore.json` 为正式 Mod 清单，`workshop.json` 为独立 Core 工坊配置。发布流程见 `docs/RELEASING.md`。
+- 使用 `sdk/validate-package.ps1` 校验完整发行目录，发布时加 `-Strict` 排除未列入校验清单的文件。`prepare-release.ps1` 生成 ZIP、哈希与独立工坊工作区，`publish-workshop.ps1` 调用官方 ModUploader 上传。
+- 角色通过 `sdk/pack-character.ps1` 生成需求声明和构建锁文件；仅 `ShoujoKagekiAijoKaren` 将完整 Core 并列复制到上传目录，其他 Mod 在工坊配置中声明独立 Core 条目的依赖。
+- 检查清单中的 BaseLib → Core → 角色依赖顺序。Karen 内嵌包与独立工坊包使用同一官方发行产物，核对 Core 文件哈希及并存时的择版结果。
 - Godot/MegaDot 打包使用具备正常编辑器目录和 .NET 运行库访问权限的 Windows 环境。遇到编辑器配置目录或程序集访问错误时，先核对执行权限。
 - 发布核对最终源码、资源、版本、依赖、包内文件及哈希，排除测试插件、凭据、日志和用户存档。工坊上传与服务部署按用户授权执行。
 
