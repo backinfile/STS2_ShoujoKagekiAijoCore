@@ -1,13 +1,16 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="referrer" content="no-referrer"><title>报错 · Core</title>
   <link rel="icon" href="assets/character_icon_karen.webp"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="errors.css">
+  <meta name="theme-color" content="#375d4c"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials"><link rel="apple-touch-icon" href="assets/app_icon_192.png">
+  <script src="client.js" defer></script>
   <script src="errors.js" defer></script>
 </head>
 <body>
-<header class="topbar"><a class="brand" href="./"><img src="assets/character_icon_karen.webp" alt="">Core<span>对局观察</span></a><nav aria-label="主导航"><a href="./#view=cards">卡牌统计</a><a href="./#view=compare">对比模式</a><a href="./#view=runs">对局记录</a><a href="errors.html" aria-current="page">报错</a></nav><span class="connection" id="connection" role="status">连接中</span><button id="refresh">刷新</button></header>
+<header class="topbar"><a class="brand" href="./"><img src="assets/character_icon_karen.webp" alt="">Core<span>对局观察</span></a><nav aria-label="主导航"><a href="./#view=cards">卡牌统计</a><a href="./#view=compare">对比模式</a><a href="./#view=runs">对局记录</a><a href="errors.html" aria-current="page">报错</a></nav><span class="connection" id="connection" role="status">连接中</span><button id="install" hidden>安装</button><button id="refresh">刷新</button></header>
 <main>
   <div class="page-heading"><h1>报错</h1><span id="total" role="status"></span></div>
   <form id="errorFilters" class="filters">
@@ -26,4 +29,5 @@
   <div id="pagination" class="pagination"></div>
   <footer><span id="capacity"></span><span id="updated">等待数据</span></footer>
 </main>
+<dialog id="errorSheet" class="card-sheet" aria-labelledby="errorSheetTitle"><div class="modal-top"><h2 id="errorSheetTitle">报错详情</h2><button id="closeErrorSheet" aria-label="关闭报错详情">×</button></div><div id="errorSheetBody"></div></dialog>
 </body></html>

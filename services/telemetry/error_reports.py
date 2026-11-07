@@ -2,15 +2,19 @@
 from protocol import core_context
 
 import hashlib
+import gzip
 import json
+import os
 import re
 import threading
 import time
 from pathlib import Path
 
 MAX_BODY = 64 * 1024
-MAX_GROUPS = 3000
-MAX_REPORTS = 50000
+MAX_GROUPS = int(os.environ.get("ERROR_MAX_GROUPS", "20000"))
+MAX_REPORTS = int(os.environ.get("ERROR_MAX_REPORTS", "250000"))
+if not 1 <= MAX_GROUPS <= 100000 or not 1 <= MAX_REPORTS <= 1000000:
+    raise ValueError("Error collection limits must be positive: groups <= 100000, reports <= 1000000")
 DAILY_REPORTS = 2000
 SOURCES = {"game", "engine", "shader", "stderr", "managed"}
 
@@ -132,6 +136,13 @@ class ErrorStore:
     def __init__(self, store):
         self.store = store
         with store.connect() as db:
+            exists = db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='error_groups'").fetchone()
+            columns = {row[1] for row in db.execute("PRAGMA table_info(error_groups)")} if exists else set()
+            legacy = exists and ("environment_id" not in columns or db.execute("SELECT 1 FROM error_groups WHERE environment_id IS NULL LIMIT 1").fetchone())
+        if legacy:
+            store.backup(store.path.parent / "backups" / ("before-error-compression-" + str(time.time_ns()) + ".sqlite3"))
+        with store.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
             db.execute("""CREATE TABLE IF NOT EXISTS error_groups (
                 id TEXT PRIMARY KEY, build TEXT NOT NULL, mod_version TEXT NOT NULL,
                 platform TEXT NOT NULL, source TEXT NOT NULL, message TEXT NOT NULL, stack TEXT NOT NULL,
@@ -139,6 +150,17 @@ class ErrorStore:
                 environment TEXT NOT NULL DEFAULT '{}')""")
             if "environment" not in {row[1] for row in db.execute("PRAGMA table_info(error_groups)")}:
                 db.execute("ALTER TABLE error_groups ADD COLUMN environment TEXT NOT NULL DEFAULT '{}'")
+            db.execute("CREATE TABLE IF NOT EXISTS error_environments (key TEXT PRIMARY KEY, metadata TEXT NOT NULL, payload BLOB NOT NULL)")
+            if "environment_id" not in {row[1] for row in db.execute("PRAGMA table_info(error_groups)")}:
+                db.execute("ALTER TABLE error_groups ADD COLUMN environment_id TEXT")
+            # The legacy rows and their references move in the same transaction.
+            environments = {}
+            for row in db.execute("SELECT id,environment FROM error_groups WHERE environment_id IS NULL").fetchall():
+                raw = row["environment"]
+                if raw not in environments:
+                    environments[raw] = self.environment(db, json.loads(raw))
+                key = environments[raw]
+                db.execute("UPDATE error_groups SET environment='{}',environment_id=? WHERE id=?", (key, row["id"]))
             db.execute("CREATE INDEX IF NOT EXISTS errors_last ON error_groups(last_seen DESC,id)")
             db.execute("""CREATE TABLE IF NOT EXISTS error_reports (
                 id TEXT PRIMARY KEY, session TEXT NOT NULL, group_id TEXT NOT NULL,
@@ -146,6 +168,24 @@ class ErrorStore:
                 received INTEGER NOT NULL)""")
             db.execute("CREATE INDEX IF NOT EXISTS error_reports_group ON error_reports(group_id,session)")
             db.execute("CREATE INDEX IF NOT EXISTS error_reports_received ON error_reports(received)")
+
+    @staticmethod
+    def environment(db, environment):
+        raw = json.dumps(environment, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
+        key = hashlib.sha256(raw).hexdigest()
+        context = environment.get("core_telemetry") or {}
+        metadata = {"mods": [{"id": mod["id"]} for mod in environment.get("mods", [])]}
+        if context:
+            metadata["core_telemetry"] = {name: context[name] for name in ("core_version", "game_target")}
+            metadata["core_telemetry"]["source_mods"] = [{"id": mod["id"]} for mod in context.get("source_mods", [])]
+        db.execute("INSERT OR IGNORE INTO error_environments VALUES (?,?,?)",
+                   (key, json.dumps(metadata, separators=(",", ":")), gzip.compress(raw, compresslevel=6)))
+        return key
+
+    @staticmethod
+    def restore_environment(row):
+        raw = row.get("environment_payload")
+        return json.loads(gzip.decompress(raw)) if raw is not None else json.loads(row["environment"])
 
     def upload(self, data):
         item = validate(data)
@@ -171,8 +211,9 @@ class ErrorStore:
                 environment = {key: item[key] for key in ("os", "game_commit", "mods", "mods_truncated")}
                 if "core_telemetry" in item:
                     environment["core_telemetry"] = item["core_telemetry"]
-                db.execute("INSERT INTO error_groups VALUES (?,?,?,?,?,?,?,?,?,0,?)",
-                           tuple(item[key] for key in ("fingerprint", "build", "mod_version", "platform", "source", "message", "stack", "first_seen", "last_seen")) + (json.dumps(environment, ensure_ascii=False),))
+                key = self.environment(db, environment)
+                db.execute("INSERT INTO error_groups (id,build,mod_version,platform,source,message,stack,first_seen,last_seen,occurrences,environment,environment_id) VALUES (?,?,?,?,?,?,?,?,?,0,?,?)",
+                           tuple(item[key] for key in ("fingerprint", "build", "mod_version", "platform", "source", "message", "stack", "first_seen", "last_seen")) + ("{}", key))
             delta = item["count"] - (old["count"] if old else 0)
             db.execute("""UPDATE error_groups SET occurrences=occurrences+?,
                 first_seen=MIN(first_seen,?),last_seen=MAX(last_seen,?) WHERE id=?""",
@@ -186,6 +227,8 @@ class ErrorStore:
         return 200 if old else 201, {"status": "ok", "id": item["fingerprint"]}
 
     def listing(self, query):
+        from_groups = " FROM error_groups LEFT JOIN error_environments AS env ON env.key=error_groups.environment_id"
+        metadata = "COALESCE(env.metadata,error_groups.environment)"
         clauses, values = [], []
         for name in ("build", "mod_version", "source", "platform"):
             value = query.get(name, ["all"])[0]
@@ -199,13 +242,13 @@ class ErrorStore:
             if len(value) > 120:
                 raise InvalidError("invalid_filter")
             if value != "all":
-                clauses.append("json_extract(environment, '$.core_telemetry." + name + "')=?")
+                clauses.append("json_extract(" + metadata + ", '$.core_telemetry." + name + "')=?")
                 values.append(value)
         source_mod = query.get("source_mod", ["all"])[0]
         if len(source_mod) > 180:
             raise InvalidError("invalid_filter")
         if source_mod != "all":
-            clauses.append("(EXISTS (SELECT 1 FROM json_each(error_groups.environment, '$.mods') AS mod WHERE json_extract(mod.value, '$.id')=?) OR EXISTS (SELECT 1 FROM json_each(error_groups.environment, '$.core_telemetry.source_mods') AS mod WHERE json_extract(mod.value, '$.id')=?))")
+            clauses.append("(EXISTS (SELECT 1 FROM json_each(" + metadata + ", '$.mods') AS mod WHERE json_extract(mod.value, '$.id')=?) OR EXISTS (SELECT 1 FROM json_each(" + metadata + ", '$.core_telemetry.source_mods') AS mod WHERE json_extract(mod.value, '$.id')=?))")
             values.extend((source_mod, source_mod))
         search = query.get("search", [""])[0].strip()
         if len(search) > 120:
@@ -221,28 +264,47 @@ class ErrorStore:
             page = max(1, min(100000, int(query.get("page", ["1"])[0])))
         except ValueError as exc:
             raise InvalidError("invalid_page") from exc
+        compact = query.get("compact", ["0"])[0] == "1"
+        environment_column = "" if compact else "environment,env.payload AS environment_payload,"
         with self.store.connect() as db:
-            total = db.execute("SELECT COUNT(*) FROM error_groups" + where, values).fetchone()[0]
+            total = db.execute("SELECT COUNT(*)" + from_groups + where, values).fetchone()[0]
             page = min(page, max(1, (total + 19) // 20))
-            rows = db.execute("SELECT id,build,mod_version,platform,source,message,first_seen,last_seen,occurrences,environment,"
-                              "(SELECT COUNT(DISTINCT session) FROM error_reports WHERE group_id=error_groups.id) AS sessions "
-                              "FROM error_groups" + where + " ORDER BY " + order + " LIMIT 20 OFFSET ?", values + [(page - 1) * 20]).fetchall()
+            rows = db.execute("SELECT id,build,mod_version,platform,source,message,first_seen,last_seen,occurrences," + environment_column +
+                              "(SELECT COUNT(DISTINCT session) FROM error_reports WHERE group_id=error_groups.id) AS sessions " +
+                              from_groups + where + " ORDER BY " + order + " LIMIT 20 OFFSET ?", values + [(page - 1) * 20]).fetchall()
             builds = [row[0] for row in db.execute("SELECT DISTINCT build FROM error_groups ORDER BY build")]
             versions = [row[0] for row in db.execute("SELECT DISTINCT mod_version FROM error_groups ORDER BY mod_version")]
-            contexts = [json.loads(row[0]) for row in db.execute("SELECT DISTINCT environment FROM error_groups")]
-            core_versions = sorted({value["core_telemetry"]["core_version"] for value in contexts if value.get("core_telemetry")})
-            source_mods = sorted({mod["id"] for value in contexts for mod in value.get("mods", []) + value.get("core_telemetry", {}).get("source_mods", [])})
+            core_versions = [row[0] for row in db.execute(
+                "SELECT DISTINCT json_extract(metadata, '$.core_telemetry.core_version') AS version "
+                "FROM error_environments WHERE version IS NOT NULL ORDER BY version")]
+            source_mods = [row[0] for row in db.execute(
+                "SELECT json_extract(mod.value, '$.id') AS id FROM error_environments, json_each(metadata, '$.mods') AS mod "
+                "UNION SELECT json_extract(mod.value, '$.id') AS id FROM error_environments, "
+                "json_each(metadata, '$.core_telemetry.source_mods') AS mod ORDER BY id")]
+            stored_groups = db.execute("SELECT COUNT(*) FROM error_groups").fetchone()[0]
             stored = db.execute("SELECT COUNT(*) FROM error_reports").fetchone()[0]
-        return {"items": [dict(row) | {"core_telemetry": json.loads(row["environment"]).get("core_telemetry")} for row in rows], "total": total, "page": page,
+        items = []
+        for row in rows:
+            item = dict(row)
+            if not compact:
+                environment = self.restore_environment(item)
+                item.pop("environment_payload", None)
+                item["environment"] = json.dumps(environment, ensure_ascii=False)
+                item["core_telemetry"] = environment.get("core_telemetry")
+            items.append(item)
+        return {"items": items, "total": total, "page": page,
                 "pages": max(1, (total + 19) // 20), "builds": builds, "mod_versions": versions,
-                "stored_reports": stored, "report_limit": MAX_REPORTS, "group_limit": MAX_GROUPS,
+                "stored_reports": stored, "stored_groups": stored_groups, "report_limit": MAX_REPORTS, "group_limit": MAX_GROUPS,
                 "verification": "unverified_client", "core_versions": core_versions, "source_mods": source_mods}
 
     def detail(self, fingerprint):
         with self.store.connect() as db:
-            row = db.execute("SELECT * FROM error_groups WHERE id=?", (fingerprint,)).fetchone()
+            row = db.execute("SELECT error_groups.*,env.payload AS environment_payload FROM error_groups "
+                             "LEFT JOIN error_environments AS env ON env.key=error_groups.environment_id WHERE id=?", (fingerprint,)).fetchone()
         if not row:
             return None
         result = dict(row)
-        environment = json.loads(result.pop("environment"))
+        environment = self.restore_environment(result)
+        for key in ("environment", "environment_id", "environment_payload"):
+            result.pop(key, None)
         return result | environment | {"verification": "unverified_client"}

@@ -5,3 +5,15 @@
 #errorFilters>button{align-self:end}.error-row{display:block;width:100%;max-width:380px;text-align:left;border:0;background:none;white-space:normal;overflow-wrap:anywhere}.error-row strong{font-weight:500}.error-row small,#errors td>small{display:block;margin-top:6px}
 #errors table td:first-child{min-width:220px;max-width:400px}#detail{display:block;min-width:0;overflow-wrap:anywhere}#detail h2{font-size:15px;white-space:pre-wrap}#detail pre{font:12px/1.7 Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;max-height:60vh;overflow:auto}#detail dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;margin:24px 0}#detail dt{color:var(--muted)}#detail dd{margin:0}#detail details{margin-top:24px}#detail summary{cursor:pointer}#detail code{font-size:11px}
 @media(max-width:800px){.topbar nav a{flex:1;padding:0 8px;font-size:12px}.errors-workbench{grid-template-columns:minmax(0,1fr)}#errorFilters{grid-template-columns:repeat(2,minmax(0,1fr))}#detail{scroll-margin-top:12px}#errors table{min-width:760px}}
+
+#errorSheetBody{padding:18px 20px max(20px,env(safe-area-inset-bottom));overflow:auto;max-height:calc(88dvh - 74px);overflow-wrap:anywhere}
+#errorSheetBody h2{font-size:16px;white-space:pre-wrap}#errorSheetBody dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;margin:24px 0}#errorSheetBody dt{color:var(--muted)}#errorSheetBody dd{margin:0}#errorSheetBody pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.7 Consolas,monospace}#errorSheetBody details{margin-top:24px}
+@media(max-width:800px){
+ #errors table,#errors tbody{display:block;min-width:0}#errors thead{display:none}
+ #errors tr{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;padding:14px;border-bottom:1px solid var(--line)}
+ #errors td{position:static;display:block;padding:0;border:0;white-space:normal;overflow-wrap:anywhere;min-width:0}
+ #errors table td:first-child{grid-column:1/-1;min-width:0;max-width:none;background:transparent}.error-row{max-width:none;padding:0;min-height:44px}
+ #errors td[data-label]::before{content:attr(data-label);display:block;font-size:11px;color:var(--muted);margin-bottom:4px}
+ #errors td:last-child{grid-column:1/-1}#errorFilters input{min-height:44px}
+ #detail:empty{display:none}
+}

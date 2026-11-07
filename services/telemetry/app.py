@@ -431,7 +431,25 @@ class Store:
             page = min(page, max(1, (count + 19) // 20))
             rows = db.execute("SELECT facts,received,duplicates FROM runs" + where +
                               " ORDER BY received DESC,id LIMIT 20 OFFSET ?", values + [(page - 1) * 20]).fetchall()
-        return {"items": [self.summary(r) for r in rows], "total": count, "page": page, "page_size": 20}
+        return {"items": [self.summary(r) for r in rows], "total": count, "page": page, "page_size": 20, "filters": self.run_filters(query)}
+
+    def run_filters(self, query):
+        where, values = self.where(query)
+        with self.connect() as db:
+            builds = [r[0] for r in db.execute("SELECT DISTINCT build FROM runs ORDER BY build DESC")]
+            # Read only filter fields; card aggregation is exclusive to the statistics view.
+            rows = db.execute("SELECT json_extract(facts, '$.core_telemetry') AS context, "
+                              "(SELECT json_group_array(json_extract(value, '$.character')) "
+                              "FROM json_each(runs.facts, '$.seats')) AS characters FROM runs" + where, values)
+            characters, core_versions, source_mods = set(), set(), set()
+            for row in rows:
+                context = json.loads(row["context"]) if row["context"] else {}
+                characters.update(json.loads(row["characters"]))
+                if context.get("core_version"):
+                    core_versions.add(context["core_version"])
+                source_mods.update(mod["id"] for mod in context.get("source_mods", []))
+        return {"builds": builds, "characters": sorted(characters),
+                "core_versions": sorted(core_versions), "source_mods": sorted(source_mods)}
 
     def stats(self, query):
         where, values = self.where(query)
@@ -659,12 +677,24 @@ class Handler(BaseHTTPRequestHandler):
         # Request URLs and headers can contain access secrets; never log them.
         pass
 
-    def respond(self, status, value, content_type="application/json; charset=utf-8", download=False):
+    def respond(self, status, value, content_type="application/json; charset=utf-8", download=False, cache_control="no-store", etag=None):
         raw = value if isinstance(value, bytes) else dumps(value).encode()
+        encoding = None
+        if status == 200 and not download and len(raw) >= 1024 and content_type.startswith(("text/", "application/json", "application/manifest+json")):
+            accepted = [item.strip().split(";", 1)[0] for item in self.headers.get("Accept-Encoding", "").split(",")
+                        if not re.search(r";\s*q=0(?:\.0*)?(?:\s|$)", item)]
+            if "gzip" in accepted:
+                raw = gzip.compress(raw, compresslevel=4)
+                encoding = "gzip"
         self.send_response(status)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(raw)))
-        self.send_header("Cache-Control", "no-store")
+        self.send_header("Cache-Control", cache_control)
+        self.send_header("Vary", "Accept-Encoding")
+        if encoding:
+            self.send_header("Content-Encoding", encoding)
+        if etag:
+            self.send_header("ETag", etag)
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Connection", "close")
         if status == 429:
@@ -684,7 +714,7 @@ class Handler(BaseHTTPRequestHandler):
             self.get()
         except (Invalid, InvalidError) as exc:
             self.respond(400, {"error": str(exc)})
-        except (BrokenPipeError, ConnectionResetError, socket.timeout):
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, socket.timeout):
             pass
         except Exception:
             LOG.exception("read_failed")
@@ -719,13 +749,19 @@ class Handler(BaseHTTPRequestHandler):
             raw = gzip.decompress(row["payload"])
             return self.respond(200, {"summary": self.server.store.summary(row),
                                       "history": safe_display(json.loads(raw))})
-        if path in ("/", "/index.html", "/app.js", "/style.css", "/catalog.json", "/relics.json", "/characters.json", "/errors.html", "/errors.js", "/errors.css") or re.fullmatch(r"/assets/[a-z0-9_]+\.(?:webp|png)", path):
+        if path in ("/", "/index.html", "/app.js", "/style.css", "/catalog.json", "/relics.json", "/characters.json", "/errors.html", "/errors.js", "/errors.css", "/client.js", "/sw.js", "/manifest.webmanifest", "/offline.html") or re.fullmatch(r"/assets/[a-z0-9_]+\.(?:webp|png)", path):
             file = WEB / ("index.html" if path == "/" else path.lstrip("/"))
             if file.is_file():
                 mime = {".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8",
                         ".css": "text/css; charset=utf-8", ".json": "application/json; charset=utf-8",
-                        ".webp": "image/webp", ".png": "image/png"}[file.suffix]
-                return self.respond(200, file.read_bytes(), mime)
+                        ".webp": "image/webp", ".png": "image/png", ".webmanifest": "application/manifest+json; charset=utf-8"}[file.suffix]
+                stat = file.stat()
+                etag = f'W/"{stat.st_mtime_ns:x}-{stat.st_size:x}"'
+                # Revalidate application code; reuse unchanged art and catalogues across visits.
+                cache = "private, max-age=3600" if file.suffix in (".webp", ".png", ".json") else "private, no-cache"
+                if self.headers.get("If-None-Match") == etag:
+                    return self.respond(304, b"", mime, cache_control=cache, etag=etag)
+                return self.respond(200, file.read_bytes(), mime, cache_control=cache, etag=etag)
         self.respond(404, {"error": "not_found"})
 
     def do_POST(self):
@@ -764,7 +800,7 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(400, {"error": str(exc)})
         except CapacityError as exc:
             self.respond(507, {"error": str(exc)})
-        except (BrokenPipeError, ConnectionResetError, socket.timeout):
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, socket.timeout):
             pass
         except Exception:
             LOG.exception("upload_failed")

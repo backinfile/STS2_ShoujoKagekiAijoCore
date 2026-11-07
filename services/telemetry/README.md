@@ -64,3 +64,9 @@ node tools/telemetry/test_web.cjs
 ```
 
 旧服务回归用例保留在 test_app.py 和 test_errors.py，按本次改动选择具体 unittest 方法。各测试使用临时数据库与本地随机端口。
+
+## 报错容量与压缩
+
+默认接收上限为 20,000 类错误、250,000 条报告，可通过 `ERROR_MAX_GROUPS`、`ERROR_MAX_REPORTS` 配置。完整环境按摘要共享并 gzip 压缩，筛选元数据单独存放。首次迁移会生成 `backups/before-error-compression-*.sqlite3` 并在事务内完成。报告身份、累计计数、乱序重试和 Mod/Core 版本信息保持原有含义。
+
+报错页面使用 `GET /api/errors?compact=1` 获取摘要，打开详情时再还原环境和调用栈。容量保护、每日预算及请求限流继续生效。

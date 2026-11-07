@@ -139,6 +139,65 @@ class ErrorTests(unittest.TestCase):
             self.assertEqual(self.errors.upload(fixture(report_id="c" * 32))[0], 429)
         self.assertEqual(Store(self.store.path).errors.listing({})["total"], 1)
 
+    def test_accepts_new_errors_beyond_legacy_group_capacity(self):
+        data = fixture()
+        _, original = self.errors.upload(data)
+        with self.store.connect() as db:
+            row = db.execute("SELECT * FROM error_groups").fetchone()
+            db.executemany("INSERT INTO error_groups (id,build,mod_version,platform,source,message,stack,first_seen,last_seen,occurrences,environment) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                           [(format(i, "064x"), *tuple(row)[1:11]) for i in range(2999)])
+        status, result = self.errors.upload(fixture(report_id="c" * 32, message="new capacity regression"))
+        self.assertEqual(status, 201)
+        self.assertEqual(self.errors.upload(data | {"count": 8})[0], 200)
+        restarted = Store(self.store.path).errors
+        self.assertEqual(restarted.detail(original["id"])["occurrences"], 8)
+        self.assertIsNotNone(restarted.detail(result["id"]))
+        self.assertEqual(restarted.listing({})["total"], 3001)
+
+    def test_compact_list_preserves_detail_and_filters(self):
+        _, result = self.errors.upload(fixture())
+        compact = self.errors.listing({"compact": ["1"]})
+        rich = self.errors.listing({})
+        self.assertNotIn("environment", compact["items"][0])
+        self.assertIn("environment", rich["items"][0])
+        self.assertEqual(compact["items"][0]["id"], result["id"])
+        self.assertEqual(compact["source_mods"], ["BaseLib"])
+        self.assertEqual(compact["items"][0]["sessions"], 1)
+        self.assertEqual(self.errors.detail(result["id"])["stack"], fixture()["stack"])
+
+    def test_environments_are_shared_compressed_and_legacy_rows_migrate(self):
+        import gzip
+        import sqlite3
+        data = fixture()
+        _, first = self.errors.upload(data)
+        self.errors.upload(fixture(report_id="c" * 32, message="different error"))
+        with self.store.connect() as db:
+            environments = db.execute("SELECT payload FROM error_environments").fetchall()
+            self.assertEqual(len(environments), 1)
+            self.assertEqual(json.loads(gzip.decompress(environments[0][0]))["mods"], data["mods"])
+        # Build the pre-compression schema with one accepted cumulative report.
+        legacy_path = Path(self.tmp.name) / "legacy.sqlite3"
+        with sqlite3.connect(legacy_path) as db:
+            db.execute("CREATE TABLE error_groups (id TEXT PRIMARY KEY, build TEXT NOT NULL, mod_version TEXT NOT NULL, "
+                       "platform TEXT NOT NULL, source TEXT NOT NULL, message TEXT NOT NULL, stack TEXT NOT NULL, "
+                       "first_seen INTEGER NOT NULL, last_seen INTEGER NOT NULL, occurrences INTEGER NOT NULL, environment TEXT NOT NULL)")
+            environment = {key: data[key] for key in ("os", "game_commit", "mods", "mods_truncated")}
+            db.execute("INSERT INTO error_groups VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                       (first["id"], *[data[key] for key in ("build", "mod_version", "platform", "source", "message", "stack", "first_seen", "last_seen", "count")], json.dumps(environment)))
+            db.execute("CREATE TABLE error_reports (id TEXT PRIMARY KEY, session TEXT NOT NULL, group_id TEXT NOT NULL, "
+                       "count INTEGER NOT NULL, first_seen INTEGER NOT NULL, last_seen INTEGER NOT NULL, received INTEGER NOT NULL)")
+            db.execute("INSERT INTO error_reports VALUES (?,?,?,?,?,?,?)",
+                       (data["report_id"], data["session_id"], first["id"], data["count"], data["first_seen"], data["last_seen"], int(time.time())))
+        db.close()
+        migrated = Store(legacy_path).errors
+        self.assertTrue(list((legacy_path.parent / "backups").glob("before-error-compression-*.sqlite3")))
+        self.assertEqual(migrated.detail(first["id"])["mods"], data["mods"])
+        self.assertEqual(migrated.listing({"source_mod": ["BaseLib"]})["total"], 1)
+        self.assertEqual(json.loads(migrated.listing({})["items"][0]["environment"]), environment)
+        self.assertEqual(migrated.upload(data)[0], 200)
+        self.assertEqual(migrated.upload(data | {"count": 8})[0], 200)
+        self.assertEqual(Store(legacy_path).errors.detail(first["id"])["occurrences"], 8)
+
     def test_limiter_blocks_single_source_and_rotating_sources(self):
         now = [0.]
         limiter = ErrorLimiter(lambda: now[0])

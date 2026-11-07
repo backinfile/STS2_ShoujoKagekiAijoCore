@@ -28,7 +28,7 @@ const node = id => {
   return nodes.get(id);
 };
 const document = {getElementById:node, querySelectorAll(){return []}, activeElement:{tagName:'BODY',dataset:{}}};
-const context = vm.createContext({document, URLSearchParams, Blob, setTimeout:()=>0, clearTimeout(){},
+const context = vm.createContext({document, URLSearchParams, Blob, AbortController, setTimeout:()=>0, clearTimeout(){},
   location:{hash:''}, history:{replaceState(_state,_title,hash){context.savedHash=hash}},
   matchMedia:()=>({matches:false}), saved:null, savedHash:'', exports:0});
 vm.runInContext(source, context);
@@ -71,7 +71,10 @@ context.sample = {cards,seats:1,runs:1,wins:1,excluded:0,missing_picked:1,builds
   run(`api=async path=>{requests.push(path);return path.startsWith('api/stats')?sample:{items:[],page:1,total:0,page_size:20}}`);
   node('character').value='SILENT';
   await run('load()');
+  assert.ok(!context.requests.some(path=>path.startsWith('api/runs?')),'cards view must not load runs');
+  run("state.view='runs'");await run('load()');
   assert.ok(context.requests.find(path=>path.startsWith('api/runs?')).includes('character=SILENT'));
+  run("state.view='cards'");await run('load()');
   assert.ok(context.requests.find(path=>path.startsWith('api/stats?')).includes('character=SILENT'));
   run('csv()');
   assert.ok((await context.saved.text()).includes('"character","SILENT"'));
@@ -144,6 +147,26 @@ context.sample = {cards,seats:1,runs:1,wins:1,excluded:0,missing_picked:1,builds
   run(`state.view='runs';state.runs.items=[{id:'fixture',received_at:0,start_time:0,outcome:'win',floor:1,ascension:0,player_count:1,build:' \t=1+1'}];csv()`);
   assert.ok((await context.saved.text()).includes("' \t=1+1"));
   console.log('PASS CSV formula prefix escaped');
+
+  context.pending=[];
+  run("params=()=>new URLSearchParams({build:'slow'});api=(path,signal)=>new Promise(resolve=>pending.push({path,signal,resolve}));state.view='cards'");
+  const slow=run('load()');run("params=()=>new URLSearchParams({build:'fast'})");const fast=run('load()');
+  assert.equal(context.pending[0].signal.aborted,true,'new filters cancel the old request');
+  context.pending[1].resolve(context.sample);await fast;
+  context.pending[0].resolve({...context.sample,seats:999});await slow;
+  assert.equal(run('state.stats.seats'),1,'late results cannot overwrite current filters');
+  run("params=()=>new URLSearchParams({ascension:'0'});api=async()=>sample");
+  console.log('PASS superseded requests are cancelled and late results ignored');
+
+  context.largeSample={...context.sample,cards:Array.from({length:185},(_,i)=>({...cards[0],id:'CARD_'+i,name:'卡牌 '+i}))};
+  node('owner').value='all';node('character').value='all';node('group').value='none';
+  run("state.view='cards';state.display='table';state.stats=largeSample;state.cardLimit=60;renderCards()");
+  assert.equal((node('cards').innerHTML.match(/<tr data-card=/g)||[]).length,60);
+  assert.ok(node('cards').innerHTML.includes('data-more'));
+  run('state.cardLimit=120;renderCards();csv()');
+  assert.equal((node('cards').innerHTML.match(/<tr data-card=/g)||[]).length,120);
+  assert.ok((await context.saved.text()).includes('CARD_184'),'CSV contains all filtered rows');
+  console.log('PASS progressive rows preserve full CSV export');
 
   context.legacy={summary:{id:'fixture',start_time:0,outcome:'win',ascension:0,floor:1,duration:10,build:'fixture'},
     history:{players:[{id:1,character:'KAREN',deck:[],relics:[null]}],map_point_history:[[{map_point_type:'event',rooms:[null],player_stats:[{player_id:1,rest_site_choices:'rest'}]}]]}};
