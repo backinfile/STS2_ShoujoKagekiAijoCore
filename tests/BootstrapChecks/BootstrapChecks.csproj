@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../src/Bootstrap/Bootstrap.cs" Link="Bootstrap.cs" />
+    <Compile Include="../../src/Bootstrap/Bundle.cs" Link="Bundle.cs" />
+  </ItemGroup>
+</Project>
