@@ -95,6 +95,7 @@ script = ExtResource("5_oq2vo")
 AutoSizeEnabled = false
 
 [node name="ControllerIcon" type="TextureRect" parent="."]
+visible = false
 unique_name_in_owner = true
 material = SubResource("ShaderMaterial_t1sul")
 layout_mode = 1
