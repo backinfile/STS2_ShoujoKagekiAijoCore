@@ -27,7 +27,8 @@ from error_reports import ErrorStore, ErrorLimiter, InvalidError, MAX_BODY as MA
 ROOT = Path(__file__).resolve().parent
 WEB = Path(os.environ.get("TELEMETRY_WEB_ROOT", str(ROOT / "web" if (ROOT / "web").is_dir() else ROOT.parents[1] / "web/telemetry")))
 MAX_BODY = 8 * 1024 * 1024
-SHINE_VALUES = {"karen_shine_current", "karen_shine_max", "core_shine_current", "core_shine_max"}
+SHINE_VALUES = {prefix + name for prefix in ("", "CardModel_")
+                for name in ("karen_shine_current", "karen_shine_max", "core_shine_current", "core_shine_max")}
 STARTERS = {"KAREN_STRIKE", "KAREN_DEFEND", "KAREN_SHINE_STRIKE", "KAREN_FALL"}
 MODEL = re.compile(r"[A-Za-z0-9_.:\-]{1,180}\Z")
 CATALOG = json.loads((WEB / "catalog.json").read_text(encoding="utf-8"))

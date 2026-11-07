@@ -190,10 +190,20 @@ class CollectorTests(unittest.TestCase):
                 self.store.stats({"character": [value]})
 
     def test_parser_strips_shine_only_and_rejects_duplicate_keys(self):
-        self.data["players"][0]["deck"][0]["props"] = {"ints": [
-            {"name": "karen_shine_current", "value": 3}, {"name": "other", "value": 9}]}
+        counters = [prefix + field for prefix in ("", "CardModel_")
+                    for field in ("karen_shine_current", "karen_shine_max", "core_shine_current", "core_shine_max")]
+        card = self.data["players"][0]["deck"][0]
+        card["props"] = {"ints": [{"name": name, "value": 3} for name in counters] + [{"name": "other", "value": 9}]}
+        card.update({name: 3 for name in counters})
+        card["core_shine_exhaust_count"] = 2
         clean = parse_history(json.dumps(self.data).encode())
         self.assertEqual(clean["players"][0]["deck"][0]["props"]["ints"], [{"name": "other", "value": 9}])
+        self.assertFalse(set(counters) & clean["players"][0]["deck"][0].keys())
+        self.assertEqual(clean["players"][0]["deck"][0]["core_shine_exhaust_count"], 2)
+        status, result = self.store.upload(clean)
+        saved = json.loads(gzip.decompress(self.store.detail(result["run_id"])["payload"]))
+        self.assertEqual(status, 201)
+        self.assertEqual(saved, clean)
         for body in (b'{"a":1,"a":2}', b'{"x":NaN}', b'not json'):
             with self.assertRaises(Invalid):
                 parse_history(body)
@@ -321,12 +331,12 @@ class CollectorTests(unittest.TestCase):
             self.store.rebuild(backup)
 
     def test_native_catalog_covers_professions_and_colorless_images(self):
-        from app import CATALOG, ROOT
+        from app import CATALOG, WEB
         for cid, owner in [("COORDINATE", "colorless"), ("TAG_TEAM", "colorless"), ("STRIKE_IRONCLAD", "ironclad"),
                            ("STRIKE_SILENT", "silent"), ("STRIKE_DEFECT", "defect"),
                            ("STRIKE_REGENT", "regent"), ("STRIKE_NECROBINDER", "necrobinder")]:
             self.assertEqual(CATALOG[cid]["owner"], owner)
-            self.assertTrue((ROOT / "web" / CATALOG[cid]["image"]).is_file())
+            self.assertTrue((WEB / CATALOG[cid]["image"]).is_file())
 
     def test_rebuild_backs_up_and_changes_only_derived_facts(self):
         status, result = self.store.upload(self.data)

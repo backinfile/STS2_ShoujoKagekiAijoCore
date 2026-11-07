@@ -22,6 +22,7 @@ internal sealed class RunHistoryUploadQueue
     private readonly Uri _endpoint;
     private readonly HttpClient _client;
     private readonly Func<bool> _enabled;
+    private readonly Func<string, string>? _preparePayload;
     private readonly Action<string> _log;
     private readonly Func<DateTimeOffset> _clock;
     private readonly Func<TimeSpan, Task> _delay;
@@ -46,7 +47,7 @@ internal sealed class RunHistoryUploadQueue
     internal RunHistoryUploadQueue(string root, Uri endpoint, HttpClient client, Func<bool> enabled,
         Action<string> log, Func<DateTimeOffset>? clock = null, Func<TimeSpan, Task>? delay = null,
         int maxItems = MaxItems, long maxBytes = MaxBytes, int maxPayloadBytes = 8 * 1024 * 1024,
-        TimeSpan requestInterval = default, bool conflictIsSuccess = true)
+        TimeSpan requestInterval = default, bool conflictIsSuccess = true, Func<string, string>? preparePayload = null)
     {
         _maxItems = maxItems; _maxBytes = maxBytes; _maxPayloadBytes = maxPayloadBytes;
         _requestInterval = requestInterval;
@@ -55,6 +56,7 @@ internal sealed class RunHistoryUploadQueue
         _directory = Path.Combine(root, Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(endpoint.AbsoluteUri)))[..16]);
         _client = client;
         _enabled = enabled;
+        _preparePayload = preparePayload;
         _log = log;
         _clock = clock ?? (() => DateTimeOffset.UtcNow);
         _delay = delay ?? (duration => Task.Delay(duration));
@@ -73,6 +75,7 @@ internal sealed class RunHistoryUploadQueue
 
     internal bool Enqueue(string payload)
     {
+        payload = _preparePayload?.Invoke(payload) ?? payload;
         byte[] bytes = Encoding.UTF8.GetBytes(payload);
         if (bytes.Length > _maxPayloadBytes)
         {
@@ -114,6 +117,7 @@ internal sealed class RunHistoryUploadQueue
                 }
                 if (!_enabled()) return;
                 _nextRequest = _clock() + _requestInterval;
+                pending.Payload = _preparePayload?.Invoke(pending.Payload) ?? pending.Payload;
                 pending.Attempts++;
                 // Persist before sending so a process exit cannot lose the original JSON.
                 Write(path, pending);

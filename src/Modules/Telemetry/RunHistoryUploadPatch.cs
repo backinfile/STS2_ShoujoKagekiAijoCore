@@ -47,7 +47,8 @@ internal static class RunHistoryUploadPatch
             if (!Queues.TryGetValue(endpoint.AbsoluteUri, out var queue))
             {
                 queue = new RunHistoryUploadQueue(Path.Combine(TelemetryModule.Context.DataDirectory, "telemetry", "pending"),
-                    endpoint, HttpClient, () => TelemetryModule.Active && TelemetryModule.Context.Configuration.Current.EnableDataUpload && Endpoint == endpoint, TelemetryModule.Warn);
+                    endpoint, HttpClient, () => TelemetryModule.Active && TelemetryModule.Context.Configuration.Current.EnableDataUpload && Endpoint == endpoint, TelemetryModule.Warn,
+                    preparePayload: RunHistorySanitizer.Sanitize);
                 Queues.Add(endpoint.AbsoluteUri, queue);
             }
             return queue;
@@ -59,19 +60,6 @@ internal static class RunHistoryUploadPatch
         try { if (Queue() is { } queue) _ = queue.FlushAsync(); }
         catch (Exception error) { TelemetryModule.Warn($"暂无法恢复对局队列 {error.GetType().Name}"); }
     }
-    private static void RemoveShineValues(JsonNode? node)
-    {
-        if (node is JsonObject obj)
-        {
-            foreach (string key in new[] { "karen_shine_current", "karen_shine_max", "core_shine_current", "core_shine_max" }) obj.Remove(key);
-            foreach (var property in obj) RemoveShineValues(property.Value);
-        }
-        else if (node is JsonArray array)
-            for (int i = array.Count - 1; i >= 0; i--)
-                if (array[i] is JsonObject saved && saved["name"] is JsonValue name && name.TryGetValue<string>(out var text) &&
-                    text is "karen_shine_current" or "karen_shine_max" or "core_shine_current" or "core_shine_max") array.RemoveAt(i);
-                else RemoveShineValues(array[i]);
-    }
     private static void Postfix()
     {
         if (!TelemetryModule.Context.Configuration.Current.EnableDataUpload || RunManager.Instance.History is not { } history) return;
@@ -80,7 +68,6 @@ internal static class RunHistoryUploadPatch
             if (Queue() is not { } queue) return;
             string json = ShineHistory.InjectIntoHistoryJson(JsonSerializationUtility.ToJson(history));
             var payload = JsonNode.Parse(json)!;
-            RemoveShineValues(payload);
             TelemetryModule.EnrichHistory(payload);
             if (queue.Enqueue(payload.ToJsonString())) _ = queue.FlushAsync();
         }
