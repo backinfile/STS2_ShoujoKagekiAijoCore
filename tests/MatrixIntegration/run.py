@@ -241,7 +241,7 @@ class Session:
 
     def fixture(self, multi=False):
         actor = int(self.state(multi)['player']['entity_id'].split('_')[-1])
-        self.command('matrix_fixture rules', multi)
+        self.command(cfg.get('fixture_command', 'matrix_fixture rules'), multi)
         end = time.monotonic() + 100
         while time.monotonic() < end:
             result = self.command('matrix_local status', multi).get('message', '')
@@ -309,6 +309,9 @@ def run_cell(branch, host_character, client_character, index):
                 session.action('menu_select', option='embark')
             for session in sessions:
                 session.wait(lambda s: s.get('state_type') in ['map', 'event'], 'multiplayer startup', multi=True)
+            if cfg.get('unlock_all'):
+                for session in sessions:
+                    session.command('unlock all', True)
             host.command('fight BOWLBUGS_WEAK', True)
             for session in sessions:
                 session.wait(lambda s: s.get('battle', {}).get('is_play_phase'), 'multiplayer combat', multi=True)
@@ -389,6 +392,20 @@ def run_cell(branch, host_character, client_character, index):
         if any((snapshot != snapshots[0] for snapshot in snapshots)):
             raise RuntimeError('Peers disagree on complete player/pile/archive snapshot')
         for session in sessions:
+            deadline = time.monotonic() + 30
+            while True:
+                try:
+                    hand = session.command('karen_check_hand', multi)
+                    hand = json.loads(hand['message'])
+                    atomic(session.out / 'hand-check.json', hand)
+                    if (hand['modelCount'] != hand['visualCount'] or hand.get('missing') or hand.get('unexpected')
+                            or hand.get('unexpectedPileIcons') or any(not item['valid'] for item in hand.get('burnOverlays', []))):
+                        raise RuntimeError('Hand models and visible nodes disagree')
+                    break
+                except RuntimeError:
+                    if time.monotonic() >= deadline:
+                        raise
+                    time.sleep(0.25)
             session.shot('after')
         row.update(passed=True, actors=len(sessions), checks=sum((len(r['rows']) for r in results)), peers_agree=True)
     except Exception as error:

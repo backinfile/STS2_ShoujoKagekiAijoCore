@@ -30,6 +30,6 @@ $workshop.dependencies = @([ulong]3737335127, [ulong]$CoreWorkshopId)
 
 Core 上传端点构建输入可通过 `SHOUJO_TELEMETRY_ENDPOINT_PATH` 指定；未显式指定时，`build.ps1` 读取忽略目录中的 `artifacts/private/CoreTelemetryEndpoint.json`。其中 `Url` 使用生产配置的 `upload_url`，与后台查看域名分离。
 
-1.1 新增的公共能力按实际引用传入 RequiredFeatures。Karen 使用 movement-pipeline@1、card-copies@1、presentation@1、temporary-music@1；Junna 使用 card-play-routing@1、model-execution@1、card-copies@1、presentation@1。使用这些能力的角色清单要求 Core 1.1.0。
+公共能力按实际引用传入 RequiredFeatures。Karen 使用 movement-pipeline@1、card-copies@1、card-snapshots@1、card-selection@1、presentation@1、temporary-music@1；Junna 使用 card-play-routing@1、model-execution@1、card-copies@1、card-snapshots@1、card-selection@1、presentation@1。使用本轮快照与选择接口的角色清单要求 Core 1.2.0。
 
 validate-package.ps1 与引导编译同一份 BundleValidation.cs 校验实现，-Strict 同时检查未列出文件与链接。

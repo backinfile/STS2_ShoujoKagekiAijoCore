@@ -1,6 +1,6 @@
 # ShoujoKagekiAijoCore 使用说明
 
-本文面向使用 Core 的玩家和 Mod 作者，说明 Core 1.1.0 的能力、配置与 API V1 接入方式。SDK 随完整 Core 构建产物提供。
+本文面向使用 Core 的玩家和 Mod 作者，说明 Core 1.2.0 的能力、配置与 API V1 接入方式。SDK 随完整 Core 构建产物提供。
 
 引导、服务端、存档与发布方面的实现约定见 [Core 实现文档](docs/IMPLEMENTATION.md)。[GitHub 仓库](https://github.com/backinfile/STS2_ShoujoKagekiAijoCore)
 
@@ -214,8 +214,16 @@ Core 更新以旧角色 DLL 直接运行和旧存档读取作为验收条件。�
 
 共享规则随对局保存。Core 的用户配置由自身格式升级，业务存档与服务端数据按各自格式兼容。每次发行说明列出游戏目标、BaseLib 要求、接口范围和迁移内容。
 
+作者接入复制与持续效果时使用以下入口：
+
+- `CardCopies.Snapshot(card)` 捕获原模型的独立运行时快照，供持续能力读取；零闪耀余量仍保留原模型。
+- `CardCopies.ForDeck/ForCombat` 按临时复制、转交或重新获得的用途创建实际牌。战斗复制保留本场费用、形态与投入，永久获得使用原生保存字段。
+- `CardSelection.Choose` 处理最多三个选项的原生选择、标题、可跳过状态与选择上下文收尾。
+
+这些入口分别声明 `card-snapshots@1`、`card-copies@1` 和 `card-selection@1`，要求 Core 1.2.0。
+
 ## 8. 文档与实现状态
 
-本说明对应 Core 1.1.0 和 API V1。公开类型签名以 src/Api.V1/ 为准，模块协作约定见 contracts/runtime-v1.md。
+本说明对应 Core 1.2.0 和 API V1。公开类型签名以 src/Api.V1/ 为准，模块协作约定见 contracts/runtime-v1.md。
 
 开发、部署和维护 Core 时阅读 [Core 实现文档](docs/IMPLEMENTATION.md)，其中记录独立发布与 Karen 内嵌目录、固定引导协议、版本选择、加载顺序检查、双版本适配、服务端与 Web 迁移，以及必要验证范围。

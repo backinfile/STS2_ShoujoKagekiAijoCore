@@ -12,6 +12,7 @@ public interface ICardCopyService
 public static class CardCopies
 {
     private static ICardCopyService Service => CoreApi.Get<ICardCopyService>();
+    public static T Snapshot<T>(T source) where T : CardModel => (T)CoreApi.Get<ICardSnapshots>().Capture(source);
     public static CardModel Preview(CardModel source, CardCopyPurpose purpose) => Service.Preview(source, purpose);
     public static CardModel ForDeck(CardModel source, Player owner, CardCopyPurpose purpose) => Service.ForDeck(source, owner, purpose);
     public static CardModel ForCombat(CardModel source, Player owner, CardCopyPurpose purpose, CardModel? permanentSource = null) => Service.ForCombat(source, owner, purpose, permanentSource);

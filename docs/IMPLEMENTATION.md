@@ -1,6 +1,6 @@
 # ShoujoKagekiAijoCore 实现文档
 
-本文面向 Core 开发、部署和维护者，记录 Core 1.1.0 的实现约定，整理日期为 2026-11-08。使用方式与作者接入示例见 [Core 使用说明](../README.md)。
+本文面向 Core 开发、部署和维护者，记录 Core 1.2.0 的实现约定，整理日期为 2026-11-08。使用方式与作者接入示例见 [Core 使用说明](../README.md)。
 
 源码与文档位于 Core 的 GitHub 仓库，SDK 随正式发行提供。工程示例采用相对路径。[GitHub 仓库](https://github.com/backinfile/STS2_ShoujoKagekiAijoCore)
 
@@ -931,3 +931,11 @@ BaseLib 能力核对了 3.4.7 的 ModConfigRegistry、SimpleModConfig、CommonAc
 公共执行、移牌、复制、音乐与表现接口见 contracts/runtime-v1.md 的「1.1 公共处理入口」。模型方法挂钩由 Modules/Execution 统一维护，Shine 与角色作用域共享发现结果。玩家状态由 Modules/Shine/Saves/CorePlayerSave 通过 BaseLib 注册；RunSaveManager_Patches 仅捕获旧格式读取。Bootstrap/Bundle.cs 同时作为 SDK 校验源码发布。
 
 Karen 使用 BaseLib CustomCharacterModel、CustomPile 注册角色与约定牌堆，逐次异步移牌由公共流水线分发；角色自身保留约定、虚空与空堆规则。Junna 保留箭矢调度，按战斗模型的生物顺序和部署序号结算、转移目标；卡值读取通过语义名称绑定稳定存储字段，持续能力按回合、卡牌、伤害及描述分组。
+
+## 1.2 复制与选择生命周期
+
+`Modules/Shine/CardCopyService` 区分内部快照、临时实际复制、永久转交和重新获得。内部快照以作用域抑制耗尽空壳替换，并显式保留永久来源语义；实际复制继续沿用耗尽规则。战斗实例经原生 MutableClone/CreateClone/CloneCard 保留费用、形态和本场字段，永久牌通过 SerializableCard 保留升级、附魔与保存字段。所有权差异集中在 `Compatibility/CardModelApi`，角色无需先复制再覆盖 Owner。
+
+`Modules/Execution/CardSelectionModule` 统一最多三个选项的选择流程。它始终调用原生选择入口，代理选择上下文并在异常时收尾，按异步调用作用域保存标题。Karen 选项和 Junna 发现能力共用此入口，牌效继续由角色执行。
+
+Karen 的约定牌堆管理器拥有模式、实际牌区、移牌后通知与补充流程；公共刷新只处理已激活的约定生命周期。Junna 的持续能力保存独立效果数据及计数，知识关系在获得、整局恢复、玩家同步与开战边界归一化，UI 查询只读取关系。Junna 数值语义别名和提示类型写入生成卡池，稳定保存字段名保持不变。

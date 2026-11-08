@@ -70,3 +70,14 @@ API 程序集版本继续固定为 1.0.0.0，发行能力通过 core.bundle 的 
 玩家状态通过 BaseLib ExtendedSaveTypes 注册 ShoujoKagekiAijoCore.player-state@1，文件与网络共用保存载体。档案卡使用原生 SerializableCard 的 JSON 类型信息，保留 BaseLib 扩展字段。旧 extra_fields 仅用于读取迁移，并在读取时转为注册载体，支持直接规范化和网络传输。新旧数据并存时新载体优先。网络读取核对 Core 指纹，未知规则拒绝恢复；发行 saveProtocol 和 networkProtocol 均为 2。
 
 SDK 与引导均执行 src/Bootstrap/Bundle.cs；发行将同一源码放入 sdk/BundleValidation.cs，严格校验额外拒绝未列出文件和文件系统链接。角色打包统一调用 SDK，按实际使用声明新增能力。
+
+## 1.2 快照与选择
+
+发行 apiVersion 为 1.2.0，公开程序集 AssemblyVersion 仍为 1.0.0.0。ICardCopyService 与已有接口的成员保持不变；新服务通过 ICardSnapshots 和 ICardSelection 注册。
+
+- CardCopies.Snapshot<T>(source) 经 ICardSnapshots.Capture 返回脱离牌区的独立原模型，保留运行时字段、费用、转换形态、投入及闪耀来源语义。快照不登记到战斗，也不因零余量替换为空壳；调用者将其作为数据读取，不移入实际牌区。
+- Preview、ForDeck、ForCombat 与 Shine.Copy 仍按 CardCopyPurpose 创建实际复制结果。耗尽后的普通复制和转交生成空壳；Reacquire 通过原生 SerializableCard 恢复永久属性并建立满余量新生命周期。
+- ForCombat 使用原生克隆保留本场状态。同场实际牌的 TemporaryCopy 保留原生 CloneOf，预算独立、DeckVersion 为空。其他战斗复制在原生登记完成后设置显式 permanentSource；该来源必须属于接收玩家的永久牌组。跨玩家转交的所有权差异集中在双版本适配器处理。
+- CardSelection.Choose(context,cards,player,canSkip=false,title=null) 经原生 FromChooseACardScreen 处理 1 至 3 个选项，保留联机同步与第三方原生挂钩。空列表返回 null；必选收到 null 或返回未提供的对象时抛出异常。标题按调用作用域恢复，选择结束或异常时平衡已打开的选择上下文。
+
+使用快照和选择分别声明 card-snapshots@1 与 card-selection@1。角色包同时要求 minCoreVersion=1.2.0。

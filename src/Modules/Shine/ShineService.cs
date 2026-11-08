@@ -31,7 +31,7 @@ public sealed class ShineService : IShineService, ICoreModule
     private static readonly AsyncLocal<Batch?> ActiveBatch = new();
     private static readonly AsyncLocal<int> SnapshotCopyDepth = new();
     [ThreadStatic] private static int _cardReadDepth;
-    private static readonly ConditionalWeakTable<CardModel, object> PermanentAcquisitions = new();
+    private static readonly ConditionalWeakTable<CardModel, object> PermanentOrigins = new();
 
     public void Initialize(CoreContext context)
     {
@@ -49,7 +49,7 @@ public sealed class ShineService : IShineService, ICoreModule
             else if (attribute != null) { Maximum.Set(card, attribute.Uses); Remaining.Set(card, attribute.Uses); }
         }
         if (Maximum.Get(card) < 0) return null;
-        var temporary = Temporary.Get(card) || !Depleted.Get(card) && !PermanentAcquisitions.TryGetValue(card, out _)
+        var temporary = Temporary.Get(card) || !Depleted.Get(card) && !PermanentOrigins.TryGetValue(card, out _)
             && card.IsMutable && card.Owner is { } owner
             && card.DeckVersion == null && !owner.Deck.Cards.Contains(card);
         return new ShineState(Remaining.Get(card), Maximum.Get(card), temporary, Pending.Get(card));
@@ -60,7 +60,7 @@ public sealed class ShineService : IShineService, ICoreModule
         Maximum.Set(card, maximum);
         Remaining.Set(card, remaining);
         Temporary.Set(card, temporary);
-        if (temporary) PermanentAcquisitions.Remove(card);
+        if (temporary) PermanentOrigins.Remove(card);
         if (remaining > 0) { Pending.Set(card, false); Depleted.Set(card, false); }
     }
     public void ChangeMaximum(CardModel card, int amount)
@@ -215,7 +215,7 @@ public sealed class ShineService : IShineService, ICoreModule
     }
     internal void ResetLifecycle(CardModel card)
     {
-        PermanentAcquisitions.GetOrCreateValue(card);
+        PermanentOrigins.GetOrCreateValue(card);
         Depleted.Set(card, false);
         Pending.Set(card, false);
         Temporary.Set(card, false);
@@ -228,17 +228,26 @@ public sealed class ShineService : IShineService, ICoreModule
     }
     private sealed class SnapshotScope : IDisposable
     {
-        public void Dispose() => SnapshotCopyDepth.Value--;
+        private bool _disposed;
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+            SnapshotCopyDepth.Value--;
+        }
     }
-    public CardModel Copy(CardModel card, CardCopyPurpose purpose)
+    public CardModel Copy(CardModel card, CardCopyPurpose purpose) => CardCopyService.CopyDetached(card, purpose);
+    internal void PreserveSnapshotOrigin(CardModel source, CardModel snapshot)
     {
-        if (purpose != CardCopyPurpose.Reacquire && (Depleted.Get(card) || GetState(card) is { Remaining: <= 0 })) return EmptyShellFor(card);
-        using var scope = AllowSnapshotCopy();
-        var result = CardModel.FromSerializable(card.ToSerializable());
-        result.Owner = card.Owner;
-        if (purpose == CardCopyPurpose.Reacquire) ResetLifecycle(result);
-        else if (GetState(card) is { } state) SetState(result, state.Remaining, state.Maximum, purpose == CardCopyPurpose.TemporaryCopy || state.Temporary);
-        return result;
+        if (GetState(source) is { Temporary: false }) PermanentOrigins.GetOrCreateValue(snapshot);
+    }
+    internal bool IsDepletedCopySource(CardModel card) => Depleted.Get(card) || GetState(card) is { Remaining: <= 0 };
+    internal CardModel CreateEmptyShell(CardModel source) => EmptyShellFor(source);
+    internal void InitializeCopy(CardModel source, CardModel copy, CardCopyPurpose purpose)
+    {
+        if (purpose == CardCopyPurpose.Reacquire) ResetLifecycle(copy);
+        else if (GetState(source) is { } state)
+            SetState(copy, state.Remaining, state.Maximum, purpose == CardCopyPurpose.TemporaryCopy || state.Temporary);
     }
     private static CardModel EmptyShellFor(CardModel source)
     {

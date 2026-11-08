@@ -96,6 +96,38 @@ if (args.Contains("--routing-only"))
     CheckFailure(() => ShoujoKageki.Core.Runtime.Modules.Execution.CardPlayRoutingModule.DispatchFromHook(original, routingCard, null!, null!), "Hook routing preserves synchronous exception identity");
     return;
 }
+if (args.Contains("--copies-only"))
+{
+    var copies = new CardCopyService();
+    copies.Initialize(context);
+    var patcher = new Harmony("Core.CopyChecks");
+    patcher.CreateClassProcessor(typeof(ShineService).GetNestedType("ClonePatch", BindingFlags.NonPublic)!).Patch();
+    ModelDb.Inject(typeof(ResolutionCard));
+    ModelDb.Inject(typeof(CoreEmptyShell));
+    var source = (ResolutionCard)ModelDb.Card<ResolutionCard>().MutableClone();
+    source.RuntimeValue = 17;
+    source.EnergyCost.SetThisCombat(4);
+    service.SetState(source, 2, 6);
+    var snapshot = CardCopies.Snapshot(source);
+    var temporary = (ResolutionCard)CardCopies.Preview(source, CardCopyPurpose.TemporaryCopy);
+    if (snapshot.RuntimeValue != 17 || temporary.RuntimeValue != 17 || snapshot.EnergyCost.GetWithModifiers(CostModifiers.Local) != 4
+        || temporary.EnergyCost.GetWithModifiers(CostModifiers.Local) != 4 || ReferenceEquals(source, snapshot))
+        throw new InvalidOperationException("Runtime snapshots and combat previews must preserve local card data and cost.");
+    if (service.GetState(temporary) is not { Remaining: 2, Maximum: 6, Temporary: true })
+        throw new InvalidOperationException("Temporary copies need an independent Shine budget.");
+    temporary.RuntimeValue = 29;
+    if (source.RuntimeValue != 17) throw new InvalidOperationException("The copy must not mutate the source.");
+    service.SetState(source, 0, 6);
+    var depletedSnapshot = CardCopies.Snapshot(source);
+    if (depletedSnapshot.RuntimeValue != 17 || service.GetState(depletedSnapshot)?.Remaining != 0)
+        throw new InvalidOperationException("An internal snapshot must retain a depleted card's type and values.");
+    if (source.MutableClone() is not CoreEmptyShell || copies.Preview(source, CardCopyPurpose.Transfer) is not CoreEmptyShell)
+        throw new InvalidOperationException("An actual exhausted-card copy still creates an empty shell.");
+    _ = CardCopies.Snapshot(source);
+    if (source.MutableClone() is not CoreEmptyShell) throw new InvalidOperationException("Snapshot permissions must not escape their invocation.");
+    Console.WriteLine("Copy lifecycle checks passed: runtime data, local cost, independence, Shine budgets, depleted snapshots and empty shells.");
+    return;
+}
 var harmony = new Harmony("Core.ResolutionChecks");
 var serviceType = typeof(ShineService);
 Type Patch(string name) => serviceType.GetNestedType(name, BindingFlags.NonPublic)!;
@@ -344,6 +376,7 @@ public abstract class ResolutionWrapperBase() : CardModel(0, CardType.Skill, Car
 [ShineCard(3)]
 public sealed class ResolutionCard : ResolutionWrapperBase
 {
+    public int RuntimeValue;
     public override int MaxUpgradeLevel => 3;
     protected override Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
         => Deferred ? Task.CompletedTask : Effect();
