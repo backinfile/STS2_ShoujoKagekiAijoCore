@@ -23,8 +23,8 @@ internal static class KarenVfxQuality
     }
     private static readonly ConditionalWeakTable<CanvasItem, DrawClock> DrawClocks = new();
     internal static CoreVfxLevel Level => CoreModConfig.VfxLevel;
-    internal static bool Enabled => Level != CoreVfxLevel.Off;
-    internal static bool AmbientEffects => Level == CoreVfxLevel.Full;
+    internal static bool Enabled => CoreModConfig.EnableShineEffects && Level != CoreVfxLevel.Off;
+    internal static bool AmbientEffects => Enabled && Level == CoreVfxLevel.Full;
     internal static int ParticleStride => Level == CoreVfxLevel.Full ? 1 : 4;
     // Godot particle emitters require at least one particle. Off prevents their factories
     // and emissions instead of assigning the invalid Amount=0.

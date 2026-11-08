@@ -4,16 +4,31 @@ public enum CombatCardGainRelicMode { Enabled, ShoujoOnly, Disabled }
 public enum MusicPlayMode { List, Shuffle, RepeatOne }
 public enum CoreVfxLevel { Full, Reduced, Off }
 public enum ShinePileButtonMode { Auto, Always, Hidden }
+public enum DerivedCardLabelMode { Always, ShoujoOnly, Hidden }
 
 public sealed record CoreSettings
 {
     public int FormatVersion { get; init; } = 1;
     public bool ShowSplashScreen { get; init; } = true;
-    public bool EnableShineDepletionAnimation { get; init; } = true;
+    private bool _enableShineEffects = true;
+    public bool EnableShineDepletionAnimation { get => _enableShineEffects; init => _enableShineEffects = value; }
+    public bool EnableShineEffects { get => _enableShineEffects; init => _enableShineEffects = value; }
     public ShinePileButtonMode ShinePileButton { get; init; } = ShinePileButtonMode.Auto;
     public CoreVfxLevel VfxLevel { get; init; } = CoreVfxLevel.Full;
-    public bool ShowDerivedCardLabel { get; init; } = true;
-    public CombatCardGainRelicMode CombatCardGainRelicMode { get; init; } = CombatCardGainRelicMode.ShoujoOnly;
+    private DerivedCardLabelMode _derivedCardLabel = DerivedCardLabelMode.ShoujoOnly;
+    public bool ShowDerivedCardLabel { get => _derivedCardLabel != DerivedCardLabelMode.Hidden; init => _derivedCardLabel = value ? DerivedCardLabelMode.Always : DerivedCardLabelMode.Hidden; }
+    public DerivedCardLabelMode DerivedCardLabel { get => _derivedCardLabel; init => _derivedCardLabel = value; }
+    private CombatCardGainRelicMode _relicMode = CombatCardGainRelicMode.ShoujoOnly;
+    private CombatCardGainRelicMode _bookOfFiveRingsPatch = CombatCardGainRelicMode.ShoujoOnly;
+    private CombatCardGainRelicMode _luckyFyshPatch = CombatCardGainRelicMode.ShoujoOnly;
+    public CombatCardGainRelicMode CombatCardGainRelicMode
+    {
+        get => _relicMode;
+        init => _relicMode = _bookOfFiveRingsPatch = _luckyFyshPatch = value;
+    }
+    public CombatCardGainRelicMode BookOfFiveRingsPatch { get => _bookOfFiveRingsPatch; init => _bookOfFiveRingsPatch = value; }
+    public CombatCardGainRelicMode LuckyFyshPatch { get => _luckyFyshPatch; init => _luckyFyshPatch = value; }
+    public bool EnableInformationCollection { get; init; } = true;
     public bool EnableDataUpload { get; init; } = true;
     public bool EnableErrorUpload { get; init; } = true;
     public string TelemetryBaseUrl { get; init; } = "";

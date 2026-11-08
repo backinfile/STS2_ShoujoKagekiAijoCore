@@ -24,8 +24,8 @@ public sealed class ShinePresentation : ICoreModule, IShinePresentation
         context.Services.Add<IShinePresentation>(this);
         context.Configuration.Changed += (previous, current) =>
         {
-            if (previous.VfxLevel != current.VfxLevel) KarenVfxQuality.ApplyLevel();
-            if (previous.ShowDerivedCardLabel != current.ShowDerivedCardLabel && Engine.GetMainLoop() is SceneTree tree)
+            if (previous.VfxLevel != current.VfxLevel || previous.EnableShineEffects != current.EnableShineEffects) KarenVfxQuality.ApplyLevel();
+            if (previous.DerivedCardLabel != current.DerivedCardLabel && Engine.GetMainLoop() is SceneTree tree)
                 NCardDerivedLabelPatch.RefreshAll(tree.Root);
         };
         ShineArchive.Changed += ShinePileManager.Refresh;
@@ -33,7 +33,7 @@ public sealed class ShinePresentation : ICoreModule, IShinePresentation
     public bool IsDepletionAnimating(CardModel card) => NKarenShineDepleteVfx.IsAnimating(card);
     internal void PlayDepletion(CardModel card)
     {
-        if (CoreApi.Configuration.Current.EnableShineDepletionAnimation) NKarenShineDepleteVfx.Play(card, NCard.FindOnTable(card));
+        if (KarenVfxQuality.Enabled) NKarenShineDepleteVfx.Play(card, NCard.FindOnTable(card));
     }
 }
 internal static class ShineExtension
@@ -112,5 +112,5 @@ internal static class ShineDescriptionPatch
 [HarmonyPatch(typeof(CardModel), nameof(CardModel.ShouldGlowRed), MethodType.Getter)]
 internal static class ShineGlowPatch
 {
-    private static void Postfix(CardModel __instance, ref bool __result) => __result |= ShineVfx.WillDeplete(__instance);
+    private static void Postfix(CardModel __instance, ref bool __result) => __result |= KarenVfxQuality.Enabled && ShineVfx.WillDeplete(__instance);
 }

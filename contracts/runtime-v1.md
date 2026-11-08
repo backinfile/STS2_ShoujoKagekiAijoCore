@@ -14,7 +14,7 @@ context.Services.Add<T>(instance) 注册唯一服务，Get<T>() 获取。配置�
 
 CoreApi.Configuration.Current 或 context.Configuration.Current 返回 CoreSettings 不可变快照。Update(settings with { ... }) 持久化后发 Changed(old,new)，Reset 恢复 Core 默认。配置只读取 Core 自身文件并升级 FormatVersion，不读取角色旧配置。
 
-CoreSettings 已固定 EnableDataUpload、EnableErrorUpload、TelemetryBaseUrl，上传开关均默认 true。地址为空时由 Telemetry 使用随发行携带的默认接收地址，数据任务拥有该默认地址来源。音乐、衍生牌标记、闪耀表现与三档 CombatCardGainRelicMode 在 src/Api.V1/Configuration.cs。
+CoreSettings 提供 EnableInformationCollection 总开关与 EnableDataUpload、EnableErrorUpload 子开关，均默认 true。总开关关闭时暂停上传和报错采集，保留子开关值。TelemetryBaseUrl 保持不变。地址为空时由 Telemetry 使用随发行携带的默认接收地址，数据任务拥有该默认地址来源。音乐、衍生牌标记、闪耀表现和补丁配置在 src/Api.V1/Configuration.cs。DerivedCardLabel 使用 Always／ShoujoOnly／Hidden，默认 ShoujoOnly；旧 ShowDerivedCardLabel 属性保留。ShinePileButton 的 Auto 保存值对应仅少歌角色显示。EnableShineEffects 默认开启，统一控制闪耀常驻光效、临界提示和耗尽动画；旧 EnableShineDepletionAnimation 属性保留为同一开关的兼容别名，读取配置时显式新字段优先；VfxLevel 统一供 Core 与 Karen 使用。BookOfFiveRingsPatch 与 LuckyFyshPatch 各自使用三档 CombatCardGainRelicMode，默认 ShoujoOnly；旧统一属性保留，设置时同时更新两项，新分项可分别覆盖。
 
 Diagnostics.Report(severity,source,code,message,error) 写日志并发布 Reported。Snapshot 返回只读诊断记录。Telemetry 可订阅 Reported 并消费原生日志，避免把自身发送错误再次入队。
 

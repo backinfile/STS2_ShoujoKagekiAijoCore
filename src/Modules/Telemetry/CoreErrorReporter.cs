@@ -59,7 +59,7 @@ internal static class CoreErrorReporter
 
     internal static void ConfigurationChanged()
     {
-        if (!TelemetryModule.Context.Configuration.Current.EnableErrorUpload) _buffer?.Clear();
+        if (!TelemetryModule.ErrorUploadEnabled) _buffer?.Clear();
         if (_timer == null) Initialize();
         if (RunHistoryUploadPatch.ErrorEndpoint is { } endpoint && endpoint != _endpoint) SetQueue(endpoint);
     }
@@ -69,7 +69,7 @@ internal static class CoreErrorReporter
     {
         _endpoint = endpoint;
         _queue = new RunHistoryUploadQueue(Path.Combine(TelemetryModule.Context.DataDirectory, "telemetry", "errors"),
-            endpoint, Client, () => TelemetryModule.Active && TelemetryModule.Context.Configuration.Current.EnableErrorUpload && RunHistoryUploadPatch.ErrorEndpoint == endpoint, _ => { },
+            endpoint, Client, () => TelemetryModule.Active && TelemetryModule.ErrorUploadEnabled && RunHistoryUploadPatch.ErrorEndpoint == endpoint, _ => { },
             maxItems: 32, maxBytes: 2 * 1024 * 1024, maxPayloadBytes: 64 * 1024,
             requestInterval: TimeSpan.FromMinutes(1), conflictIsSuccess: false);
     }
@@ -87,7 +87,7 @@ internal static class CoreErrorReporter
 
     internal static void CaptureException(object? error)
     {
-        if (!TelemetryModule.Context.Configuration.Current.EnableErrorUpload || _buffer == null || _capturing) return;
+        if (!TelemetryModule.ErrorUploadEnabled || _buffer == null || _capturing) return;
         try
         {
             string text = error?.ToString() ?? "Unhandled exception";
@@ -100,7 +100,7 @@ internal static class CoreErrorReporter
 
     internal static void Capture(string source, string message, string stack, Func<string>? stackFactory = null)
     {
-        if (_capturing || !TelemetryModule.Context.Configuration.Current.EnableErrorUpload || _buffer == null) return;
+        if (_capturing || !TelemetryModule.ErrorUploadEnabled || _buffer == null) return;
         try { _capturing = true; _buffer.Capture(source, message, stack, stackFactory); }
         catch (Exception failure) { LastFailure = failure.GetType().Name; }
         finally { _capturing = false; }
@@ -111,8 +111,8 @@ internal static class CoreErrorReporter
         if (Interlocked.Exchange(ref _ticking, 1) != 0) return;
         try
         {
-            if (!TelemetryModule.Context.Configuration.Current.EnableErrorUpload || _buffer == null || _queue == null || RunHistoryUploadPatch.ErrorEndpoint != _endpoint) return;
-            _buffer.Persist(payload => TelemetryModule.Context.Configuration.Current.EnableErrorUpload && _queue.Enqueue(payload));
+            if (!TelemetryModule.ErrorUploadEnabled || _buffer == null || _queue == null || RunHistoryUploadPatch.ErrorEndpoint != _endpoint) return;
+            _buffer.Persist(payload => TelemetryModule.ErrorUploadEnabled && _queue.Enqueue(payload));
             // Keep at most one upload worker, including while backing off for an unavailable server.
             if (_upload.IsCompleted) _upload = _queue.FlushAsync();
         }

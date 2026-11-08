@@ -9,6 +9,70 @@ using ShoujoKageki.Core.Runtime;
 using ShoujoKageki.Core.Runtime.Modules.Shine;
 using ShoujoKageki.Core.V1;
 
+if (args.Contains("--configuration-only"))
+{
+    var configuration = new ShoujoKageki.Core.Runtime.Modules.Configuration.CoreConfiguration();
+    var checks = 0;
+    void CheckSetting(bool condition, string name)
+    {
+        if (!condition) throw new InvalidOperationException(name);
+        checks++;
+    }
+    CheckSetting(configuration.Current.DerivedCardLabel == DerivedCardLabelMode.ShoujoOnly, "Derived labels default to Shoujo characters");
+    CheckSetting(configuration.Current.ShinePileButton == ShinePileButtonMode.Auto, "Shine pile defaults to Shoujo characters");
+    CheckSetting(configuration.Current.EnableShineEffects && configuration.Current.EnableInformationCollection, "New switches default on");
+    foreach (var enabled in new[] { false, true })
+    {
+        configuration.Update(new CoreSettings { EnableShineEffects = enabled });
+        CheckSetting(configuration.Current.EnableShineDepletionAnimation == enabled, "Shine effects controls depletion animation");
+        configuration.Update(new CoreSettings { EnableShineDepletionAnimation = enabled });
+        CheckSetting(configuration.Current.EnableShineEffects == enabled, "Legacy depletion switch aliases Shine effects");
+    }
+    configuration.Update(new CoreSettings { EnableShineDepletionAnimation = false, EnableShineEffects = true });
+    CheckSetting(configuration.Current.EnableShineEffects && configuration.Current.EnableShineDepletionAnimation, "Explicit Shine effects overrides the legacy switch");
+    foreach (var mode in Enum.GetValues<CombatCardGainRelicMode>())
+    {
+        configuration.Update(new CoreSettings { CombatCardGainRelicMode = mode });
+        CheckSetting(configuration.Current.BookOfFiveRingsPatch == mode && configuration.Current.LuckyFyshPatch == mode, "Legacy relic setting applies to both relics");
+    }
+    configuration.Update(new CoreSettings { CombatCardGainRelicMode = CombatCardGainRelicMode.Enabled, BookOfFiveRingsPatch = CombatCardGainRelicMode.Disabled, LuckyFyshPatch = CombatCardGainRelicMode.ShoujoOnly });
+    configuration.Update(configuration.Current with { EnableShineEffects = false });
+    CheckSetting(configuration.Current.BookOfFiveRingsPatch == CombatCardGainRelicMode.Disabled && configuration.Current.LuckyFyshPatch == CombatCardGainRelicMode.ShoujoOnly, "Independent relic settings survive unrelated updates");
+    ShoujoKagekiAijoCore.CoreModConfig.ShowDerivedCardLabel = false;
+    CheckSetting(configuration.Current.DerivedCardLabel == DerivedCardLabelMode.Hidden, "Legacy hidden labels stay hidden");
+    ShoujoKagekiAijoCore.CoreModConfig.ShowDerivedCardLabel = true;
+    CheckSetting(configuration.Current.DerivedCardLabel == DerivedCardLabelMode.ShoujoOnly, "Legacy visible labels migrate to the default scope");
+    foreach (var mode in Enum.GetValues<DerivedCardLabelMode>())
+    {
+        var settings = new CoreSettings { DerivedCardLabel = mode };
+        var roundtrip = System.Text.Json.JsonSerializer.Deserialize<CoreSettings>(System.Text.Json.JsonSerializer.Serialize(settings))!;
+        CheckSetting(roundtrip.DerivedCardLabel == mode, "Derived label scope survives JSON roundtrip");
+    }
+    var oldRules = System.Text.Json.JsonSerializer.Deserialize<CoreRunRules>("{\"RulesetId\":\"shine@1\",\"RelicMode\":0,\"NetworkFingerprint\":\"old\"}")!;
+    CheckSetting((oldRules.BookOfFiveRingsPatch ?? oldRules.RelicMode) == CombatCardGainRelicMode.Enabled && (oldRules.LuckyFyshPatch ?? oldRules.RelicMode) == CombatCardGainRelicMode.Enabled, "Old rule snapshots retain the shared mode");
+    var rules = oldRules with { BookOfFiveRingsPatch = CombatCardGainRelicMode.Disabled, LuckyFyshPatch = CombatCardGainRelicMode.ShoujoOnly };
+    var restored = System.Text.Json.JsonSerializer.Deserialize<CoreRunRules>(System.Text.Json.JsonSerializer.Serialize(rules))!;
+    CheckSetting(restored == rules, "Independent rule snapshots roundtrip");
+    configuration.Update(new CoreSettings { DerivedCardLabel = (DerivedCardLabelMode)99, BookOfFiveRingsPatch = (CombatCardGainRelicMode)99, LuckyFyshPatch = (CombatCardGainRelicMode)99 });
+    CheckSetting(configuration.Current.DerivedCardLabel == DerivedCardLabelMode.ShoujoOnly && configuration.Current.BookOfFiveRingsPatch == CombatCardGainRelicMode.ShoujoOnly && configuration.Current.LuckyFyshPatch == CombatCardGainRelicMode.ShoujoOnly, "Invalid settings recover defaults");
+    var servicesForConfig = new CoreServices();
+    servicesForConfig.Add<ICoreConfiguration>(configuration);
+    var telemetry = typeof(ShoujoKageki.Core.Telemetry.TelemetryModule);
+    telemetry.GetProperty("Context", BindingFlags.Static | BindingFlags.NonPublic)!.SetValue(null, new CoreContext(servicesForConfig, "test", "test", ""));
+    bool DataEnabled() => (bool)telemetry.GetProperty("DataUploadEnabled", BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null)!;
+    bool ErrorsEnabled() => (bool)telemetry.GetProperty("ErrorUploadEnabled", BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null)!;
+    foreach (var master in new[] { false, true })
+    foreach (var data in new[] { false, true })
+    foreach (var errors in new[] { false, true })
+    {
+        configuration.Update(new CoreSettings { EnableInformationCollection = master, EnableDataUpload = data, EnableErrorUpload = errors });
+        CheckSetting(DataEnabled() == (master && data) && ErrorsEnabled() == (master && errors), "Collection master gates both channels");
+        CheckSetting(configuration.Current.EnableDataUpload == data && configuration.Current.EnableErrorUpload == errors, "Collection master preserves child switches");
+    }
+    Console.WriteLine($"Configuration checks passed: {checks}");
+    return;
+}
+
 var services = new CoreServices();
 var service = new ShineService();
 service.Initialize(new CoreContext(services, "1.0.0", "test", ""));
