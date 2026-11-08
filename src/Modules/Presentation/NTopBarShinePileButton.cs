@@ -46,7 +46,7 @@ public partial class NTopBarShinePileButton : MegaCrit.Sts2.Core.Nodes.TopBar.NT
         {
             var mode = CoreApi.Configuration.Current.ShinePileButton;
             Visible = mode != ShinePileButtonMode.Hidden && (mode == ShinePileButtonMode.Always
-                || ShinePileManager.GetShinePileCount(_player) > 0 || _player.Deck.Cards.Any(c => V1.Shine.IsShineCard(c)));
+                || CoreDiscovery.IsShoujoCharacter(_player.Character));
         }
         _numberStepClock = Mathf.Max(0, _numberStepClock-(float)delta);
         if (_count < _countTarget && _numberStepClock <= 0)

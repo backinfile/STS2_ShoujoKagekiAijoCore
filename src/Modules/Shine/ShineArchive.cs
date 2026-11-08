@@ -6,7 +6,11 @@ using ShoujoKageki.Core.V1;
 
 namespace ShoujoKageki.Core.Runtime.Modules.Shine;
 
-public sealed record CoreRunRules(string RulesetId, CombatCardGainRelicMode RelicMode, string NetworkFingerprint);
+public sealed record CoreRunRules(string RulesetId, CombatCardGainRelicMode RelicMode, string NetworkFingerprint)
+{
+    public CombatCardGainRelicMode? BookOfFiveRingsPatch { get; init; }
+    public CombatCardGainRelicMode? LuckyFyshPatch { get; init; }
+}
 public static class ShineArchive
 {
     public const string LegacyRulesetId = "karen-shine@legacy-1";
@@ -14,7 +18,11 @@ public static class ShineArchive
     {
         public readonly List<SerializableCard> Cards = [];
         public readonly List<string> Lifecycles = [];
-        public CoreRunRules Rules = new(V1.Shine.RulesetId, CoreApi.Configuration.Current.CombatCardGainRelicMode, RuntimeEntry.Fingerprint);
+        public CoreRunRules Rules = new(V1.Shine.RulesetId, CoreApi.Configuration.Current.CombatCardGainRelicMode, RuntimeEntry.Fingerprint)
+        {
+            BookOfFiveRingsPatch = CoreApi.Configuration.Current.BookOfFiveRingsPatch,
+            LuckyFyshPatch = CoreApi.Configuration.Current.LuckyFyshPatch
+        };
     }
     public static event Action<Player>? Changed;
     private static readonly ConditionalWeakTable<Player, Archive> Data = new();

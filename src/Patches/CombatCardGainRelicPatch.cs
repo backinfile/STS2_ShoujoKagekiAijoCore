@@ -21,7 +21,8 @@ internal static class CombatCardGainRelicPatch
     {
         var player = __instance.Owner;
         if (player == null || CombatManager.Instance?.IsInProgress != true) return true;
-        var mode = ShineArchive.GetRules(player).RelicMode;
+        var rules = ShineArchive.GetRules(player);
+        var mode = (__instance is BookOfFiveRings ? rules.BookOfFiveRingsPatch : rules.LuckyFyshPatch) ?? rules.RelicMode;
         var restrict = mode == CombatCardGainRelicMode.Enabled
             || mode == CombatCardGainRelicMode.ShoujoOnly && CoreDiscovery.IsShoujoCharacter(player.Character);
         if (!restrict) return true;

@@ -37,9 +37,9 @@ internal static class CommonAssetPreload
         }
         foreach (string path in paths) Visit(path);
         __state = [];
-        // Prepare shared dependencies before parallel scene loading can wait on the same native task twice.
+        // Avoid concurrent first loads of shared dependencies from the Common scene batch.
         foreach (string path in references.Where(pair => pair.Value > 1).Select(pair => pair.Key).Order(StringComparer.Ordinal))
-            __state.Add(ResourceLoader.Load<Resource>(path) ?? throw new InvalidDataException("Common dependency failed to load: " + path));
+            if (ResourceLoader.Load<Resource>(path) is { } resource) __state.Add(resource);
         Log.Info($"[Core Common preload] Prepared shared dependencies={__state.Count} in {watch.ElapsedMilliseconds}ms");
     }
 

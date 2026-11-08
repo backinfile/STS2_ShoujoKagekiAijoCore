@@ -91,7 +91,10 @@ public static class NCardDerivedLabelPatch
             if (label == null) return;
 
             var model = __instance.Model;
-            if (CoreApi.Configuration.Current.ShowDerivedCardLabel && model != null && model.IsMutable && model.DeckVersion == null && _generatedInCombat.Get(model))
+            var mode = CoreApi.Configuration.Current.DerivedCardLabel;
+            if (mode != DerivedCardLabelMode.Hidden && model != null && model.IsMutable
+                && (mode == DerivedCardLabelMode.Always || CoreDiscovery.IsShoujoCharacter(model.Owner?.Character))
+                && model.DeckVersion == null && _generatedInCombat.Get(model))
             {
                 label.SetTextAutoSize(DerivedCardLabel.GetFormattedText());
                 label.Visible = true;

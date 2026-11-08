@@ -47,7 +47,7 @@ internal static class RunHistoryUploadPatch
             if (!Queues.TryGetValue(endpoint.AbsoluteUri, out var queue))
             {
                 queue = new RunHistoryUploadQueue(Path.Combine(TelemetryModule.Context.DataDirectory, "telemetry", "pending"),
-                    endpoint, HttpClient, () => TelemetryModule.Active && TelemetryModule.Context.Configuration.Current.EnableDataUpload && Endpoint == endpoint, TelemetryModule.Warn,
+                    endpoint, HttpClient, () => TelemetryModule.Active && TelemetryModule.DataUploadEnabled && Endpoint == endpoint, TelemetryModule.Warn,
                     preparePayload: RunHistorySanitizer.Sanitize);
                 Queues.Add(endpoint.AbsoluteUri, queue);
             }
@@ -56,13 +56,13 @@ internal static class RunHistoryUploadPatch
     }
     internal static void ResumePendingUploads()
     {
-        if (!TelemetryModule.Context.Configuration.Current.EnableDataUpload) return;
+        if (!TelemetryModule.DataUploadEnabled) return;
         try { if (Queue() is { } queue) _ = queue.FlushAsync(); }
         catch (Exception error) { TelemetryModule.Warn($"暂无法恢复对局队列 {error.GetType().Name}"); }
     }
     private static void Postfix()
     {
-        if (!TelemetryModule.Context.Configuration.Current.EnableDataUpload || RunManager.Instance.History is not { } history) return;
+        if (!TelemetryModule.DataUploadEnabled || RunManager.Instance.History is not { } history) return;
         try
         {
             if (Queue() is not { } queue) return;

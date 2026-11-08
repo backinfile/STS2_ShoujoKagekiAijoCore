@@ -30,7 +30,10 @@ public sealed class CoreConfiguration : ICoreConfiguration
             MusicPlayMode = Enum.IsDefined(settings.MusicPlayMode) ? settings.MusicPlayMode : MusicPlayMode.List,
             VfxLevel = Enum.IsDefined(settings.VfxLevel) ? settings.VfxLevel : CoreVfxLevel.Full,
             ShinePileButton = Enum.IsDefined(settings.ShinePileButton) ? settings.ShinePileButton : ShinePileButtonMode.Auto,
-            CombatCardGainRelicMode = Enum.IsDefined(settings.CombatCardGainRelicMode) ? settings.CombatCardGainRelicMode : CombatCardGainRelicMode.ShoujoOnly
+            DerivedCardLabel = Enum.IsDefined(settings.DerivedCardLabel) ? settings.DerivedCardLabel : DerivedCardLabelMode.ShoujoOnly,
+            CombatCardGainRelicMode = Enum.IsDefined(settings.CombatCardGainRelicMode) ? settings.CombatCardGainRelicMode : CombatCardGainRelicMode.ShoujoOnly,
+            BookOfFiveRingsPatch = Enum.IsDefined(settings.BookOfFiveRingsPatch) ? settings.BookOfFiveRingsPatch : CombatCardGainRelicMode.ShoujoOnly,
+            LuckyFyshPatch = Enum.IsDefined(settings.LuckyFyshPatch) ? settings.LuckyFyshPatch : CombatCardGainRelicMode.ShoujoOnly
         };
         var previous = _current;
         if (previous == normalized) return;

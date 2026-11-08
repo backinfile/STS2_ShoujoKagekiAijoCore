@@ -14,6 +14,8 @@ public sealed class TelemetryModule : ICoreModule, IDisposable
     internal static CoreContext Context { get; private set; } = null!;
     private CoreContext? _context;
     internal static bool Active { get; private set; }
+    internal static bool DataUploadEnabled => Context.Configuration.Current is { EnableInformationCollection: true, EnableDataUpload: true };
+    internal static bool ErrorUploadEnabled => Context.Configuration.Current is { EnableInformationCollection: true, EnableErrorUpload: true };
     public string Id => "telemetry";
     public int Order => 100;
     public void Initialize(CoreContext context)
@@ -30,7 +32,7 @@ public sealed class TelemetryModule : ICoreModule, IDisposable
     private static void ConfigurationChanged(CoreSettings oldSettings, CoreSettings newSettings)
     {
         CoreErrorReporter.ConfigurationChanged();
-        if (newSettings.EnableDataUpload) RunHistoryUploadPatch.ResumePendingUploads();
+        if (newSettings.EnableInformationCollection && newSettings.EnableDataUpload) RunHistoryUploadPatch.ResumePendingUploads();
     }
     internal static void Warn(string message) => Context.Diagnostics.Report(DiagnosticSeverity.Warning, "telemetry", "delivery", message);
     private static string Version(string modId, string version) => string.IsNullOrWhiteSpace(version) ? (modId == "sts2" ? Context.GameVersion : "unknown") : version;

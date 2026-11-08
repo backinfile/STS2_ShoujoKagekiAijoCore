@@ -8,7 +8,7 @@ internal partial class CoreErrorLogger : Godot.Logger
 {
     public override void _LogMessage(string message, bool error)
     {
-        if (!error || !TelemetryModule.Context.Configuration.Current.EnableErrorUpload) return;
+        if (!error || !TelemetryModule.ErrorUploadEnabled) return;
         string bounded = message.Length > 16384 ? message[..16384] : message;
         int newline = bounded.IndexOf('\n');
         CoreErrorReporter.Capture(bounded.StartsWith("[ERROR]", StringComparison.Ordinal) ? "game" : "stderr",
@@ -18,7 +18,7 @@ internal partial class CoreErrorLogger : Godot.Logger
     public override void _LogError(string function, string file, int line, string code, string rationale,
         bool editorNotify, int errorType, Godot.Collections.Array<ScriptBacktrace> scriptBacktraces)
     {
-        if (errorType == (int)ErrorType.Warning || !TelemetryModule.Context.Configuration.Current.EnableErrorUpload) return;
+        if (errorType == (int)ErrorType.Warning || !TelemetryModule.ErrorUploadEnabled) return;
         try
         {
             CoreErrorReporter.Capture(errorType == (int)ErrorType.Shader ? "shader" : "engine",
