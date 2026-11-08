@@ -102,7 +102,11 @@ internal static class ShineDescriptionPatch
         var label = new LocString("gameplay_ui", "CORE_SHINE_LABEL").GetFormattedText();
         var suffix = new LocString("gameplay_ui", "CORE_SHINE_SUFFIX").GetFormattedText();
         var number = state.Remaining < state.Maximum ? $"[red]{state.Remaining}[/red]" : state.Remaining.ToString();
-        __result += "\n" + label + number + suffix;
+        var exhaustTitle = new LocString("card_keywords", "EXHAUST.title").GetFormattedText();
+        var exhaustBadge = $"[gold]{exhaustTitle}[/gold]{new LocString("card_keywords", "PERIOD").GetRawText()}";
+        var separator = __instance.Keywords.Contains(CardKeyword.Exhaust)
+            && __result.EndsWith(exhaustBadge, StringComparison.Ordinal) ? "" : "\n";
+        __result += separator + label + number + suffix;
     }
 }
 [HarmonyPatch(typeof(CardModel), nameof(CardModel.ShouldGlowRed), MethodType.Getter)]

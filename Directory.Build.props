@@ -4,7 +4,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>13</LangVersion>
-    <CoreVersion>1.0.1</CoreVersion>
+    <CoreVersion>1.0.2</CoreVersion>
     <Version>$(CoreVersion)</Version>
     <Sts2Api Condition="'$(Sts2Api)' == ''">stable</Sts2Api>
     <DefineConstants Condition="'$(Sts2Api)' == 'beta'">$(DefineConstants);STS2_BETA</DefineConstants>

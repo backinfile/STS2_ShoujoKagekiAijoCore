@@ -53,10 +53,13 @@ public static class Bootstrap
 
     private static void InitializeOnce()
     {
-        var location = Path.GetDirectoryName(typeof(Bootstrap).Assembly.Location)!;
-        _logicalMod = ModManager.Mods.FirstOrDefault(x => x.manifest?.id == ModId && Eligible(x)
-            && Path.GetFullPath(x.path).Equals(Path.GetFullPath(location), StringComparison.OrdinalIgnoreCase))
-            ?? throw new InvalidOperationException("Cannot identify the active Core mod entry.");
+        var entries = ModManager.Mods.Where(x => x.manifest?.id == ModId && Eligible(x)).ToArray();
+        var location = Path.GetDirectoryName(typeof(Bootstrap).Assembly.Location);
+        _logicalMod = entries.FirstOrDefault(x => !string.IsNullOrEmpty(location)
+            && Path.TrimEndingDirectorySeparator(Path.GetFullPath(x.path)).Equals(
+                Path.TrimEndingDirectorySeparator(Path.GetFullPath(location)), StringComparison.OrdinalIgnoreCase))
+            // Android may report a canonical assembly path instead of the mod directory alias.
+            ?? (entries.Length == 1 ? entries[0] : throw new InvalidOperationException("Cannot identify the active Core mod entry."));
         var baseLib = ModManager.Mods.FirstOrDefault(x => x.manifest?.id == "BaseLib" && x.state == ModLoadState.Loaded)
             ?? throw new InvalidOperationException("缺少已加载的 BaseLib，请按 BaseLib → Core → 角色 Mod 排列，并安装 BaseLib 3.4.7。");
         if (AccessTools.Field(typeof(ReflectionHelper), "_modTypes").GetValue(null) != null)
