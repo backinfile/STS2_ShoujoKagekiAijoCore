@@ -1,0 +1,8 @@
+config_version=5
+[application]
+config/name="Core Presentation Checks"
+run/main_scene="res://Probe.tscn"
+[dotnet]
+project/assembly_name="PresentationChecks"
+[rendering]
+renderer/rendering_method="gl_compatibility"

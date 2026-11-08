@@ -31,7 +31,10 @@ internal sealed class ShineCardBorder(NCard card)
     private static Vector2[] GetContour(Texture2D texture)
     {
         if (!Contours.TryGetValue(texture, out var contour))
-            Contours[texture] = contour = ReadContour(texture);
+        {
+            contour = ReadContour(texture);
+            if (contour.Length > 0) Contours[texture] = contour;
+        }
         return contour;
     }
 
@@ -98,10 +101,13 @@ internal sealed class ShineCardBorder(NCard card)
         // compressed atlases. Decompress the source atlas before extracting its region.
         if (texture is AtlasTexture atlas)
         {
-            using var source = atlas.Atlas.GetImage();
+            if (atlas.Atlas is not { } atlasTexture) return null;
+            using var source = ReadImage(atlasTexture);
             if (source == null || source.IsEmpty()) return null;
-            if (source.IsCompressed() && source.Decompress() != Error.Ok) return null;
-            return source.GetRegion(new Rect2I((Vector2I)atlas.Region.Position, (Vector2I)atlas.Region.Size));
+            var size = (Vector2I)atlas.Region.Size;
+            if (size.X == 0) size.X = source.GetWidth();
+            if (size.Y == 0) size.Y = source.GetHeight();
+            return source.GetRegion(new Rect2I((Vector2I)atlas.Region.Position, size));
         }
         var image = texture.GetImage();
         if (image != null && image.IsCompressed() && image.Decompress() != Error.Ok) { image.Dispose(); return null; }
