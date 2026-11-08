@@ -19,7 +19,7 @@ BundleCandidate Select(params BundleCandidate[] candidates) => BundleSelection.S
 Check(ReferenceEquals(Select(candidate), candidate), "single complete bundle");
 var identical = candidate with { Root = "workshop-copy", Source = "Workshop:copy" };
 Check(Select(identical, candidate).Source == candidate.Source, "identical copies converge by stable source identity");
-var newer = candidate with { Bundle = candidate.Bundle with { ReleaseVersion = "1.1.0", ResourceVersion = "1.1.0" }, Fingerprint = "newer" };
+var newer = candidate with { Bundle = candidate.Bundle with { ReleaseVersion = "1.2.0", ResourceVersion = "1.2.0" }, Fingerprint = "newer" };
 Check(ReferenceEquals(Select(candidate, newer), newer), "highest common compatible release");
 var missingFeature = newer with { Bundle = newer.Bundle with { Features = ["music@1"] } };
 Check(ReferenceEquals(Select(candidate, missingFeature), candidate), "newer missing required feature falls back");
@@ -46,6 +46,11 @@ foreach (var file in Directory.EnumerateFiles(args[0], "*", SearchOption.AllDire
 }
 try
 {
+    Check(BundleSelection.ValidateStrict(scratch, "strict").Fingerprint == candidate.Fingerprint, "strict official package");
+    var extra = Path.Combine(scratch, "unexpected.txt");
+    File.WriteAllText(extra, "extra");
+    Reject(() => BundleSelection.ValidateStrict(scratch, "strict"), "strict rejects unlisted files");
+    File.Delete(extra);
     var runtime = Path.Combine(scratch, candidate.Bundle.Targets["beta"].Assembly);
     File.AppendAllText(runtime, "tampered");
     Reject(() => BundleSelection.Validate(scratch, "Workshop:tampered"), "unselected target runtime is also verified");

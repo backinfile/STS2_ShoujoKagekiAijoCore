@@ -1,3 +1,4 @@
+using ShoujoKageki.Core.V1.Presentation;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -25,7 +26,8 @@ internal sealed class KarenMusicPlayback : IDisposable
     private string? _forcedPath;
     private bool _disposed;
     private InterruptedPlayback? _interrupted;
-    private sealed record InterruptedPlayback(AudioStream? Stream, string? Path, int Index, double Position,
+    internal bool TemporaryLoop { get; set; }
+    internal sealed record InterruptedPlayback(AudioStream? Stream, string? Path, int Index, double Position,
         bool Playing, bool Paused, bool Loading, string Status);
     internal bool FormPriority { get; private set; }
     internal readonly List<string> Tracks = new();
@@ -54,7 +56,7 @@ internal sealed class KarenMusicPlayback : IDisposable
         owner.AddChild(_player);
         _player.Finished += OnFinished;
         MusicModule.Attach(this);
-        FormPriority = MusicModule.FormPriority;
+        FormPriority = false;
         UpdateVolumes();
     }
 
@@ -108,6 +110,7 @@ internal sealed class KarenMusicPlayback : IDisposable
             }
         }
         Changed?.Invoke();
+        MusicModule.RefreshPlayback();
     }
 
     internal Task Play(int index) => index < 0 || index >= Tracks.Count ? Task.CompletedTask : PlayTrack(index, Tracks[index]);
@@ -133,7 +136,7 @@ internal sealed class KarenMusicPlayback : IDisposable
             // Only the selected file is read; decoding resumes on the Godot context.
             AudioStream? stream;
             if (path.StartsWith("res://", StringComparison.Ordinal))
-                stream = KarenResourceLoader.LoadAudioStream(path, Path.GetFileName(path), nameof(KarenMusicPlayback))?.Duplicate() as AudioStream;
+                stream = CoreResources.LoadAudioStream(path, Path.GetFileName(path), nameof(KarenMusicPlayback))?.Duplicate() as AudioStream;
             else
             {
                 byte[] bytes = await System.IO.File.ReadAllBytesAsync(path);
@@ -213,6 +216,8 @@ internal sealed class KarenMusicPlayback : IDisposable
         _forcedPath = null;
         if (Index < 0 && Tracks.Count > 0) Index = 0;
         _interrupted = null;
+        FormPriority = false;
+        MusicModule.PlaybackReset();
         Loading = false;
         _player.Stop();
         _player.StreamPaused = false;
@@ -224,10 +229,33 @@ internal sealed class KarenMusicPlayback : IDisposable
 
     private void OnFinished()
     {
+        if (FormPriority && _forcedPath != null)
+        {
+            if (TemporaryLoop) _ = ForceTrack(_forcedPath);
+            else { UpdateVolumes(); Changed?.Invoke(); }
+            return;
+        }
         if (CoreModConfig.MusicPlayMode == MusicPlayMode.RepeatOne) _ = _forcedPath != null ? PlayTrack(-1, _forcedPath, true) : Play(Index);
         else if (FormPriority) { UpdateVolumes(); Changed?.Invoke(); }
         else if (Tracks.Count > 0) Step(1);
         else Stop();
+    }
+
+    internal InterruptedPlayback CaptureTemporary() => new(_player.Stream, _forcedPath, Index, Position,
+        _player.Playing, false, Loading, Status);
+    internal void RestoreTemporary(InterruptedPlayback state)
+    {
+        _request++; Loading = false; _pausedSeek = null;
+        _player.Stop(); _player.StreamPaused = false; _player.Stream = state.Stream;
+        _forcedPath = state.Path; Index = state.Index; Status = state.Status;
+        if (state.Stream != null && state.Playing) _player.Play((float)state.Position);
+        else if (state.Loading && state.Path != null) _ = ForceTrack(state.Path);
+        UpdateVolumes(); Changed?.Invoke();
+    }
+    internal void SuspendTemporary(bool paused)
+    {
+        if (_player.Stream != null) _player.StreamPaused = paused;
+        UpdateVolumes(); Changed?.Invoke();
     }
 
     internal void SetFormPriority(bool active)

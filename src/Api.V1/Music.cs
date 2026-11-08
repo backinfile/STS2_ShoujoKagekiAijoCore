@@ -14,3 +14,9 @@ public interface IMusicPlayback
     void Previous();
     event Action<MusicPlaybackState>? Changed;
 }
+
+/// <summary>A temporary track owns its playback until disposal; nested owners restore the displaced track.</summary>
+public interface ITemporaryMusicPlayback
+{
+    IDisposable AcquireTrack(string owner, string resourcePath, bool loop = true);
+}

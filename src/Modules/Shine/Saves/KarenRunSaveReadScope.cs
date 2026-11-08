@@ -51,9 +51,7 @@ internal sealed class KarenRunSaveReadScope : IDisposable
                 }
             }
 
-            player.ExtraFields ??= new SerializableExtraPlayerFields();
-            foreach (var handler in PlayerExtraFieldsHandlers.All)
-                handler.ReadPlayerField(extra, player.ExtraFields);
+            CorePlayerSave.BindLegacy(player, extra);
         }
     }
 

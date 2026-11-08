@@ -1,9 +1,9 @@
 using Godot;
 using System;
 
-namespace ShoujoKageki.Core.Runtime.Modules.Presentation;
+namespace ShoujoKageki.Core.V1.Presentation;
 
-public static class KarenResourceLoader
+public static class CoreResources
 {
     public static T? Load<T>(string path, string owner) where T : Resource
     {

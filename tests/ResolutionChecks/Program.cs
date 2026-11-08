@@ -74,9 +74,28 @@ if (args.Contains("--configuration-only"))
 }
 
 var services = new CoreServices();
+services.Add<ICoreDiscovery>(new CoreDiscovery());
+var context = new CoreContext(services, "1.1.0", "test", "");
+new ShoujoKageki.Core.Runtime.Modules.Execution.ModelExecutionModule().Initialize(context);
 var service = new ShineService();
-service.Initialize(new CoreContext(services, "1.0.0", "test", ""));
+service.Initialize(context);
 CoreApi.Bind(services);
+if (args.Contains("--routing-only"))
+{
+    new ShoujoKageki.Core.Runtime.Modules.Execution.CardPlayRoutingModule().Initialize(context);
+    var routingCard = new SynchronousFailureCard();
+    var expected = SynchronousFailureCard.Failure;
+    void CheckFailure(Action invoke, string name)
+    {
+        try { invoke(); }
+        catch (Exception actual) when (ReferenceEquals(actual, expected)) { Console.WriteLine(name + ": passed"); return; }
+        throw new InvalidOperationException(name);
+    }
+    CheckFailure(() => ShoujoKageki.Core.Runtime.Modules.Execution.CardPlayRoutingModule.Dispatch(routingCard, null!, null!), "Native routing preserves synchronous exception identity");
+    Func<CardModel, PlayerChoiceContext, CardPlay, Task> original = (_, _, _) => throw expected;
+    CheckFailure(() => ShoujoKageki.Core.Runtime.Modules.Execution.CardPlayRoutingModule.DispatchFromHook(original, routingCard, null!, null!), "Hook routing preserves synchronous exception identity");
+    return;
+}
 var harmony = new Harmony("Core.ResolutionChecks");
 var serviceType = typeof(ShineService);
 Type Patch(string name) => serviceType.GetNestedType(name, BindingFlags.NonPublic)!;
@@ -187,7 +206,9 @@ harmony.Patch(AccessTools.Method(machine, "MoveNext"), Hook("WrapperPatch", "Pre
     Hook("WrapperPatch", "Transpiler"), Hook("WrapperPatch", "Finalizer"));
 harmony.Patch(AccessTools.Method(typeof(ResolutionCard), nameof(ResolutionCard.Before)), postfix: Hook("NativePermitPatch", "Postfix"));
 harmony.Patch(AccessTools.Method(typeof(ResolutionCard), "OnPlay"),
-    new HarmonyMethod(serviceType, "NativePlayPrefix"), new HarmonyMethod(serviceType, "NativePlayPostfix"));
+    new HarmonyMethod(typeof(ShoujoKageki.Core.Runtime.Modules.Execution.ModelExecutionModule), "CardPrefix"),
+    new HarmonyMethod(typeof(ShoujoKageki.Core.Runtime.Modules.Execution.ModelExecutionModule), "CardPostfix"),
+    finalizer: new HarmonyMethod(typeof(ShoujoKageki.Core.Runtime.Modules.Execution.ModelExecutionModule), "Finalizer"));
 
 ModelDb.Inject(typeof(ResolutionCard)); var card = (ResolutionCard)ModelDb.Card<ResolutionCard>().MutableClone();
 service.SetState(card, 3, 3);
@@ -340,3 +361,9 @@ public sealed class ResolutionCard : ResolutionWrapperBase
 }
 
 public sealed class PlainCard() : CardModel(0, CardType.Skill, CardRarity.Token, TargetType.Self) { }
+
+public sealed class SynchronousFailureCard() : CardModel(0, CardType.Skill, CardRarity.Token, TargetType.Self)
+{
+    public static readonly Exception Failure = new IOException("expected synchronous failure");
+    protected override Task OnPlay(PlayerChoiceContext context, CardPlay play) => throw Failure;
+}

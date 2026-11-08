@@ -1,10 +1,11 @@
+using ShoujoKageki.Core.V1.Presentation;
 using System;
 using Godot;
 
-namespace ShoujoKageki.Core.Runtime.Modules.Presentation;
+namespace ShoujoKageki.Core.V1.Presentation;
 
 /// <summary>A short, tapered strip on an existing draw layer. Head may pass 1 to retract its tail.</summary>
-internal static class KarenLightRibbon
+public static class LightRibbon
 {
     // Shared visual resources are prepared during the run loading screen as well as on demand.
     // Each draw call copies these arrays synchronously. Reuse buffers on the calling
@@ -12,18 +13,18 @@ internal static class KarenLightRibbon
     private sealed class DrawBuffers
     {
         internal readonly Vector2[] Samples = new Vector2[49], Normals = new Vector2[49], Outer = new Vector2[8], Core = new Vector2[8];
-        internal readonly KarenVfxCanvasBatch Batch = new(1536);
+        internal readonly CanvasGeometryBatch Batch = new(1536);
     }
     [ThreadStatic] private static DrawBuffers? _drawBuffers;
     private static DrawBuffers Buffers => _drawBuffers ??= new DrawBuffers();
-    internal static void PrepareResources()
+    public static void PrepareResources()
     {
         _ = Buffers;
         _glow ??= new GradientTexture2D {
         Width=96,Height=96,Fill=GradientTexture2D.FillEnum.Radial,FillFrom=new(.5f,.5f),FillTo=new(1,.5f),
         Gradient=new Gradient { Offsets=[0,.18f,.55f,1],Colors=[Colors.White,new(1,1,1,.65f),new(1,1,1,.12f),Colors.Transparent] } };
     }
-    internal static Godot.Resource?[] PreparedResources => [_glow];
+    public static Godot.Resource?[] PreparedResources => [_glow];
 
     private static GradientTexture2D? _glow;
     private static GradientTexture2D Glow { get { PrepareResources(); return _glow!; } }
@@ -38,7 +39,7 @@ internal static class KarenLightRibbon
     {
         float first = Mathf.Clamp(head - length, 0, 1), last = Mathf.Clamp(head, 0, 1);
         if (alpha <= 0 || last - first < .001f) return;
-        int segments = 48 / KarenVfxQuality.ParticleStride;
+        int segments = 48 / CoreEffects.ParticleStride;
         var buffers = Buffers;
         var points = buffers.Samples; var normals = buffers.Normals; var batch = buffers.Batch;
         batch.Clear();

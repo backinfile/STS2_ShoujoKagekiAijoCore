@@ -1,3 +1,8 @@
+#nullable enable
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text.Json;
@@ -100,6 +105,34 @@ public static class BundleSelection
         if (pack.Read(magic) != 4 || !magic.SequenceEqual("GDPC"u8)) throw new InvalidDataException("Core resource pack is invalid.");
         var fingerprint = Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(bundle, JsonOptions))));
         return new BundleCandidate(Path.GetFullPath(root), source, bundle, fingerprint);
+    }
+
+    public static BundleCandidate ValidateStrict(string root, string source)
+    {
+        var candidate = Validate(root, source);
+        foreach (var entry in EnumeratePackageEntries(candidate.Root))
+        {
+            if ((File.GetAttributes(entry) & FileAttributes.ReparsePoint) != 0)
+                throw new InvalidDataException("Core package contains a link.");
+            if (Directory.Exists(entry)) continue;
+            var relative = Path.GetRelativePath(candidate.Root, entry).Replace('\\', '/');
+            if (relative != "core.bundle" && !candidate.Bundle.Files.ContainsKey(relative))
+                throw new InvalidDataException($"Core package contains an unlisted file: {relative}");
+        }
+        return candidate;
+    }
+
+    private static IEnumerable<string> EnumeratePackageEntries(string root)
+    {
+        foreach (var entry in Directory.EnumerateFileSystemEntries(root))
+        {
+            // Check before descending: links may leave the package or form a cycle.
+            if ((File.GetAttributes(entry) & FileAttributes.ReparsePoint) != 0)
+                throw new InvalidDataException("Core package contains a link.");
+            yield return entry;
+            if (Directory.Exists(entry))
+                foreach (var nested in EnumeratePackageEntries(entry)) yield return nested;
+        }
     }
 
     public static BundleCandidate Select(IEnumerable<BundleCandidate> candidates, IReadOnlyList<CoreRequirements> requirements,

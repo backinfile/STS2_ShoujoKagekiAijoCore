@@ -83,6 +83,7 @@ public partial class NKarenMusicPlayer : Control
             _reloadPending = true;
             _reloadAfter = .4;
         }
+        if (!_reloadPending) MusicModule.RefreshPlayback();
         Refresh();
     }
 

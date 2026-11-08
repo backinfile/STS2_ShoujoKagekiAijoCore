@@ -1,6 +1,6 @@
 # ShoujoKagekiAijoCore 实现文档
 
-本文面向 Core 开发、部署和维护者，记录 Core 1.0.1 的实现约定，整理日期为 2026-11-07。使用方式与作者接入示例见 [Core 使用说明](../README.md)。
+本文面向 Core 开发、部署和维护者，记录 Core 1.1.0 的实现约定，整理日期为 2026-11-08。使用方式与作者接入示例见 [Core 使用说明](../README.md)。
 
 源码与文档位于 Core 的 GitHub 仓库，SDK 随正式发行提供。工程示例采用相对路径。[GitHub 仓库](https://github.com/backinfile/STS2_ShoujoKagekiAijoCore)
 
@@ -459,7 +459,7 @@ Core 在进程内统一注册该组补丁。Karen 迁移版本退出原前缀与
 | 内容 | Karen 源码依据 | 迁移建议 |
 | --- | --- | --- |
 | 闪耀结算与耗尽监听 | Models/Cards/KarenBaseCardModel、ShineSystem/IShineExhaustionListener、ShinePileManager | 随闪耀迁入，保留使用后尚未耗尽的牌效回调，以及持有遗物的耗尽监听 |
-| 存档与联机数据桥接 | SaveSystem/KarenRunSaveReadScope、PlayerExtraFieldsHandlerBase、RunSaveManager_Patches、SerializablePlayerExtraFields_Patches | 随存档迁入，Core 保存业务快照与旧格式兼容，优先复用 BaseLib 玩家扩展保存及网络机制 |
+| 存档与联机数据桥接 | CorePlayerSave、KarenRunSaveReadScope、RunSaveManager_Patches | 随存档迁入，Core 保存业务快照与旧格式兼容，优先复用 BaseLib 玩家扩展保存及网络机制 |
 | 双版本攻击命令与异步补丁工具 | Compat/AttackCommandCompat、Utils/Async | 作为 GameAdapter 与 Runtime 内部工具，统一 FromCard 参数差异和主线程异步续接 |
 | 共享提示与虚拟牌堆表现 | Patches/CardHoverTipsPatch、PromisePileSystem/Patches/NCardFindOnTablePatch 的公共部分 | 随关键字与牌堆迁入，复用 BaseLib 关键字、牌堆查询和转场能力，角色提供专属提示与表现锚点 |
 | 只读手牌一致性检查 | Commands/KarenCheckHandConsoleCmd | 抽取通用的模型、可见节点、重复与残留绑定检查，角色通过内部扩展提供专属覆盖层检查 |
@@ -925,3 +925,9 @@ BaseLib 能力核对了 3.4.7 的 ModConfigRegistry、SimpleModConfig、CommonAc
 
 确定后由 Core 仓库发布接口参考、完整作者示例和迁移清单，并将两份文档更新为对应正式规范。
 
+
+## 1.1 重构入口
+
+公共执行、移牌、复制、音乐与表现接口见 contracts/runtime-v1.md 的「1.1 公共处理入口」。模型方法挂钩由 Modules/Execution 统一维护，Shine 与角色作用域共享发现结果。玩家状态由 Modules/Shine/Saves/CorePlayerSave 通过 BaseLib 注册；RunSaveManager_Patches 仅捕获旧格式读取。Bootstrap/Bundle.cs 同时作为 SDK 校验源码发布。
+
+Karen 使用 BaseLib CustomCharacterModel、CustomPile 注册角色与约定牌堆，逐次异步移牌由公共流水线分发；角色自身保留约定、虚空与空堆规则。Junna 保留箭矢调度，按战斗模型的生物顺序和部署序号结算、转移目标；卡值读取通过语义名称绑定稳定存储字段，持续能力按回合、卡牌、伤害及描述分组。

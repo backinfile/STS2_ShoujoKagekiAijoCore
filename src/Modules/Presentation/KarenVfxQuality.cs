@@ -1,3 +1,4 @@
+using ShoujoKageki.Core.V1.Presentation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,47 +17,15 @@ namespace ShoujoKageki.Core.Runtime.Modules.Presentation;
 /// <summary>Local presentation budgets; gameplay and card ownership stay native.</summary>
 internal static class KarenVfxQuality
 {
-    private sealed class DrawClock
-    {
-        public ulong Next;
-        public bool Suppressed, WasVisible;
-    }
-    private static readonly ConditionalWeakTable<CanvasItem, DrawClock> DrawClocks = new();
-    internal static CoreVfxLevel Level => CoreModConfig.VfxLevel;
-    internal static bool Enabled => CoreModConfig.EnableShineEffects && Level != CoreVfxLevel.Off;
-    internal static bool AmbientEffects => Enabled && Level == CoreVfxLevel.Full;
-    internal static int ParticleStride => Level == CoreVfxLevel.Full ? 1 : 4;
-    // Godot particle emitters require at least one particle. Off prevents their factories
-    // and emissions instead of assigning the invalid Amount=0.
-    internal static int ParticleCount(int count) => count <= 0 ? 0 : Math.Max(1, (count + ParticleStride - 1) / ParticleStride);
-    internal static float SpawnInterval(float interval) => Enabled ? interval * ParticleStride : float.PositiveInfinity;
-
-    internal static void Redraw(CanvasItem? surface)
-    {
-        if (surface == null) return;
-        if (!Enabled) { Suppress(surface); return; }
-        Restore(surface);
-        if (Level == CoreVfxLevel.Full) { surface.QueueRedraw(); return; }
-        var clock = DrawClocks.GetValue(surface, static _ => new DrawClock());
-        ulong now = Time.GetTicksUsec();
-        if (now < clock.Next) return;
-        clock.Next = now + 50000UL;
-        surface.QueueRedraw();
-    }
-
-    private static void Suppress(CanvasItem item)
-    {
-        var clock = DrawClocks.GetValue(item, static _ => new DrawClock());
-        if (!clock.Suppressed) { clock.WasVisible = item.Visible; clock.Suppressed = true; }
-        item.Hide();
-    }
-    private static void Restore(CanvasItem item)
-    {
-        if (!DrawClocks.TryGetValue(item, out var clock) || !clock.Suppressed) return;
-        clock.Suppressed = false;
-        item.Visible = clock.WasVisible;
-        clock.Next = 0;
-    }
+    internal static CoreVfxLevel Level => (CoreVfxLevel)(int)CoreEffects.Level;
+    internal static bool Enabled => CoreModConfig.EnableShineEffects && CoreEffects.Enabled;
+    internal static bool AmbientEffects => Enabled && CoreEffects.AmbientEffects;
+    internal static int ParticleStride => CoreEffects.ParticleStride;
+    internal static int ParticleCount(int count) => CoreEffects.ParticleCount(count);
+    internal static float SpawnInterval(float interval) => Enabled ? CoreEffects.SpawnInterval(interval) : float.PositiveInfinity;
+    internal static void Redraw(CanvasItem? surface) => CoreEffects.Redraw(surface, Enabled);
+    private static void Suppress(CanvasItem surface) => CoreEffects.Suppress(surface);
+    private static void Restore(CanvasItem surface) => CoreEffects.Restore(surface);
     private static bool IsEffect(Type type) => type.Assembly == typeof(KarenVfxQuality).Assembly
         && (type.Name.StartsWith("NKaren", StringComparison.Ordinal) && type.Name.EndsWith("Vfx", StringComparison.Ordinal) || type.Name.StartsWith("NDisableRelic", StringComparison.Ordinal))
         && typeof(CanvasItem).IsAssignableFrom(type);

@@ -19,10 +19,16 @@ public sealed class CoreDiscovery : ICoreDiscovery
             x.manifest.version ?? "", x.modSource.ToString(), x.state == ModLoadState.Loaded)).ToArray());
         if (ModManager.State == ModManagerState.None) return;
         if (AccessTools.Field(typeof(ModelDb), "_contentById").GetValue(null) is not IDictionary content || content.Count == 0) return;
+        var owners = new Dictionary<Assembly, Mod?>();
+        Mod? Owner(Assembly assembly)
+        {
+            if (!owners.TryGetValue(assembly, out var owner)) owners[assembly] = owner = OwnerOf(assembly);
+            return owner;
+        }
         Models = Array.AsReadOnly(content.Values.Cast<AbstractModel>().Select(model =>
         {
             var type = model.GetType();
-            var mod = OwnerOf(type.Assembly);
+            var mod = Owner(type.Assembly);
             var kind = model switch { CardModel => "card", CharacterModel => "character", CardPoolModel => "cardPool", RelicModel => "relic", _ => type.BaseType?.Name ?? "model" };
             var coreOwned = type.Assembly == typeof(RuntimeEntry).Assembly;
             return new CoreModelInfo(model.Id.ToString(), kind, coreOwned ? CoreApi.ModId : mod?.manifest?.id ?? "sts2",

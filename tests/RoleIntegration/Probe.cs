@@ -85,6 +85,8 @@ public sealed class CoreRoleCommand : AbstractConsoleCmd
         return new(Run(player), true, "Core role checks started.");
     }
 
+    internal static string LastResult => _result;
+
     private static object? SavedRules(Player? player)
     {
         if (player == null) return null;
@@ -142,7 +144,7 @@ public sealed class CoreRoleCommand : AbstractConsoleCmd
         catch (Exception error) { _result = JsonSerializer.Serialize(new { exported = false, error = error.ToString() }); }
     }
 
-    private static async Task Run(Player player)
+    internal static async Task Run(Player player)
     {
         var rows = new List<object>();
         var context = new ThrowingPlayerChoiceContext();
@@ -155,7 +157,7 @@ public sealed class CoreRoleCommand : AbstractConsoleCmd
         async Task<CardModel> Card()
         {
             var card = combat.CreateCard(ModelDb.Card<ResolutionProbeCard>(), player);
-            await CardPileCmd.Add(card, PileType.Hand, skipVisuals: true);
+            await CardPileCmd.Add(card, PileType.Hand, skipVisuals: false);
             return card;
         }
         try
@@ -164,7 +166,7 @@ public sealed class CoreRoleCommand : AbstractConsoleCmd
             foreach (var card in player.PlayerCombatState!.AllCards.ToArray())
             {
                 ArrowCombat.Cancel(card);
-                await CardPileCmd.RemoveFromCombat(card, skipVisuals: true);
+                await CardPileCmd.RemoveFromCombat(card, skipVisuals: false);
             }
             var native = await Card();
             ResolutionProbeCard.Effects = 0;
@@ -182,7 +184,7 @@ public sealed class CoreRoleCommand : AbstractConsoleCmd
             CardReplays.SetNext(arrow, 2);
             ResolutionProbeCard.Effects = 0;
             ResolutionProbeCard.ResolutionIndices.Clear();
-            await CardPileCmd.Add(arrow, PileType.Play, skipVisuals: true);
+            await CardPileCmd.Add(arrow, PileType.Play, skipVisuals: false);
             await HandArrow.Play(context, arrow);
             Check("deployment preserves the budget", Shine.GetState(arrow)?.Remaining == 1);
             Check("deployment skips actual-effect callbacks", ResolutionProbeCard.Effects == 0 && ResolutionProbeCard.ResolutionIndices.Count == 0);

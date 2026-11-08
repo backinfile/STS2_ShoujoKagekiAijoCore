@@ -1,38 +1,17 @@
 param([Parameter(Mandatory)][string]$CorePackage, [switch]$Strict)
 $ErrorActionPreference = 'Stop'
-$root = [IO.Path]::GetFullPath($CorePackage).TrimEnd([IO.Path]::DirectorySeparatorChar)
-$bundle = Get-Content -LiteralPath (Join-Path $root 'core.bundle') -Raw -Encoding UTF8 | ConvertFrom-Json
-if ($bundle.format -ne 1 -or $bundle.bootstrapProtocol -ne 1 -or $bundle.apiMajor -ne 1) { throw 'Unsupported Core package protocol.' }
-if ($bundle.resourceVersion -ne $bundle.releaseVersion) { throw 'Core code/resource release mismatch.' }
-$required = @($bundle.apiAssembly, $bundle.resourcePack, 'ShoujoKagekiAijoCore.dll', 'ShoujoKagekiAijoCore.json')
-$required += @($bundle.targets.PSObject.Properties | ForEach-Object { $_.Value.assembly })
-foreach ($relative in $required) {
-    if (-not $bundle.files.PSObject.Properties[$relative]) { throw "Core package has no digest for $relative" }
+# The packaged SDK carries the exact source compiled into the bootstrap.
+$source = Join-Path $PSScriptRoot 'BundleValidation.cs'
+if (-not (Test-Path -LiteralPath $source)) { $source = Join-Path $PSScriptRoot '../src/Bootstrap/Bundle.cs' }
+if (-not ('ShoujoKageki.Core.Bootstrap.BundleSelection' -as [type])) {
+    Add-Type -Path $source -CompilerOptions '/langversion:preview'
 }
-foreach ($property in $bundle.files.PSObject.Properties) {
-    if ([IO.Path]::IsPathRooted($property.Name)) { throw 'Core file paths must be relative.' }
-    $path = [IO.Path]::GetFullPath((Join-Path $root $property.Name))
-    if (-not $path.StartsWith($root + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { throw 'Core file path escapes the package.' }
-    $current = $path
-    while ($current -ne $root) {
-        $item = Get-Item -LiteralPath $current
-        if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Core package contains a link.' }
-        $current = Split-Path -Parent $current
-    }
-    if ((Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash -ne $property.Value) { throw "Core file checksum mismatch for $($property.Name)" }
+$root = [IO.Path]::GetFullPath($CorePackage)
+$candidate = if ($Strict) {
+    [ShoujoKageki.Core.Bootstrap.BundleSelection]::ValidateStrict($root, 'SDK')
+} else {
+    [ShoujoKageki.Core.Bootstrap.BundleSelection]::Validate($root, 'SDK')
 }
-$manifest = Get-Content -LiteralPath (Join-Path $root 'ShoujoKagekiAijoCore.json') -Raw -Encoding UTF8 | ConvertFrom-Json
-if ($manifest.id -ne 'ShoujoKagekiAijoCore' -or $manifest.version -ne $bundle.releaseVersion) { throw 'Core manifest and bundle release identity differ.' }
-$api = [Reflection.AssemblyName]::GetAssemblyName((Join-Path $root $bundle.apiAssembly))
-if ($api.Name -ne 'ShoujoKagekiAijoCore.Api.V1' -or $api.Version -ne [Version]'1.0.0.0') { throw 'Unexpected Core API identity.' }
-if ($Strict) {
-    foreach ($file in Get-ChildItem -LiteralPath $root -Recurse -Force) {
-        if ($file.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Core package contains a link.' }
-        if ($file.PSIsContainer) { continue }
-        $relative = [IO.Path]::GetRelativePath($root, $file.FullName).Replace('\','/')
-        if ($relative -ne 'core.bundle' -and -not $bundle.files.PSObject.Properties[$relative]) {
-            throw "Core package contains an unlisted file: $relative"
-        }
-    }
-}
-[pscustomobject]@{ Root = $root; Bundle = $bundle }
+# Preserve the SDK's existing PowerShell object contract for packaging callers.
+$json = [System.Text.Json.JsonSerializer]::Serialize($candidate.Bundle, $candidate.Bundle.GetType(), [ShoujoKageki.Core.Bootstrap.BundleSelection]::JsonOptions)
+[pscustomobject]@{ Root = $candidate.Root; Bundle = ($json | ConvertFrom-Json) }

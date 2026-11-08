@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+ <PropertyGroup><TargetFramework>net9.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><AssemblyName>CoreMatrixIntegration</AssemblyName><DefineConstants Condition="'$(Sts2Api)' == 'beta'">$(DefineConstants);STS2_BETA</DefineConstants></PropertyGroup>
+ <ItemGroup>
+  <Compile Include="../RoleIntegration/Probe.cs" Link="CoreRoleProbe.cs" />
+  <Reference Include="ShoujoKagekiAijoCore.Api.V1" HintPath="$(CoreApiPath)" Private="false" />
+  <Reference Include="ShoujoKagekiJunna" HintPath="$(JunnaAssemblyPath)" Private="false" />
+  <Reference Include="Karen" HintPath="$(KarenAssemblyPath)" Private="false" />
+  <Reference Include="sts2" HintPath="$(GameDir)/data_sts2_windows_x86_64/sts2.dll" Private="false" />
+  <Reference Include="GodotSharp" HintPath="$(GameDir)/data_sts2_windows_x86_64/GodotSharp.dll" Private="false" />
+  <Reference Include="0Harmony" HintPath="$(GameDir)/data_sts2_windows_x86_64/0Harmony.dll" Private="false" />
+  <PackageReference Include="Alchyr.Sts2.BaseLib" Version="3.4.7" />
+ </ItemGroup>
+</Project>

@@ -15,13 +15,14 @@ using ShoujoKageki.Core.Runtime.Modules.Shine;
 
 namespace ShoujoKageki.Core.Runtime.Modules.Presentation;
 
-public sealed class ShinePresentation : ICoreModule, IShinePresentation
+public sealed class ShinePresentation : ICoreModule, IShinePresentation, IShinePileView
 {
     public string Id => "shine-presentation";
     public int Order => 0;
     public void Initialize(CoreContext context)
     {
         context.Services.Add<IShinePresentation>(this);
+        context.Services.Add<IShinePileView>(this);
         context.Configuration.Changed += (previous, current) =>
         {
             if (previous.VfxLevel != current.VfxLevel || previous.EnableShineEffects != current.EnableShineEffects) KarenVfxQuality.ApplyLevel();
@@ -30,6 +31,7 @@ public sealed class ShinePresentation : ICoreModule, IShinePresentation
         };
         ShineArchive.Changed += ShinePileManager.Refresh;
     }
+    public NCardPileScreen Show(Player player) => ShinePileManager.ShowScreen(player);
     public bool IsDepletionAnimating(CardModel card) => NKarenShineDepleteVfx.IsAnimating(card);
     internal void PlayDepletion(CardModel card)
     {

@@ -1,3 +1,4 @@
+using ShoujoKageki.Core.V1.Presentation;
 using Godot;
 
 using System.Threading;
@@ -65,7 +66,7 @@ public partial class KarenSplashScreen : Control
         _sprite.Position = screenSize / 2;
 
         // 播放 Revue 音效
-        _audioPlayer = new AudioStreamPlayer { Stream = KarenResourceLoader.LoadAudioStream("res://ShoujoKagekiAijoCore/audio/" + SoundFile, SoundFile, nameof(KarenSplashScreen)), Bus = "Master" };
+        _audioPlayer = new AudioStreamPlayer { Stream = CoreResources.LoadAudioStream("res://ShoujoKagekiAijoCore/audio/" + SoundFile, SoundFile, nameof(KarenSplashScreen)), Bus = "Master" };
         AddChild(_audioPlayer);
         _audioPlayer.Play();
     }

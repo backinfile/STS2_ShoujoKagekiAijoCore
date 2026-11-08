@@ -32,14 +32,12 @@ public sealed class ShineService : IShineService, ICoreModule
     private static readonly AsyncLocal<int> SnapshotCopyDepth = new();
     [ThreadStatic] private static int _cardReadDepth;
     private static readonly ConditionalWeakTable<CardModel, object> PermanentAcquisitions = new();
-    private readonly HashSet<MethodInfo> _hookedMethods = [];
-    private readonly Harmony _harmony = new(CoreApi.ModId + ".ActualResolution");
 
     public void Initialize(CoreContext context)
     {
         Instance = this;
         context.Services.Add<IShineService>(this);
-        context.ModelsReady += InstallActualPlayHooks;
+        ShoujoKageki.Core.Runtime.Modules.Execution.ModelExecutionModule.RegisterNative(BeginNativePlay);
     }
     public ShineState? GetState(CardModel card)
     {
@@ -117,9 +115,14 @@ public sealed class ShineService : IShineService, ICoreModule
                 Parent.Choice ??= Choice;
                 return;
             }
+            List<Exception>? errors = null;
             foreach (var card in Executed)
-                if (Pending.Get(card) || Instance.GetState(card) is { Remaining: <= 0 })
-                    await Instance.FinishDepletion(card, Choice);
+            {
+                if (!Pending.Get(card) && Instance.GetState(card) is not { Remaining: <= 0 }) continue;
+                try { await Instance.FinishDepletion(card, Choice); }
+                catch (Exception error) { (errors ??= []).Add(error); }
+            }
+            if (errors != null) throw new AggregateException("Card depletion cleanup failed.", errors);
         }
     }
     internal static Batch BeginBatch(PlayerChoiceContext? context, CardModel? nativeCard = null)
@@ -291,30 +294,12 @@ public sealed class ShineService : IShineService, ICoreModule
             if (isPermanent && !ReferenceEquals(card, permanent)) permanent.RemoveFromState();
         }
     }
-    private void InstallActualPlayHooks()
+    private static Func<Task, Task>? BeginNativePlay(CardModel card, PlayerChoiceContext choice, CardPlay play)
     {
-        var prefix = new HarmonyMethod(typeof(ShineService), nameof(NativePlayPrefix));
-        var postfix = new HarmonyMethod(typeof(ShineService), nameof(NativePlayPostfix));
-        var methods = RuntimeEntry.Context.Discovery.Models.Where(x => x.Kind == "card")
-            .Select(x => AccessTools.Method(x.ModelType, "OnPlay", [typeof(PlayerChoiceContext), typeof(CardPlay)]))
-            .OfType<MethodInfo>().Where(x => !x.IsAbstract)
-            .Select(x => x.DeclaringType!.GetMethod(x.Name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly,
-                null, [typeof(PlayerChoiceContext), typeof(CardPlay)], null)!).Distinct();
-        foreach (var method in methods)
-            if (_hookedMethods.Add(method)) _harmony.Patch(method, prefix, postfix);
-    }
-    private static void NativePlayPrefix(CardModel __instance, PlayerChoiceContext __0, out ResolutionLease? __state)
-    {
-        __state = null;
         var batch = ActiveBatch.Value;
-        if (batch == null || !batch.NativePermits.Remove(__instance)) return;
-        __state = Instance.Enter(__instance, CardResolutionKind.NativePlay, __0);
-    }
-    private static void NativePlayPostfix(ref Task __result, ResolutionLease? __state)
-    {
-        if (__state == null) return;
-        if (__state.OwnBatch) __state.Batch.Detach();
-        __result = Exit(__result, __state);
+        if (batch == null || !batch.NativePermits.Remove(card)) return null;
+        var lease = Instance.Enter(card, CardResolutionKind.NativePlay, choice);
+        return task => Exit(task, lease);
     }
     [HarmonyPatch(typeof(Hook), nameof(Hook.BeforeCardPlayed))]
     private static class NativePermitPatch

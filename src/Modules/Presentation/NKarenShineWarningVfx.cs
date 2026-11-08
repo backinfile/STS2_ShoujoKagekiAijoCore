@@ -1,3 +1,4 @@
+using ShoujoKageki.Core.V1.Presentation;
 using Godot;
 using ShoujoKageki.Core.Runtime.Modules.Presentation;
 using System.Collections.Generic;
@@ -25,7 +26,7 @@ public partial class NKarenShineWarningVfx(NCard card, CardModel model) : Node2D
         public readonly float Life = life, Radius = radius, Phase = phase;
     }
     private readonly List<Spark> _sparks = new(40);
-    private readonly KarenVfxCanvasBatch _drawBatch = new();
+    private readonly CanvasGeometryBatch _drawBatch = new();
     public bool BelongsTo(CardModel? candidate) => ReferenceEquals(candidate, model);
     public override void _Ready() => Visible = false;
 

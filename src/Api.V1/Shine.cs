@@ -78,3 +78,8 @@ public static class Shine
     public static IAsyncDisposable BeginResolutionBatch() => Service.BeginResolutionBatch();
     public static CardModel Copy(CardModel card, CardCopyPurpose purpose) => Service.Copy(card, purpose);
 }
+
+public interface IShinePileView
+{
+    MegaCrit.Sts2.Core.Nodes.Screens.NCardPileScreen Show(Player player);
+}

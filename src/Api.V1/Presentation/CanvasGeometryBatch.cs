@@ -1,10 +1,10 @@
 using System;
 using Godot;
 
-namespace ShoujoKageki.Core.Runtime.Modules.Presentation;
+namespace ShoujoKageki.Core.V1.Presentation;
 
 /// <summary>Reusable, ordered triangle geometry for small animated canvas decorations.</summary>
-internal sealed class KarenVfxCanvasBatch(int initialPointCapacity = 4096)
+public sealed class CanvasGeometryBatch(int initialPointCapacity = 4096)
 {
     private static readonly Vector2[] CirclePoints = CreateCircle();
     private Vector2[] _points = Array.Empty<Vector2>();
@@ -18,8 +18,8 @@ internal sealed class KarenVfxCanvasBatch(int initialPointCapacity = 4096)
     private Transform2D _transform = Transform2D.Identity;
     private float _pixelSize = 1f;
 
-    internal static void PrepareResources() => _ = CirclePoints;
-    internal static Resource?[] PreparedResources => Array.Empty<Resource?>();
+    public static void PrepareResources() => _ = CirclePoints;
+    public static Resource?[] PreparedResources => Array.Empty<Resource?>();
 
     private static Vector2[] CreateCircle()
     {
@@ -83,7 +83,7 @@ internal sealed class KarenVfxCanvasBatch(int initialPointCapacity = 4096)
     {
         if (radius <= 0 || color.A <= 0) return;
         int segments = radius / _pixelSize < 8 ? 16 : radius / _pixelSize < 24 ? 32 : 64;
-        segments = Math.Max(8, segments / KarenVfxQuality.ParticleStride);
+        segments = Math.Max(8, segments / CoreEffects.ParticleStride);
         int stride = CirclePoints.Length / segments;
         Reserve(segments + 1, segments * 3);
         int first = _pointCount;

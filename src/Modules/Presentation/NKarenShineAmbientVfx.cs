@@ -1,3 +1,4 @@
+using ShoujoKageki.Core.V1.Presentation;
 using Godot;
 using ShoujoKageki.Core.Runtime.Modules.Presentation;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -16,7 +17,7 @@ public partial class NKarenShineAmbientVfx(NCard card, CardModel model, NKarenSh
     private Transform2D _previousPose;
     private Vector2 _lightWorld;
     private readonly ShineCardBorder _border = new(card);
-    private readonly KarenVfxCanvasBatch _drawBatch = new();
+    private readonly CanvasGeometryBatch _drawBatch = new();
     private sealed class Spark(Vector2 position, Vector2 velocity, float life, float radius)
     {
         public Vector2 Position = position, Velocity = velocity;
