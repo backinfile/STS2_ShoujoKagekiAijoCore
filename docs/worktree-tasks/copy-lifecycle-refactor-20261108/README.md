@@ -246,6 +246,12 @@ Report the resulting branch, commit, verification, cleanup state, and task docum
 
 </skill>
 
+### 后续用户输入
+
+> 合并 Core/Karen，保留全部工作树（推荐）
+
+> 清理不再用到的工作树
+
 ## Brief task plan
 
 - 在 ../worktrees/STS2_ShoujoKagekiAijoCore/copy-lifecycle-refactor-20261108 工作，原分支 main，起点 d6cf8cec0bd88bb0cf876597794112b28630736f。
@@ -266,7 +272,7 @@ Report the resulting branch, commit, verification, cleanup state, and task docum
 - 实测覆盖原模型快照、耗尽空壳、永久来源、跨玩家所有权、CloneOf、临时费用、转换与投入、独立预算、永久转交入牌组前的来源标识、最后一次北极星安装与后续结算、实际传递、选牌／跳过／必选、知识组获得与旧关系读档／同步、约定能力隔离、原生移牌、Void 与无限补充。
 - 四端手牌模型与可见节点数量一致，无缺失／多余节点，耗尽覆盖标记一致；查看移牌前后截图，保留合法出牌录像。全程窗口最小化，无焦点抢占。
 - 原检出的 main 提交保持起点。Junna 原检出有 64 个未提交文件；其中两个工作台文件在任务期间另行更新，保持其当前内容。
-- 当前状态：实现和定向验证完成；任务分支等待用户确认合并和清理。Junna 的原检出有重叠未提交内容，需要在整合时保留。
+- 当前状态：实现和定向验证完成；本仓库已合并到 main，用户已授权清理不再使用的工作树。Junna 的重叠未提交内容保留待整合。
 
 最终验证产物 SHA-256：
 
@@ -281,3 +287,11 @@ Report the resulting branch, commit, verification, cleanup state, and task docum
 本仓库构建产物：`out/tmp/copy-lifecycle-refactor-20261108/packages-r3/`。实机证据：`out/tmp/copy-lifecycle-refactor-20261108/lifecycle-live/cases/`，包括双版本 host/client 的 rules、手牌检查、截图及合法出牌录像。
 
 提交前审查：完整暂存索引及归档文本隐私检查通过，所有受 Git 跟踪文档通过本机绝对路径检查，使用匿名任务提交身份。
+
+## 合并与工作树清理
+
+本仓库实现已快进合并到原 main，合并前后提交树一致。
+
+用户后续授权清理不再使用的工作树。本次清理范围：Core、Karen 的 copy-lifecycle-refactor-20261108，以及 Junna 的 full-card-resolution-localization-20261105、pursuit-upgrade-preview-analysis-20261105。四个工作树均干净，提交均已包含于各自 main，没有进程引用这些路径。代码与任务记录由 main 保留；相关分支和既有归档保留。
+
+Junna 的 copy-lifecycle-refactor-20261108、junna-a0-playtest-20261107 尚未合并，保留工作树。Junna 原检出的未提交内容保持在原处。
