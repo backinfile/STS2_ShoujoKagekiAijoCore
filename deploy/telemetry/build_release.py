@@ -21,7 +21,8 @@ def build(output):
             digest.update(path.read_bytes())
     worker = output / "web/sw.js"
     worker.write_text(worker.read_text(encoding="utf-8").replace("__ASSET_VERSION__", digest.hexdigest()[:16]), encoding="utf-8")
-    shutil.copy2(root / "deploy/telemetry/install.py", output / "install.py")
+    for name in ("install.py", "domain_config.py"):
+        shutil.copy2(root / "deploy/telemetry" / name, output / name)
     print("Release assembled")
 
 

@@ -2,12 +2,17 @@ param(
     [string]$StableGameDir = $env:SHOUJO_STABLE_GAME,
     [string]$BetaGameDir = $env:SHOUJO_BETA_GAME,
     [string]$Godot = $env:GODOT_BIN,
-    [string]$TelemetryEndpointPath = '',
+    [string]$TelemetryEndpointPath = $env:SHOUJO_TELEMETRY_ENDPOINT_PATH,
     [string]$OutputDirectory = '',
     [string]$Version = '1.0.2'
 )
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
+if (-not $TelemetryEndpointPath) {
+    $localEndpoint = Join-Path $root 'artifacts/private/CoreTelemetryEndpoint.json'
+    if (Test-Path -LiteralPath $localEndpoint -PathType Leaf) { $TelemetryEndpointPath = $localEndpoint }
+}
+if ($TelemetryEndpointPath -and -not (Test-Path -LiteralPath $TelemetryEndpointPath -PathType Leaf)) { throw 'TelemetryEndpointPath must identify an existing endpoint configuration.' }
 if (-not $StableGameDir -or -not $BetaGameDir -or -not $Godot) { throw 'Provide StableGameDir, BetaGameDir and Godot, or their documented environment variables.' }
 if (-not $OutputDirectory) { $OutputDirectory = Join-Path $root 'dist/ShoujoKagekiAijoCore' }
 $output = [IO.Path]::GetFullPath($OutputDirectory)

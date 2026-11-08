@@ -12,6 +12,18 @@ python deploy/telemetry/build_release.py --output <new-release-directory>
 
 真实 access.json、service.env、客户端 endpoint 和生产数据独立保管。仓库只维护配置格式及生成程序。部署前备份数据库与归档，记录发行提交。回退选择同时识别旧、新请求格式的服务发行目录。
 
+## 上传与查看域名
+
+查看页面和上传使用不同域名。先为独立上传域名配置 DNS，并通过 Certbot nginx 认证器签发名为 `karen-telemetry-upload` 的证书，再运行安装脚本：
+
+```sh
+python3 install.py --public-origin https://<page-host> --upload-origin https://<upload-host>
+```
+
+`--page-origin` 是 `--public-origin` 的别名。也可使用 `TELEMETRY_PUBLIC_ORIGIN`、`TELEMETRY_UPLOAD_ORIGIN`。重装分别沿用 `access.json` 中的页面与上传域名；更改上传域名保留既有查看入口。相同主机名会在写入访问配置前被拒绝。
+
+安装器维护独立上传虚拟主机及页面主机限制：上传域名仅开放对局、报错和旧客户端会话的 POST 入口；查看页面仅在查看域名提供。已发布客户端使用的原上传路径保留兼容，新客户端仅携带独立上传地址。客户端端点文件的 `Url` 使用 `access.json` 的 `upload_url`。
+
 ## Web 资料
 
 安装 Pillow 后，从作者导出的目录构建卡牌缩略图及完整身份索引。

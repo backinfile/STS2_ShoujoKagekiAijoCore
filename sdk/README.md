@@ -27,3 +27,5 @@ $workshop.dependencies = @([ulong]3737335127, [ulong]$CoreWorkshopId)
 3737335127 为 BaseLib 条目 ID，CoreWorkshopId 使用 Core 首次发布后生成的 mod_id.txt 中的 ID。官方 ModUploader 按 workshop.json 同步必需物品。Core 自身的工坊工作区和发布命令见 [发布说明](../docs/RELEASING.md)。
 
 自动编译与模块接线见 contracts/runtime-v1.md。构建 Core 时设置 SHOUJO_STABLE_GAME、SHOUJO_BETA_GAME 和 GODOT_BIN，或向 build.ps1 传入对应参数。TelemetryEndpointPath 是本机发布输入，接收地址文件进入忽略目录。每次构建指定一个新的 OutputDirectory。
+
+Core 上传端点构建输入可通过 `SHOUJO_TELEMETRY_ENDPOINT_PATH` 指定；未显式指定时，`build.ps1` 读取忽略目录中的 `artifacts/private/CoreTelemetryEndpoint.json`。其中 `Url` 使用生产配置的 `upload_url`，与后台查看域名分离。
