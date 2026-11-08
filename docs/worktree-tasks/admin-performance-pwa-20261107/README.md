@@ -245,6 +245,73 @@ Report the resulting branch, commit, verification, cleanup state, and task docum
 
 还能怎么压缩占用空间？
 
+### 6. 更新的执行环境
+
+<environment_context>
+  <current_date>2026-11-08</current_date>
+  <timezone>Asia/Shanghai</timezone>
+  <filesystem><workspace_roots><root><repository-root></root></workspace_roots><permission_profile type="managed"><file_system type="restricted"><entry access="read"><special>:root</special></entry><entry access="write"><path><repository-root></path></entry><entry access="write"><special>:slash_tmp</special></entry><entry access="write"><special>:tmpdir</special></entry><entry access="read"><path><repository-root>/.git</path></entry><entry access="read"><path><repository-root>/.agents</path></entry><entry access="read"><path><repository-root>/.codex</path></entry><entry access="read"><path><repository-root>/.aws</path></entry></file_system></permission_profile></filesystem>
+</environment_context>
+
+### 7. 合并与清理确认
+
+<send_user_message_question_reply>
+[{"answer":"合并并清理（推荐）","question":"提交 7b11f5b 已部署，原 main 工作区干净。是否合入 main，并清理本任务分支、工作树及临时测试文件？部署、备份、任务记录和必要验证证据会保留。用户指定的 $worktree-task 要求合并与清理另行确认。","questionItemId":"[\"request_user_input_async\",\"call_664cd28604f740db8e69d2bf59730bcd\",0]"}]
+</send_user_message_question_reply>
+
+### 8. 再次提供技能
+
+<skill>
+<name>worktree-task</name>
+<path>$worktree-task</path>
+---
+name: worktree-task
+description: Use when completing a repository change in an isolated Git worktree, consolidating its task changes into one commit, and merging it back to the starting branch.
+---
+
+# Worktree Task
+
+Complete the requested change in a temporary worktree, then integrate it safely into the branch that was current when the task began.
+
+## Rules
+
+- Capture the original checkout, branch, and revision once; never re-infer the integration target.
+- Refuse an active Git operation. If the original checkout is dirty, warn that its uncommitted changes will not enter the worktree, preserve them untouched, and proceed from the current branch's latest commit by default.
+- Place the worktree at `../worktrees/<projectName>/<task-slug>` relative to the repository root, unless repository instructions override it.
+- Perform all modification and verification work inside the worktree.
+- Keep a task document under `docs/worktree-tasks/<task-slug>/` inside the worktree and include it in the task commit, so it survives integration and worktree cleanup.
+- Sanitize every document tracked by Git or being added to Git, including existing unchanged documents. Replace sensitive data such as private personal details and credentials with descriptive placeholders while preserving meaning.
+- Use repository-relative paths in persisted documents and express worktree locations relative to the repository root. Never persist local absolute paths, including in quoted user input or Markdown links. Use descriptive placeholders for paths outside the repository and `$skill-name` for local skill references. Tool calls and safety checks may use absolute paths internally.
+- Do not perform remote operations or rewrite existing original-branch history unless explicitly requested.
+- For merge and cleanup confirmation, use `request_user_input_async` when available and permitted; otherwise ask in chat. One explicit confirmation may approve both merging and the listed cleanup; the original task request alone is not approval.
+- Preserve the task branch and worktree whenever a safety check or integration fails.
+
+## Task Document
+
+Use `docs/worktree-tasks/<task-slug>/README.md` by default, with the same task slug as the worktree. Create it before implementation. Keep the input record complete and the plan and results concise:
+
+- **Original user input:** Record the full text of every task-related user message in chronological order, including introductory guidance, skill invocations, constraints, and follow-up corrections. Preserve the original wording and formatting, applying only the sanitization above. Append later messages in full.
+- **Brief task plan:** Record the intended approach and main steps; update it when the approach changes.
+- **Result and changes:** After implementation, summarize the actual completion status, changed files and behavior, verification results, and any remaining work or limitations. If work stops early, record partial progress accurately.
+
+Before each commit, check the input record against the user messages, finalize the result section, and review all Git-tracked documents and documents being added for sensitive data and local absolute paths, including quoted input and link targets. If synchronization changes the implementation or verification results, update the document in the synchronization commit. Preserve the document with the task changes and include its path in the final report.
+
+## Workflow
+
+1. Check the repository state and refuse conflicting worktree paths or branches. Record any original uncommitted state so it can be protected and verified later.
+2. Create a uniquely named task branch and worktree from the captured original branch's latest commit. Create the task document with the sanitized user input and brief plan.
+3. Establish a clean baseline, implement the task, and verify it. Complete the task document's result section, then consolidate all task changes, including the document, into one commit before synchronization unless the user or repository policy requires multiple commits.
+4. Merge the latest local original branch into the task branch. Resolve conflicts only in the worktree, then verify and commit the synchronized result.
+5. Confirm the original checkout is still on the captured branch, its committed HEAD is unchanged since synchronization, and any pre-existing uncommitted state remains intact. If HEAD advanced, repeat synchronization; stop after three races.
+6. Show the target branch, task commit, change summary, verification results, any original uncommitted state, and proposed cleanup items. Request one confirmation with choices to merge and clean up, merge and keep, or defer.
+7. Only after confirmation, merge the synchronized task branch back without creating an additional integration commit when possible. If integration would overwrite uncommitted state, preserve the worktree and report that integration is pending instead.
+8. Verify the committed trees match, checks pass, the original branch contains the consolidated task commit, and pre-existing uncommitted state was preserved.
+9. After successful integration verification, remove this run's clean worktree, task branch, and disposable temporary files covered by the cleanup approval, after proving needed content is preserved. Reuse combined approval from step 6 without asking again. If only merging was approved, retain these items until the user approves cleanup; request further confirmation for any additional cleanup items.
+
+Report the resulting branch, commit, verification, cleanup state, and task document path.
+
+</skill>
+
 ## 简要计划
 
 1. 检查页面、请求与部署方式，记录首屏加载基线。
@@ -255,7 +322,7 @@ Report the resulting branch, commit, verification, cleanup state, and task docum
 
 ## 结果与变更
 
-实现、定向验证与生产重新部署已完成，待用户确认合并与清理。
+实现、定向验证与生产重新部署已完成；用户已确认合并并清理。
 
 - 起始分支 `main`，起始提交 `215bbd47ac83cb39652fc86525b9facf1f0aca3a`，原工作区干净。
 - 任务分支 `task/admin-performance-pwa-20261107`，工作树 `../worktrees/STS2_ShoujoKagekiAijoCore/admin-performance-pwa-20261107`。
@@ -281,4 +348,11 @@ Report the resulting branch, commit, verification, cleanup state, and task docum
 - 已实测页面、清单、Worker、图标、对局与报错接口 200，静态条件请求 304，静态私有缓存与 API `no-store` 正确透传。共享代理继承的缓存头隐藏已显式覆盖。
 - 真实线上手机页面、PWA 安装资格、报错容量和完整压缩环境详情通过，页面脚本异常为 0；现有访问路径、凭据和页面访问方式保持一致。
 - 证据：`out/tmp/admin-pwa/migration-verification.json`、`out/tmp/admin-pwa/deployment-verification.json`、`out/tmp/admin-pwa/production-browser-result.json`。生产数据副本、读取配置、浏览器依赖与发行包均位于忽略目录或部署主机受限目录。
-- 合并目标为任务开始时的 `main`；原检出保持干净。任务分支与工作树保留，等待合并和清理确认。
+- 合并目标为任务开始时的 `main`，原检出保持干净；用户已确认合并并清理。
+
+### 合并与清理确认后的同步
+
+- 等待确认期间，`main` 从起始提交推进至 `65b2e139ed2f0e0e386d4486a5b5a793dbb7cc4b`，新增 Android 引导和闪耀表现修复，与本任务无文件交集；按约定先在任务分支同步再快进合回 `main`。
+- 已部署实现提交为 `7b11f5bd79965bc4f21caca0d512be093d9f8f1a`；同步后核对 `services/telemetry/`、`web/telemetry/`、`deploy/telemetry/` 和页面回归脚本的受测内容一致，保留原主线新增修复。
+- 必要证据、最终发行包和手机预览保留至主检出的忽略目录 `artifacts/admin-performance-pwa-20261107/`，复制时逐项校验 SHA256。任务记录随提交保留。
+- 获准清理的内容为本任务工作树、任务分支及其中临时测试文件；部署主机的正式发行、备份与访问配置继续保留。合并后核对提交树一致、原检出干净，再执行清理。
