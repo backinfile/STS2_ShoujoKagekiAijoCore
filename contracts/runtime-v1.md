@@ -81,3 +81,12 @@ SDK 与引导均执行 src/Bootstrap/Bundle.cs；发行将同一源码放入 sdk
 - CardSelection.Choose(context,cards,player,canSkip=false,title=null) 经原生 FromChooseACardScreen 处理 1 至 3 个选项，保留联机同步与第三方原生挂钩。空列表返回 null；必选收到 null 或返回未提供的对象时抛出异常。标题按调用作用域恢复，选择结束或异常时平衡已打开的选择上下文。
 
 使用快照和选择分别声明 card-snapshots@1 与 card-selection@1。角色包同时要求 minCoreVersion=1.2.0。
+
+## 1.3 运行生命周期扩展
+
+- `ICardSnapshots.Capture` 保存脱离牌堆的原模型快照，能力来源和预览使用此入口。
+- `ICardOptions` 创建脱离战斗登记的展示选项，并通过原生三选一或网格完成同步选择。选项执行由角色提供。
+- `ICardEffectRouting` 接收可保留的 `CardEffectContinuation`。延迟任务使用结算时的选择上下文继续剩余路由，调度由角色维护。
+- `ICardExecution` 通过原生自动出牌流程完成免费或付费执行，统一携带支付信息、X 值和自动出牌钩子。
+- `CoreEffects.Register` 显式登记特效及独立绘制层，配置变化时刷新可见性，处理与释放按原生命周期继续。
+- 能力声明增加 `card-effects@1`、`card-execution@1`、`card-options@1`、`effect-registration@1`。公开程序集版本继续为 `1.0.0.0`。

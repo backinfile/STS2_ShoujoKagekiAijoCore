@@ -7,3 +7,12 @@ public interface ICardPlayRouting
 {
     IDisposable Register(CardPlayMiddleware middleware, Func<CardModel, PileType?> destination);
 }
+
+/// <summary>A continuation may be retained by a scheduler and resumed with its current choice context.</summary>
+public delegate Task CardEffectContinuation(PlayerChoiceContext context, CardPlay play);
+public delegate Task CardEffectMiddleware(CardModel card, PlayerChoiceContext context, CardPlay play,
+    CardEffectContinuation next);
+public interface ICardEffectRouting
+{
+    IDisposable Register(CardEffectMiddleware middleware, Func<CardModel, PileType?> destination);
+}

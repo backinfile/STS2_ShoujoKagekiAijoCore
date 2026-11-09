@@ -1,4 +1,5 @@
 {
+  "CORE_SELECT_OPTION": "選択肢を選択",
   "CORE_SHINE_CARD_REWARD": "キラめきカード報酬×{Count}",
   "CORE_SHINE_CARD_REWARD_SELECT": "キラめきカード報酬×{MaxCount}",
   "CORE_SHINE_LABEL": "[gold]キラめき[/gold]",

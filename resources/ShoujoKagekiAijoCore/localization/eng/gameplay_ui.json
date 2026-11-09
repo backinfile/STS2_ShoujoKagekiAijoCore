@@ -1,4 +1,5 @@
 {
+  "CORE_SELECT_OPTION": "Choose an option",
   "CORE_SHINE_CARD_REWARD": "Shine Card Rewards ×{Count}",
   "CORE_SHINE_CARD_REWARD_SELECT": "Shine Card Rewards ×{MaxCount}",
   "CORE_SHINE_LABEL": "[gold]Shine [/gold]",

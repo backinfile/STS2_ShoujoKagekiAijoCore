@@ -1,5 +1,6 @@
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Entities.Multiplayer;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
@@ -11,26 +12,59 @@ using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 namespace ShoujoKageki.Core.Runtime.Modules.Execution;
 
 /// <summary>Native selection and synchronization with invocation-local presentation and cleanup.</summary>
-public sealed class CardSelectionModule : ICoreModule, ICardSelection
+public sealed class CardSelectionModule : ICoreModule, ICardSelection, ICardOptions
 {
     private static readonly AsyncLocal<LocString?> Title = new();
     public string Id => "card-selection";
     public int Order => -300;
-    public void Initialize(CoreContext context) => context.Services.Add<ICardSelection>(this);
-    public async Task<CardModel?> Choose(PlayerChoiceContext context, IReadOnlyList<CardModel> cards,
+    public void Initialize(CoreContext context)
+    {
+        context.Services.Add<ICardSelection>(this);
+        context.Services.Add<ICardOptions>(this);
+    }
+    public CardModel Create(CardModel canonical, Player owner, bool upgrade = false)
+    {
+        ArgumentNullException.ThrowIfNull(canonical);
+        ArgumentNullException.ThrowIfNull(owner);
+        var option = CoreApi.Get<ICardSnapshots>().Capture(canonical);
+        CardModelApi.AssignRecipient(option, owner);
+        if (upgrade && option.IsUpgradable) CardCmd.Upgrade(option);
+        return option;
+    }
+    Task<CardModel?> ICardOptions.Choose(PlayerChoiceContext context, IReadOnlyList<CardModel> cards,
+        Player player, bool canSkip, LocString? title)
+        => ChooseCore(context, cards, player, canSkip, title);
+
+    public Task<CardModel?> Choose(PlayerChoiceContext context, IReadOnlyList<CardModel> cards,
         Player player, bool canSkip, LocString? title)
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(cards);
         ArgumentNullException.ThrowIfNull(player);
         if (cards.Count > 3) throw new ArgumentException("At most three choices are supported.", nameof(cards));
+        if (cards.Count == 0) return Task.FromResult<CardModel?>(null);
+        return ChooseCore(context, cards, player, canSkip, title);
+    }
+    private static async Task<CardModel?> ChooseCore(PlayerChoiceContext context, IReadOnlyList<CardModel> cards,
+        Player player, bool canSkip, LocString? title)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(cards);
+        ArgumentNullException.ThrowIfNull(player);
         if (cards.Count == 0) return null;
         var previous = Title.Value;
         Title.Value = title;
         try
         {
             await using var choice = new ChoiceContext(context);
-            var selected = await CardSelectCmd.FromChooseACardScreen(choice, cards, player, canSkip);
+            CardModel? selected;
+            if (cards.Count <= 3)
+                selected = await CardSelectCmd.FromChooseACardScreen(choice, cards, player, canSkip);
+            else
+            {
+                var preferences = new CardSelectorPrefs(title ?? new LocString("gameplay_ui", "CORE_SELECT_OPTION"), canSkip ? 0 : 1, 1);
+                selected = (await CardSelectCmd.FromSimpleGrid(choice, cards, player, preferences)).SingleOrDefault();
+            }
             if (selected != null && !cards.Contains(selected))
                 throw new InvalidOperationException("The selected card is not one of the offered choices.");
             if (selected == null && !canSkip)

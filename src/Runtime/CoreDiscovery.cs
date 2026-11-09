@@ -13,8 +13,12 @@ public sealed class CoreDiscovery : ICoreDiscovery
     public IReadOnlyList<CoreModInfo> Mods { get; private set; } = [];
     public IReadOnlyList<CoreModelInfo> Models { get; private set; } = [];
     public event Action? ModelsChanged;
+    private static readonly Dictionary<Assembly, Mod?> Owners = new();
+    private static readonly Dictionary<Type, bool> CharacterFamilies = new();
     public void Refresh()
     {
+        Owners.Clear();
+        CharacterFamilies.Clear();
         Mods = Array.AsReadOnly(ModManager.Mods.Where(x => x.manifest?.id != null && x.state is ModLoadState.None or ModLoadState.Loaded or ModLoadState.Failed).Select(x => new CoreModInfo(x.manifest!.id!,
             x.manifest.version ?? "", x.modSource.ToString(), x.state == ModLoadState.Loaded)).ToArray());
         if (ModManager.State == ModManagerState.None) return;
@@ -43,6 +47,13 @@ public sealed class CoreDiscovery : ICoreDiscovery
     }
     private static Mod? OwnerOf(Assembly assembly)
     {
+        if (Owners.TryGetValue(assembly, out var cached)) return cached;
+        var owner = FindOwner(assembly);
+        Owners[assembly] = owner;
+        return owner;
+    }
+    private static Mod? FindOwner(Assembly assembly)
+    {
         var associated = ModManager.Mods.FirstOrDefault(mod => Assemblies(mod).Contains(assembly));
         if (associated != null || assembly.IsDynamic || string.IsNullOrEmpty(assembly.Location)) return associated;
         // Stable exposes only the loader assembly. Its implementation stays inside the mod directory.
@@ -56,7 +67,15 @@ public sealed class CoreDiscovery : ICoreDiscovery
     public static bool IsShoujoCharacter(CharacterModel? character)
     {
         if (character == null) return false;
-        var owner = OwnerOf(character.GetType().Assembly);
+        var type = character.GetType();
+        if (CharacterFamilies.TryGetValue(type, out var cached)) return cached;
+        var isShoujo = ReadCharacterFamily(type);
+        CharacterFamilies[type] = isShoujo;
+        return isShoujo;
+    }
+    private static bool ReadCharacterFamily(Type type)
+    {
+        var owner = OwnerOf(type.Assembly);
         if (owner?.manifest?.id is not { } modId) return false;
         if (modId is "ShoujoKagekiAijoKaren" or "ShoujoKagekiJunna") return true;
         var requirements = Path.Combine(owner.path, "core.requirements");

@@ -1,4 +1,5 @@
 {
+  "CORE_SELECT_OPTION": "选择一项",
   "CORE_SHINE_CARD_REWARD": "闪耀牌奖励×{Count}",
   "CORE_SHINE_CARD_REWARD_SELECT": "闪耀牌奖励×{MaxCount}",
   "CORE_SHINE_LABEL": "[gold]闪耀[/gold]",

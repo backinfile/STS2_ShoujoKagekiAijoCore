@@ -1,6 +1,6 @@
 # ShoujoKagekiAijoCore 使用说明
 
-本文面向使用 Core 的玩家和 Mod 作者，说明 Core 1.2.0 的能力、配置与 API V1 接入方式。SDK 随完整 Core 构建产物提供。
+本文面向使用 Core 的玩家和 Mod 作者，说明 Core 1.3.0 的能力、配置与 API V1 接入方式。SDK 随完整 Core 构建产物提供。
 
 引导、服务端、存档与发布方面的实现约定见 [Core 实现文档](docs/IMPLEMENTATION.md)。[GitHub 仓库](https://github.com/backinfile/STS2_ShoujoKagekiAijoCore)
 

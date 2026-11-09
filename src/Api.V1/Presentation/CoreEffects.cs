@@ -8,6 +8,52 @@ public static class CoreEffects
 {
     private sealed class DrawClock { internal ulong Next; internal bool Suppressed, WasVisible; }
     private static readonly ConditionalWeakTable<CanvasItem, DrawClock> Clocks = new();
+    private sealed class Registration
+    {
+        private readonly WeakReference<CanvasItem> _surface;
+        internal Registration(CanvasItem surface)
+        {
+            _surface = new(surface);
+            surface.VisibilityChanged += OnVisibilityChanged;
+        }
+        private void OnVisibilityChanged()
+        {
+            if (!Enabled && _surface.TryGetTarget(out var surface) && surface.Visible)
+            {
+                Clocks.GetValue(surface, _ => new()).WasVisible = true;
+                Suppress(surface);
+            }
+        }
+    }
+    private static readonly ConditionalWeakTable<CanvasItem, Registration> Registrations = new();
+    private static readonly List<WeakReference<CanvasItem>> Registered = [];
+    private static bool _observingConfiguration;
+
+    /// <summary>Registers a visual layer. Its processing and cleanup continue at every effect level.</summary>
+    public static void Register(CanvasItem surface)
+    {
+        ArgumentNullException.ThrowIfNull(surface);
+        if (Registrations.TryGetValue(surface, out _)) return;
+        Registrations.Add(surface, new Registration(surface));
+        Registered.RemoveAll(reference => !reference.TryGetTarget(out var previous) || !GodotObject.IsInstanceValid(previous));
+        Registered.Add(new(surface));
+        if (!_observingConfiguration)
+        {
+            CoreApi.Configuration.Changed += (_, _) => RefreshRegistered();
+            _observingConfiguration = true;
+        }
+        if (!Enabled) Suppress(surface);
+    }
+    public static void RefreshRegistered()
+    {
+        Registered.RemoveAll(reference => !reference.TryGetTarget(out var surface) || !GodotObject.IsInstanceValid(surface));
+        foreach (var reference in Registered.ToArray())
+        {
+            if (!reference.TryGetTarget(out var surface)) continue;
+            if (Enabled) Restore(surface);
+            else Suppress(surface);
+        }
+    }
     public static CoreVfxLevel Level => CoreApi.Configuration.Current.VfxLevel;
     public static bool Enabled => Level != CoreVfxLevel.Off;
     public static bool AmbientEffects => Level == CoreVfxLevel.Full;

@@ -939,3 +939,11 @@ Karen 使用 BaseLib CustomCharacterModel、CustomPile 注册角色与约定牌�
 `Modules/Execution/CardSelectionModule` 统一最多三个选项的选择流程。它始终调用原生选择入口，代理选择上下文并在异常时收尾，按异步调用作用域保存标题。Karen 选项和 Junna 发现能力共用此入口，牌效继续由角色执行。
 
 Karen 的约定牌堆管理器拥有模式、实际牌区、移牌后通知与补充流程；公共刷新只处理已激活的约定生命周期。Junna 的持续能力保存独立效果数据及计数，知识关系在获得、整局恢复、玩家同步与开战边界归一化，UI 查询只读取关系。Junna 数值语义别名和提示类型写入生成卡池，稳定保存字段名保持不变。
+
+## 展示选项与延迟结算
+
+展示选项通过 `CardOptions.Create` 创建快照并指定拥有者。`CardOptions.Choose` 在三选一与网格之间选择原生入口，选择上下文按本次调用跟踪开始和结束。
+
+角色在 `ICardEffectRouting` 登记部署处理，实际牌效保留在模型的 `OnPlay`。部署保存剩余路由回调，到期后传入当前选择上下文执行。箭矢批次继续通过闪耀结算作用域计次与收尾。
+
+模型归属和角色家族缓存由 `CoreDiscovery.Refresh` 更新。显示层查询直接读取缓存。

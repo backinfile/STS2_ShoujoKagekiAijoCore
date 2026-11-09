@@ -19,7 +19,9 @@ BundleCandidate Select(params BundleCandidate[] candidates) => BundleSelection.S
 Check(ReferenceEquals(Select(candidate), candidate), "single complete bundle");
 var identical = candidate with { Root = "workshop-copy", Source = "Workshop:copy" };
 Check(Select(identical, candidate).Source == candidate.Source, "identical copies converge by stable source identity");
-var newer = candidate with { Bundle = candidate.Bundle with { ReleaseVersion = "1.2.0", ResourceVersion = "1.2.0" }, Fingerprint = "newer" };
+var release = Version.Parse(candidate.Bundle.ReleaseVersion.Split('-')[0].TrimStart('v'));
+var nextRelease = new Version(release.Major, release.Minor, release.Build + 1).ToString();
+var newer = candidate with { Bundle = candidate.Bundle with { ReleaseVersion = nextRelease, ResourceVersion = nextRelease }, Fingerprint = "newer" };
 Check(ReferenceEquals(Select(candidate, newer), newer), "highest common compatible release");
 var missingFeature = newer with { Bundle = newer.Bundle with { Features = ["music@1"] } };
 Check(ReferenceEquals(Select(candidate, missingFeature), candidate), "newer missing required feature falls back");
@@ -29,7 +31,7 @@ Reject(() => Select(candidate, candidate with { Fingerprint = "conflicting" }), 
 Reject(() => Select(candidate, missingFeature with { Bundle = missingFeature.Bundle with { ReleaseVersion = candidate.Bundle.ReleaseVersion } }), "conflict checked before requirement filtering");
 Reject(() => BundleSelection.Select([candidate], requirements, "0.112.0", "3.4.7", "1.0.0"), "unknown game rejected");
 Reject(() => BundleSelection.Select([candidate], requirements, "0.107.1", "3.0.0", "1.0.0"), "BaseLib minimum enforced");
-Reject(() => BundleSelection.Select([candidate], requirements, "0.107.1", "3.4.7", "2.0.0"), "role release minimum enforced");
+Reject(() => BundleSelection.Select([candidate], requirements, "0.107.1", "3.4.7", $"{release.Major + 1}.0.0"), "role release minimum enforced");
 Reject(() => BundleSelection.Select([candidate], [new CoreRequirements { ModId = "V2", ApiMajor = 2 }], "0.107.1", "3.4.7", "1.0.0"), "API major mismatch");
 Reject(() => BundleSelection.ResolvePath(args[0], "../escape.dll"), "path traversal rejected");
 Check(SemVersion.Parse("1.0.0").CompareTo(SemVersion.Parse("1.0.0-beta.10")) > 0, "stable after prerelease");
