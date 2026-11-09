@@ -3,6 +3,7 @@ using System.Reflection;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.RestSite;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Models;
 
@@ -75,6 +76,26 @@ public sealed class CardUpgradeModule : ICoreModule, ICardUpgrades
         private static void Postfix(ref Task __result, CommandEffectScope __state)
         {
             __result = __state.Complete(__result);
+            __state.Dispose();
+        }
+        private static Exception? Finalizer(Exception? __exception, CommandEffectScope? __state)
+        {
+            __state?.Dispose();
+            return __exception;
+        }
+    }
+    // Rest-site choices complete outside GameAction and AbstractModel dispatch.
+    [HarmonyPatch]
+    private static class RestSiteCompletion
+    {
+        private static IEnumerable<MethodBase> TargetMethods() => typeof(RestSiteOption).Assembly.GetTypes()
+            .Where(type => !type.IsAbstract && typeof(RestSiteOption).IsAssignableFrom(type))
+            .Select(type => AccessTools.DeclaredMethod(type, nameof(RestSiteOption.OnSelect)))
+            .Where(method => method != null && method.ReturnType == typeof(Task<bool>)).Distinct()!;
+        private static void Prefix(out CommandEffectScope __state) => __state = new();
+        private static void Postfix(ref Task<bool> __result, CommandEffectScope __state)
+        {
+            __result = (Task<bool>)__state.Complete(__result);
             __state.Dispose();
         }
         private static Exception? Finalizer(Exception? __exception, CommandEffectScope? __state)
