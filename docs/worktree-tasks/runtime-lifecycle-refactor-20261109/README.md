@@ -237,6 +237,12 @@ Junna 当前有大量未提交的源码、卡池和工作台改动，并且与�
 
 按 skill 默认，从 main 最新提交开始，原未提交改动留在原检出
 
+### 合并与清理确认
+
+按 worktree-task 的显式确认要求，是否将 Core 6569bc4、Karen 702e25a、Junna 6999d19 合并回各自 main？若选择清理，会先将最终包、截图、录像与报告保留到 Core 原仓库的 out/tmp/runtime-lifecycle-refactor-20261109/，再删除本次三个工作树、任务分支及工作树内临时产物。
+
+合并并清理
+
 ## Brief task plan
 
 - 从三个项目已捕获的 main 提交建立隔离工作树，保护 Junna 原有未提交状态。
@@ -248,7 +254,7 @@ Junna 当前有大量未提交的源码、卡池和工作台改动，并且与�
 
 ## Result and changes
 
-已完成本次重构和定向验证。任务分支已同步本地 main，等待合并与清理确认。
+已完成本次重构和定向验证。任务分支已同步本地 main，用户已批准合并与清理。
 
 - 兼容新增 ICardEffectRouting、ICardExecution、ICardOptions，保留旧路由与选择契约。
 - 支付、X 值与实际入口接入原生自动出牌异步状态机，隔离嵌套原生调用。
@@ -271,11 +277,11 @@ Junna 当前有大量未提交的源码、卡池和工作台改动，并且与�
 
 ### 证据与集成状态
 
-- Core 工作树的 out/tmp/runtime-lifecycle-refactor-20261109/ 保存隔离用户目录、日志、截图、录像、断言报告、包和 final-package-hashes.json，均在忽略目录。
+- 最终包、日志、截图、录像、断言报告和哈希清单已保留至 Core 原仓库的 out/tmp/runtime-lifecycle-refactor-20261109/，108 个文件逐项核对复制哈希。packages/ 按 Core、Karen 和 Junna 保存各自发行结构，preservation-manifest.json 记录保留文件。
 - 实机发现并修正辅助方法被 Harmony 识别为 Prepare、JIT 内联跳过薄包装、编辑器错误导出原生子场景、能量计基类订阅遗漏。最终定向断言全部通过。
 - Karen 构建保留已有编译警告，Core 与 Junna 编译无警告。
 - 完整暂存索引、压缩包内文本、全部跟踪文档及提交身份完成隐私检查。
-- 三项目均在 codex/runtime-lifecycle-refactor-20261109，目标为各自 main。按 $worktree-task 等待合并与清理确认。
+- 三项目均在 codex/runtime-lifecycle-refactor-20261109，目标为各自 main。用户已确认合并并清理，按 $worktree-task 快进合并并验证提交树一致后，清理本次工作树、任务分支和工作树内临时产物。
 
 ### 本项目最终包 SHA-256
 
