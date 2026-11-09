@@ -25,8 +25,14 @@ async function api(path,signal){
  if(!response.ok)throw Error(response.status===401?'登录已失效，请刷新页面重新登录':'请求失败（'+response.status+'）');return response.json();
 }
 function params(scope=primary){return new URLSearchParams(new FormData(scope.$('filters')));}
-function model(value){const raw=typeof value==='string'?value:value?.model_full_id??value?.Entry??value?.entry??'未知';return (state.catalog[raw]||state.relics[raw])?raw:raw.split('.').at(-1).toUpperCase();}
-function meta(value){const id=typeof value==='object'?model(value?.model_full_id??value?.id??value):model(value);return {id,...state.catalog[id],name:state.catalog[id]?.name??id};}
+function model(value){
+  const full=typeof value==='object'?value?.model_full_id:null;
+  const candidate=full??(typeof value==='object'?value?.id??value:value);
+  const raw=typeof candidate==='string'?candidate:candidate?.Entry??candidate?.entry??'未知';
+  if(full&&!(raw.startsWith('CARD.')&&raw.split('.').length===2))return raw;
+  return (state.catalog[raw]||state.relics[raw]||raw.split('.').length>2)?raw:raw.split('.').at(-1).toUpperCase();
+}
+function meta(value){const id=model(value);return {id,...state.catalog[id],name:state.catalog[id]?.name??id};}
 function tag(outcome){return '<span class="tag '+outcome+'">'+OUTCOME[outcome]+'</span>';}
 function image(card,cls=''){return card.image?'<img class="'+cls+'" src="'+esc(card.image)+'" alt="" width="420" height="300" loading="lazy">':'<span class="card-placeholder '+cls+'" aria-hidden="true">?</span>';}
 function title(card){return esc(card.name)+(card.current_upgrade_level>0?' +'+card.current_upgrade_level:'');}
@@ -162,7 +168,7 @@ function floors(){let floor=0;return listOf(state.history?.history.map_point_his
 const ROOM={unassigned:'未知房间',unknown:'未知房间',monster:'普通战斗',elite:'精英战斗',boss:'首领战斗',shop:'商店',treasure:'宝箱',event:'事件',restsite:'休息处',map:'地图',ancient:'先古'};
 function roomName(entry){const rooms=listOf(entry.rooms);const value=rooms[0]?.room_type??entry.map_point_type;const names=rooms.length?['unassigned','monster','elite','boss','treasure','shop','event','restsite','map']:['unassigned','unknown','shop','treasure','restsite','monster','elite','boss','ancient'];return typeof value==='number'?names[value]??'unknown':String(value??'unknown').toLowerCase().replaceAll('_','');}
 function roomIcon(entry){const room=roomName(entry);return ({restsite:'rest',unknown:'event',map:'event',unassigned:'event'}[room]??room);}
-function groupPile(cards){const map=new Map();for(const card of listOf(cards).filter(Boolean)){const id=model(card.id),level=card.current_upgrade_level??0,key=id+'+'+level;if(!map.has(key))map.set(key,{...meta(id),current_upgrade_level:level,count:0});map.get(key).count++;}return [...map.values()];}
+function groupPile(cards){const map=new Map();for(const card of listOf(cards).filter(Boolean)){const id=meta(card).id,level=card.current_upgrade_level??0,key=id+'+'+level;if(!map.has(key))map.set(key,{...meta(id),current_upgrade_level:level,count:0});map.get(key).count++;}return [...map.values()];}
 function pileHTML(cards){const groups=groupPile(cards);return groups.length?'<div class="pile">'+groups.map(c=>'<button class="history-card" data-inspect="'+esc(c.id)+'">'+image(c)+'<span>'+title(c)+'<small>'+c.count+' 张</small></span></button>').join('')+'</div>':'<div class="empty">无记录卡牌</div>';}
 function renderHistory(){
  const keepSeat=document.activeElement?.id==='historySeat';

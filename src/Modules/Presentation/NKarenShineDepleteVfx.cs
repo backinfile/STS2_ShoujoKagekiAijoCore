@@ -16,6 +16,8 @@ namespace ShoujoKageki.Core.Runtime.Modules.Presentation;
 /// <summary>Owns only the detached visual; model depletion remains in ShinePileManager.</summary>
 public partial class NKarenShineDepleteVfx : Node2D
 {
+    public override void _EnterTree() => ShoujoKageki.Core.V1.Presentation.CoreEffects.Register(this, static () => CoreModConfig.EnableShineEffects);
+
     private NCard _card = null!;
     private CardModel _model = null!;
     private Control _target = null!;

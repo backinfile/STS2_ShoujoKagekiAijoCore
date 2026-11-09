@@ -9,6 +9,8 @@ namespace ShoujoKageki.Core.Runtime.Modules.Presentation;
 /// <summary>A short catch on the visual wrapper; native hover still owns the icon itself.</summary>
 public partial class NKarenShinePileArrivalVfx(TextureRect icon, Control visual) : Node2D
 {
+    public override void _EnterTree() => ShoujoKageki.Core.V1.Presentation.CoreEffects.Register(this, static () => CoreModConfig.EnableShineEffects);
+
     private readonly List<float> _impacts = new(3);
     private readonly Vector2 _baseScale = visual.Scale, _basePivot = visual.PivotOffset;
     private readonly float _baseRotation = visual.Rotation;

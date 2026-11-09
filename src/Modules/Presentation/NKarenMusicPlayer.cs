@@ -70,7 +70,7 @@ public partial class NKarenMusicPlayer : Control
         Visible = enabled;
         if (!enabled)
         {
-            _music.Stop();
+            if (!MusicModule.FormPriority) _music.Stop();
             _expanded = false;
             _volumeExpanded = false;
             _notice.Visible = false;
@@ -79,7 +79,7 @@ public partial class NKarenMusicPlayer : Control
         if (_lastDirectory != CoreModConfig.MusicDirectory || _music.Tracks.Count == 0)
         {
             _lastDirectory = CoreModConfig.MusicDirectory;
-            _music.Stop();
+            if (!MusicModule.FormPriority) _music.Stop();
             _reloadPending = true;
             _reloadAfter = .4;
         }

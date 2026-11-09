@@ -11,6 +11,8 @@ namespace ShoujoKageki.Core.Runtime.Modules.Presentation;
 /// <summary>Quiet, persistent card light; the last-Shine warning owns the stronger state.</summary>
 public partial class NKarenShineAmbientVfx(NCard card, CardModel model, NKarenShineWarningVfx warning) : Node2D
 {
+    public override void _EnterTree() => ShoujoKageki.Core.V1.Presentation.CoreEffects.Register(this, static () => CoreModConfig.EnableShineEffects);
+
     private float _age, _spawnClock, _phase;
     private int _sparkIndex;
     private bool _hasPose;

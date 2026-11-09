@@ -11,6 +11,8 @@ namespace ShoujoKageki.Core.Runtime.Modules.Presentation;
 /// <summary>Last-light embers follow the card from hand through the whole play.</summary>
 public partial class NKarenShineWarningVfx(NCard card, CardModel model) : Node2D
 {
+    public override void _EnterTree() => ShoujoKageki.Core.V1.Presentation.CoreEffects.Register(this, static () => CoreModConfig.EnableShineEffects);
+
     private float _age;
     private bool _warnedInHand;
     private bool _hasPose;

@@ -12,7 +12,7 @@ using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 namespace ShoujoKageki.Core.Runtime.Modules.Execution;
 
 /// <summary>Native selection and synchronization with invocation-local presentation and cleanup.</summary>
-public sealed class CardSelectionModule : ICoreModule, ICardSelection, ICardOptions
+public sealed class CardSelectionModule : ICoreModule, ICardSelection, ICardOptions, ICardPicking
 {
     private static readonly AsyncLocal<LocString?> Title = new();
     public string Id => "card-selection";
@@ -21,6 +21,31 @@ public sealed class CardSelectionModule : ICoreModule, ICardSelection, ICardOpti
     {
         context.Services.Add<ICardSelection>(this);
         context.Services.Add<ICardOptions>(this);
+        context.Services.Add<ICardPicking>(this);
+    }
+    public async Task<IReadOnlyList<CardModel>> Pick(PlayerChoiceContext context, Player player,
+        IEnumerable<CardModel> candidates, CardPickRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(player);
+        ArgumentNullException.ThrowIfNull(candidates);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.Prompt);
+        if (request.Minimum < 0 || request.Maximum < request.Minimum)
+            throw new ArgumentOutOfRangeException(nameof(request));
+        var cards = candidates.Distinct().ToArray();
+        int maximum = Math.Min(request.Maximum, cards.Length);
+        if (maximum == 0) return [];
+        var piles = cards.ToDictionary(card => card, card => card.Pile);
+        var preferences = new CardSelectorPrefs(request.Prompt, Math.Min(request.Minimum, maximum), maximum);
+        await using var choice = new ChoiceContext(context);
+        var selected = request.PreferHand && cards.All(card => card.Pile?.Type == MegaCrit.Sts2.Core.Entities.Cards.PileType.Hand && card.Owner == player)
+            ? await CardSelectCmd.FromHand(choice, player, preferences, cards.Contains, request.Source!)
+            : await CardSelectCmd.FromSimpleGrid(choice, cards, player, preferences);
+        var result = selected.ToArray();
+        if (result.Length > maximum || result.Length < Math.Min(request.Minimum, maximum) || result.Distinct().Count() != result.Length || result.Any(card => !piles.ContainsKey(card)))
+            throw new InvalidOperationException("The selected cards do not match the offered selection.");
+        return result.Where(card => !card.HasBeenRemovedFromState && ReferenceEquals(card.Pile, piles[card])).ToArray();
     }
     public CardModel Create(CardModel canonical, Player owner, bool upgrade = false)
     {

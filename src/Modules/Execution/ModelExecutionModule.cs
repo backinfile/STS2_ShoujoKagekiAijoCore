@@ -41,8 +41,7 @@ public sealed class ModelExecutionModule : ICoreModule, IModelExecutionScopes
         foreach (var type in RuntimeEntry.Context.Discovery.Models.Select(model => model.ModelType).Distinct())
         {
             bool card = typeof(CardModel).IsAssignableFrom(type);
-            if (!card && !typeof(PowerModel).IsAssignableFrom(type) && !typeof(RelicModel).IsAssignableFrom(type)
-                && !typeof(OrbModel).IsAssignableFrom(type)) continue;
+            if (!typeof(AbstractModel).IsAssignableFrom(type)) continue;
             // Include inherited card effects once; model methods on other types are declared hooks.
             var methods = card
                 ? new[] { AccessTools.Method(type, "OnPlay", [typeof(PlayerChoiceContext), typeof(CardPlay)]) }
@@ -68,6 +67,7 @@ public sealed class ModelExecutionModule : ICoreModule, IModelExecutionScopes
     }
     private sealed class Invocation : IDisposable
     {
+        internal readonly CommandEffectScope Effects = new();
         internal readonly List<IDisposable> Scopes = [];
         internal readonly List<Func<Task, Task>> Completions = [];
         public void Dispose()
@@ -75,6 +75,7 @@ public sealed class ModelExecutionModule : ICoreModule, IModelExecutionScopes
             // Dispose is also called by Harmony's exception finalizer.
             for (int index = Scopes.Count - 1; index >= 0; index--) Scopes[index].Dispose();
             Scopes.Clear();
+            Effects.Dispose();
         }
     }
     private static Invocation Enter(AbstractModel model, CardPlay? play)
@@ -99,9 +100,14 @@ public sealed class ModelExecutionModule : ICoreModule, IModelExecutionScopes
         }
         catch { __state.Dispose(); throw; }
     }
-    private static void ModelPostfix(Invocation __state) => __state.Dispose();
+    private static void ModelPostfix(ref Task __result, Invocation __state)
+    {
+        __result = __state.Effects.Complete(__result);
+        __state.Dispose();
+    }
     private static void CardPostfix(ref Task __result, Invocation __state)
     {
+        __result = __state.Effects.Complete(__result);
         foreach (var complete in __state.Completions.AsEnumerable().Reverse()) __result = complete(__result);
         __state.Dispose();
     }

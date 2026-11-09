@@ -33,3 +33,5 @@ Core 上传端点构建输入可通过 `SHOUJO_TELEMETRY_ENDPOINT_PATH` 指定�
 公共能力按实际引用传入 RequiredFeatures。Karen 使用 movement-pipeline@1、card-copies@1、card-snapshots@1、card-selection@1、presentation@1、temporary-music@1；Junna 使用 card-play-routing@1、model-execution@1、card-copies@1、card-snapshots@1、card-selection@1、presentation@1。使用本轮快照与选择接口的角色清单要求 Core 1.2.0。
 
 validate-package.ps1 与引导编译同一份 BundleValidation.cs 校验实现，-Strict 同时检查未列出文件与链接。
+
+实际卡牌选择声明 `card-picking@1`，升级后续牌效声明 `card-upgrades@1`，临时曲目与静默租约声明 `music-overrides@1`。这些增量能力要求 Core 1.4.0。角色继续保留各自牌效、箭矢调度和约定牌堆规则。

@@ -11,14 +11,17 @@ public static class CoreEffects
     private sealed class Registration
     {
         private readonly WeakReference<CanvasItem> _surface;
-        internal Registration(CanvasItem surface)
+        private readonly Func<bool> _enabled;
+        internal bool IsEnabled => Enabled && _enabled();
+        internal Registration(CanvasItem surface, Func<bool> enabled)
         {
             _surface = new(surface);
+            _enabled = enabled;
             surface.VisibilityChanged += OnVisibilityChanged;
         }
         private void OnVisibilityChanged()
         {
-            if (!Enabled && _surface.TryGetTarget(out var surface) && surface.Visible)
+            if (!IsEnabled && _surface.TryGetTarget(out var surface) && surface.Visible)
             {
                 Clocks.GetValue(surface, _ => new()).WasVisible = true;
                 Suppress(surface);
@@ -30,11 +33,14 @@ public static class CoreEffects
     private static bool _observingConfiguration;
 
     /// <summary>Registers a visual layer. Its processing and cleanup continue at every effect level.</summary>
-    public static void Register(CanvasItem surface)
+    public static void Register(CanvasItem surface) => Register(surface, static () => true);
+    public static void Register(CanvasItem surface, Func<bool> enabled)
     {
         ArgumentNullException.ThrowIfNull(surface);
+        ArgumentNullException.ThrowIfNull(enabled);
         if (Registrations.TryGetValue(surface, out _)) return;
-        Registrations.Add(surface, new Registration(surface));
+        var registration = new Registration(surface, enabled);
+        Registrations.Add(surface, registration);
         Registered.RemoveAll(reference => !reference.TryGetTarget(out var previous) || !GodotObject.IsInstanceValid(previous));
         Registered.Add(new(surface));
         if (!_observingConfiguration)
@@ -42,7 +48,7 @@ public static class CoreEffects
             CoreApi.Configuration.Changed += (_, _) => RefreshRegistered();
             _observingConfiguration = true;
         }
-        if (!Enabled) Suppress(surface);
+        if (!registration.IsEnabled) Suppress(surface);
     }
     public static void RefreshRegistered()
     {
@@ -50,7 +56,7 @@ public static class CoreEffects
         foreach (var reference in Registered.ToArray())
         {
             if (!reference.TryGetTarget(out var surface)) continue;
-            if (Enabled) Restore(surface);
+            if (Registrations.TryGetValue(surface, out var registration) && registration.IsEnabled) Restore(surface);
             else Suppress(surface);
         }
     }
@@ -63,7 +69,7 @@ public static class CoreEffects
     public static void Redraw(CanvasItem? surface, bool enabled = true)
     {
         if (surface == null) return;
-        if (!enabled || !Enabled) { Suppress(surface); return; }
+        if (!enabled || !Enabled || Registrations.TryGetValue(surface, out var registration) && !registration.IsEnabled) { Suppress(surface); return; }
         Restore(surface);
         if (Level == CoreVfxLevel.Full) { surface.QueueRedraw(); return; }
         var clock = Clocks.GetValue(surface, _ => new());

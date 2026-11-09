@@ -9,6 +9,8 @@ namespace ShoujoKageki.Core.Runtime.Modules.Presentation;
 /// <summary>Quiet, screen-owned decoration behind the native pile grid. No gameplay or card transforms.</summary>
 public partial class NKarenPileViewVfx : Control
 {
+    public override void _EnterTree() => ShoujoKageki.Core.V1.Presentation.CoreEffects.Register(this, static () => CoreModConfig.EnableShineEffects);
+
     private bool _promise;
     private float _age, _duration;
     private static readonly Color Gold = new("#e9c78d"), Red = new("#ce777d"), Ash = new("#a697aa");

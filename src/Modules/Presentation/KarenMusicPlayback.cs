@@ -217,7 +217,6 @@ internal sealed class KarenMusicPlayback : IDisposable
         if (Index < 0 && Tracks.Count > 0) Index = 0;
         _interrupted = null;
         FormPriority = false;
-        MusicModule.PlaybackReset();
         Loading = false;
         _player.Stop();
         _player.StreamPaused = false;
@@ -309,7 +308,8 @@ internal sealed class KarenMusicPlayback : IDisposable
         _player.VolumeLinear = CoreModConfig.MusicPlayerMuted ? 0 : Math.Clamp(CoreModConfig.MusicPlayerVolume, 0, 1);
         // Change only the native music bus, retaining ambience, SFX and live settings.
         var proxy = NAudioManager.Instance?.GetNodeOrNull<Node>("Proxy");
-        if (GodotObject.IsInstanceValid(proxy)) proxy!.Call("set_bgm_volume", IsPlaying ? 0f : bgm * bgm);
+        if (GodotObject.IsInstanceValid(proxy)) proxy!.Call("set_bgm_volume", IsPlaying || MusicOverridesModule.SuppressesNative ? 0f : bgm * bgm);
+        MusicOverridesModule.RefreshNativeVolume();
 
     }
 

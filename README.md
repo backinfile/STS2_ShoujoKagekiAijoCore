@@ -227,3 +227,7 @@ Core 更新以旧角色 DLL 直接运行和旧存档读取作为验收条件。�
 本说明对应 Core 1.2.0 和 API V1。公开类型签名以 src/Api.V1/ 为准，模块协作约定见 contracts/runtime-v1.md。
 
 开发、部署和维护 Core 时阅读 [Core 实现文档](docs/IMPLEMENTATION.md)，其中记录独立发布与 Karen 内嵌目录、固定引导协议、版本选择、加载顺序检查、双版本适配、服务端与 Web 迁移，以及必要验证范围。
+
+### 实际卡牌选择、升级与临时音乐
+
+Core 1.4 提供 `CardPicking.Pick`，统一实际卡牌选择和结果校验。`CardUpgrades.Upgrade` 等待升级产生的后续牌效，原生模型与动作内的升级由 Core 自动衔接。`IMusicOverrides` 提供临时曲目和静默租约，释放后恢复被中断的音乐。能力声明见 `sdk/README.md`，接口见 `src/Api.V1/`。
