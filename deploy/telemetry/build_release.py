@@ -10,7 +10,7 @@ def build(output):
     if output.exists():
         raise ValueError("Release output already exists")
     output.mkdir(parents=True)
-    for name in ("app.py", "error_reports.py", "protocol.py", "raw_archive.py"):
+    for name in ("app.py", "error_reports.py", "error_retention.py", "protocol.py", "raw_archive.py"):
         shutil.copy2(root / "services/telemetry" / name, output / name)
     shutil.copytree(root / "web/telemetry", output / "web")
     # Every release gives the worker a new cache when any web asset changes.

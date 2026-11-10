@@ -70,3 +70,41 @@ node tools/telemetry/test_web.cjs
 默认接收上限为 20,000 类错误、250,000 条报告，可通过 `ERROR_MAX_GROUPS`、`ERROR_MAX_REPORTS` 配置。完整环境按摘要共享并 gzip 压缩，筛选元数据单独存放。首次迁移会生成 `backups/before-error-compression-*.sqlite3` 并在事务内完成。报告身份、累计计数、乱序重试和 Mod/Core 版本信息保持原有含义。
 
 报错页面使用 `GET /api/errors?compact=1` 获取摘要，打开详情时再还原环境和调用栈。容量保护、每日预算及请求限流继续生效。
+
+## 旧报错生命周期
+
+普通报错连续 7 天没有有效新上报后淘汰正文，明确忽略的指纹为 3 天。`ERROR_RETENTION_DAYS` 和 `ERROR_IGNORED_RETENTION_DAYS` 可配置为 1 至 3650 天。`last_activity` 使用服务端实际接受新报告或累计次数增长的时间，重复及乱序重试保持原值。历史日志补传从本次有效接收开始计时。客户端 `first_seen`、`last_seen` 保持事件时间含义。
+
+首次升级先生成 `backups/before-error-retention-*.sqlite3`。旧库缺少计数更新的接收时间，所有既有类别从迁移时起获得完整宽限期。迁移和清理均使用事务，上传、策略导入和清理通过同一 SQLite 写锁串行提交。
+
+待处理、待上线核验及待原包核验记录按指纹保留。管理员通过 `--sync-error-policy <policy-file>` 原子导入巡检策略。格式如下。
+
+```json
+{
+  "schema_version": 1,
+  "generated_at": 1794272400,
+  "valid_until": 1794294000,
+  "groups": {
+    "<64-character-fingerprint>": {"status": "protected", "closed_at": 0}
+  }
+}
+```
+
+`status` 支持 `ordinary`、`ignored`、`protected`、`closed`。结案条目记录稳定的 Unix 秒 `closed_at`，按最近服务端活动与结案时间的较晚值，再保留普通报错期限。已保护的映射只能显式结案或继续保护。已结案的时间必须稳定，重新打开时改为保护。缺失或过期策略、未映射指纹、未知活动时间均保留。策略最大有效期 72 小时，Karen 导出器使用成功巡检后 6 小时，保证次日巡检失败时旧忽略策略已经失效。`--suspend-error-retention` 立即使清理策略失效，成功重导入后恢复。
+
+```powershell
+python services/telemetry/app.py --prune-errors --dry-run
+python services/telemetry/app.py --prune-errors
+```
+
+维护命令读取 `DATABASE_PATH`。首次创建 `Store` 会执行必要的数据库迁移，生产只读评估使用 SQLite 只读连接，迁移与清理预览在副本执行。dry-run 输出候选和保留原因、正文 UTF-8 字节数、扣除保留摘要后的预计清除字节数、报告条数、可移除环境及压缩字节数、空闲页和耗时。正式执行额外输出实际淘汰类别、删除报告及环境数量。事务内保存最近 90 次成功结果，异常记录 `failure_scope=transaction_rolled_back` 并由服务日志保留。
+
+清理将正文缩为首行最多 160 字的摘要，清空调用栈和环境引用。完整报告的会话、首次接收及每报告时间明细被移除，报告 ID、累计次数、身份哈希保存在 `error_receipts`，会话只保留不可逆摘要供精确去重。环境只在确认没有类别引用时删除。旧报告重试保持幂等，累计数增长或新报告复发时恢复完整可观察状态，同时保留历史累计、首次和最近事件时间。旧报告重新建立完整明细时，`received=0` 表示原接收时间已淘汰，服务端活动仍记录当前时间，累计次数续传继续免于新报告的每日预算。
+
+`stored_groups`、`stored_reports` 和容量限制统计活动类别及完整报告。`retired_groups`、`receipt_reports` 单独统计已淘汰摘要和重试凭据。历史摘要与去重状态继续计入数据库实际大小。默认列表只列活动类别。指纹详情返回 `data_state=retired`、`retired_at` 和 `retention_reason`，页面显示“正文已淘汰”。
+
+巡检使用 `GET /api/errors?inventory=1`，读取活动和已淘汰指纹的轻量清单。每页最多 500 项，下一页携带 `after=<next>` 与首屏 `revision`。有效上传或清理改变清单后返回 `inventory_changed`，采集器重新读取完整分页。历史指纹缺失、计数倒退、访问失败及分页不完整均不能推进成功基线。详情采集可合并同指纹的较新计数和淘汰状态，完整性边界以已通过校验的清单修订号为准。修订号之后才出现的新指纹留给下一次巡检，服务端对其保守保留。
+
+### 空间回收
+
+清理释放的 SQLite 页会供后续写入复用。结果中的 `space_after` 给出实际空闲页和字节数。空闲空间同时达到 16 MiB、数据库页数的 20% 时，`vacuum_recommended` 为真。维护窗口先备份，停止采集服务和清理定时器，再使用 SQLite `VACUUM` 回收文件空间，完成后核对 `PRAGMA integrity_check`、类别及报告数量并恢复服务。预留至少一个数据库文件大小的可用空间。每日清理只做生命周期淘汰和空闲页统计。

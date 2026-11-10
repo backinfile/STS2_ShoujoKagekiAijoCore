@@ -812,8 +812,36 @@ def main():
     parser.add_argument("--backup")
     parser.add_argument("--archive-raw", action="store_true")
     parser.add_argument("--rebuild", action="store_true")
+    operations = parser.add_mutually_exclusive_group()
+    operations.add_argument("--prune-errors", action="store_true")
+    parser.add_argument("--dry-run", action="store_true")
+    operations.add_argument("--sync-error-policy", type=Path)
+    operations.add_argument("--suspend-error-retention", action="store_true")
     args = parser.parse_args()
+    if (args.prune_errors or args.sync_error_policy or args.suspend_error_retention) and (args.backup or args.archive_raw or args.rebuild):
+        parser.error("Error maintenance requires a separate invocation")
+    if args.dry_run and not args.prune_errors:
+        parser.error("--dry-run requires --prune-errors")
     store = Store(os.environ.get("DATABASE_PATH", str(ROOT / "data/history.sqlite3")))
+    if args.suspend_error_retention:
+        with store.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            db.execute("UPDATE error_retention_meta SET valid_until=0 WHERE singleton=1")
+        print(dumps({"status": "retention_suspended"}))
+        return
+    if args.sync_error_policy:
+        from error_retention import sync_policy
+        print(dumps(sync_policy(store, json.loads(args.sync_error_policy.read_text(encoding="utf-8")))))
+        return
+    if args.prune_errors:
+        from error_retention import prune
+        try:
+            result = prune(store, dry_run=args.dry_run)
+        except Exception:
+            LOG.exception("error_retention_failed failure_scope=transaction_rolled_back")
+            raise
+        print(dumps(result))
+        return
     if args.rebuild or (not args.backup and not args.archive_raw and store.needs_rebuild()):
         backup = args.backup or str(store.path.parent / "backups" / ("before-facts-v3-" + str(time.time_ns()) + ".sqlite3"))
         LOG.warning("derived_history_rebuild count=%s", store.rebuild(backup))

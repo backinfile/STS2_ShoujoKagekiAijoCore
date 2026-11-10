@@ -1,5 +1,6 @@
 """Bounded error collection, separate from run statistics and raw history archives."""
 from protocol import core_context
+import error_retention as retention
 
 import hashlib
 import gzip
@@ -138,7 +139,11 @@ class ErrorStore:
         with store.connect() as db:
             exists = db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='error_groups'").fetchone()
             columns = {row[1] for row in db.execute("PRAGMA table_info(error_groups)")} if exists else set()
-            legacy = exists and ("environment_id" not in columns or db.execute("SELECT 1 FROM error_groups WHERE environment_id IS NULL LIMIT 1").fetchone())
+            needs_retention = exists and "last_activity" not in columns
+            active_filter = " AND retired_at=0" if "retired_at" in columns else ""
+            legacy = exists and ("environment_id" not in columns or db.execute("SELECT 1 FROM error_groups WHERE environment_id IS NULL" + active_filter + " LIMIT 1").fetchone())
+        if needs_retention:
+            store.backup(store.path.parent / "backups" / ("before-error-retention-" + str(time.time_ns()) + ".sqlite3"))
         if legacy:
             store.backup(store.path.parent / "backups" / ("before-error-compression-" + str(time.time_ns()) + ".sqlite3"))
         with store.connect() as db:
@@ -154,8 +159,9 @@ class ErrorStore:
             if "environment_id" not in {row[1] for row in db.execute("PRAGMA table_info(error_groups)")}:
                 db.execute("ALTER TABLE error_groups ADD COLUMN environment_id TEXT")
             # The legacy rows and their references move in the same transaction.
+            retired_filter = " AND retired_at=0" if "retired_at" in {row[1] for row in db.execute("PRAGMA table_info(error_groups)")} else ""
             environments = {}
-            for row in db.execute("SELECT id,environment FROM error_groups WHERE environment_id IS NULL").fetchall():
+            for row in db.execute("SELECT id,environment FROM error_groups WHERE environment_id IS NULL" + retired_filter).fetchall():
                 raw = row["environment"]
                 if raw not in environments:
                     environments[raw] = self.environment(db, json.loads(raw))
@@ -168,6 +174,8 @@ class ErrorStore:
                 received INTEGER NOT NULL)""")
             db.execute("CREATE INDEX IF NOT EXISTS error_reports_group ON error_reports(group_id,session)")
             db.execute("CREATE INDEX IF NOT EXISTS error_reports_received ON error_reports(received)")
+            retention.initialize(db, int(time.time()))
+            db.execute("CREATE INDEX IF NOT EXISTS errors_environment ON error_groups(environment_id)")
 
     @staticmethod
     def environment(db, environment):
@@ -193,43 +201,59 @@ class ErrorStore:
         with self.store.connect() as db:
             db.execute("BEGIN IMMEDIATE")
             old = db.execute("SELECT * FROM error_reports WHERE id=?", (item["report_id"],)).fetchone()
+            receipt = db.execute("SELECT * FROM error_receipts WHERE id=?", (item["report_id"],)).fetchone()
             if old and (old["session"] != item["session_id"] or old["group_id"] != item["fingerprint"] or old["first_seen"] != item["first_seen"]):
                 return 409, {"error": "error_report_identity_conflict"}
-            if old and item["count"] <= old["count"]:
+            if receipt and receipt["identity"] != retention.report_identity(item):
+                return 409, {"error": "error_report_identity_conflict"}
+            previous = old if old is not None else receipt
+            if previous and item["count"] <= previous["count"]:
                 return 200, {"status": "duplicate", "id": item["fingerprint"]}
             if sum(p.stat().st_size for p in (self.store.path, Path(str(self.store.path) + "-wal")) if p.exists()) >= 1024**3:
                 return 507, {"error": "storage_capacity_reached"}
-            if not old:
-                if db.execute("SELECT COUNT(*) FROM error_reports WHERE received>=?", (now - 86400,)).fetchone()[0] >= DAILY_REPORTS:
-                    return 429, {"error": "daily_error_budget_reached"}
-                if db.execute("SELECT COUNT(*) FROM error_reports").fetchone()[0] >= MAX_REPORTS:
-                    return 507, {"error": "error_report_capacity_reached"}
-            group = db.execute("SELECT id FROM error_groups WHERE id=?", (item["fingerprint"],)).fetchone()
-            if not group:
-                if db.execute("SELECT COUNT(*) FROM error_groups").fetchone()[0] >= MAX_GROUPS:
+            if not previous and db.execute("SELECT COUNT(*) FROM error_reports WHERE received>=?", (now - 86400,)).fetchone()[0] >= DAILY_REPORTS:
+                return 429, {"error": "daily_error_budget_reached"}
+            if not old and db.execute("SELECT COUNT(*) FROM error_reports").fetchone()[0] >= MAX_REPORTS:
+                return 507, {"error": "error_report_capacity_reached"}
+            group = db.execute("SELECT id,retired_at FROM error_groups WHERE id=?", (item["fingerprint"],)).fetchone()
+            if not group or group["retired_at"]:
+                if db.execute("SELECT COUNT(*) FROM error_groups WHERE retired_at=0").fetchone()[0] >= MAX_GROUPS:
                     return 507, {"error": "error_group_capacity_reached"}
                 environment = {key: item[key] for key in ("os", "game_commit", "mods", "mods_truncated")}
                 if "core_telemetry" in item:
                     environment["core_telemetry"] = item["core_telemetry"]
                 key = self.environment(db, environment)
-                db.execute("INSERT INTO error_groups (id,build,mod_version,platform,source,message,stack,first_seen,last_seen,occurrences,environment,environment_id) VALUES (?,?,?,?,?,?,?,?,?,0,?,?)",
-                           tuple(item[key] for key in ("fingerprint", "build", "mod_version", "platform", "source", "message", "stack", "first_seen", "last_seen")) + ("{}", key))
-            delta = item["count"] - (old["count"] if old else 0)
-            db.execute("""UPDATE error_groups SET occurrences=occurrences+?,
+                if group:
+                    db.execute("UPDATE error_groups SET message=?,stack=?,environment_id=?,retired_at=0,retention_reason='' WHERE id=?",
+                               (item["message"], item["stack"], key, item["fingerprint"]))
+                else:
+                    db.execute("INSERT INTO error_groups (id,build,mod_version,platform,source,message,stack,first_seen,last_seen,occurrences,environment,environment_id) VALUES (?,?,?,?,?,?,?,?,?,0,?,?)",
+                               tuple(item[name] for name in ("fingerprint", "build", "mod_version", "platform", "source", "message", "stack", "first_seen", "last_seen")) + ("{}", key))
+            delta = item["count"] - (previous["count"] if previous else 0)
+            db.execute("""UPDATE error_groups SET occurrences=occurrences+?,last_activity=?,
                 first_seen=MIN(first_seen,?),last_seen=MAX(last_seen,?) WHERE id=?""",
-                       (delta, item["first_seen"], item["last_seen"], item["fingerprint"]))
+                       (delta, now, item["first_seen"], item["last_seen"], item["fingerprint"]))
             if old:
                 db.execute("UPDATE error_reports SET count=?,last_seen=MAX(last_seen,?) WHERE id=?",
                            (item["count"], item["last_seen"], item["report_id"]))
             else:
+                # A compacted receipt predates the daily window. Its original receive time is gone.
                 db.execute("INSERT INTO error_reports VALUES (?,?,?,?,?,?,?)",
-                           (item["report_id"], item["session_id"], item["fingerprint"], item["count"], item["first_seen"], item["last_seen"], now))
-        return 200 if old else 201, {"status": "ok", "id": item["fingerprint"]}
+                           (item["report_id"], item["session_id"], item["fingerprint"], item["count"], item["first_seen"], item["last_seen"], 0 if receipt else now))
+                db.execute("DELETE FROM error_receipts WHERE id=?", (item["report_id"],))
+            db.execute("INSERT OR IGNORE INTO error_sessions VALUES (?,?)", (item["fingerprint"], retention.session_key(item["session_id"])))
+            retention.changed(db)
+        return 200 if previous else 201, {"status": "ok", "id": item["fingerprint"]}
 
     def listing(self, query):
+        if query.get("inventory", ["0"])[0] == "1":
+            try:
+                return retention.inventory(self.store, query)
+            except ValueError as exc:
+                raise InvalidError(str(exc)) from exc
         from_groups = " FROM error_groups LEFT JOIN error_environments AS env ON env.key=error_groups.environment_id"
         metadata = "COALESCE(env.metadata,error_groups.environment)"
-        clauses, values = [], []
+        clauses, values = ["retired_at=0"], []
         for name in ("build", "mod_version", "source", "platform"):
             value = query.get(name, ["all"])[0]
             if len(value) > 80:
@@ -267,10 +291,11 @@ class ErrorStore:
         compact = query.get("compact", ["0"])[0] == "1"
         environment_column = "" if compact else "environment,env.payload AS environment_payload,"
         with self.store.connect() as db:
+            db.execute("BEGIN")
             total = db.execute("SELECT COUNT(*)" + from_groups + where, values).fetchone()[0]
             page = min(page, max(1, (total + 19) // 20))
             rows = db.execute("SELECT id,build,mod_version,platform,source,message,first_seen,last_seen,occurrences," + environment_column +
-                              "(SELECT COUNT(DISTINCT session) FROM error_reports WHERE group_id=error_groups.id) AS sessions " +
+                              "(SELECT COUNT(*) FROM error_sessions WHERE group_id=error_groups.id) AS sessions " +
                               from_groups + where + " ORDER BY " + order + " LIMIT 20 OFFSET ?", values + [(page - 1) * 20]).fetchall()
             builds = [row[0] for row in db.execute("SELECT DISTINCT build FROM error_groups ORDER BY build")]
             versions = [row[0] for row in db.execute("SELECT DISTINCT mod_version FROM error_groups ORDER BY mod_version")]
@@ -281,8 +306,10 @@ class ErrorStore:
                 "SELECT json_extract(mod.value, '$.id') AS id FROM error_environments, json_each(metadata, '$.mods') AS mod "
                 "UNION SELECT json_extract(mod.value, '$.id') AS id FROM error_environments, "
                 "json_each(metadata, '$.core_telemetry.source_mods') AS mod ORDER BY id")]
-            stored_groups = db.execute("SELECT COUNT(*) FROM error_groups").fetchone()[0]
+            stored_groups = db.execute("SELECT COUNT(*) FROM error_groups WHERE retired_at=0").fetchone()[0]
             stored = db.execute("SELECT COUNT(*) FROM error_reports").fetchone()[0]
+            retired = db.execute("SELECT COUNT(*) FROM error_groups WHERE retired_at>0").fetchone()[0]
+            receipts = db.execute("SELECT COUNT(*) FROM error_receipts").fetchone()[0]
         items = []
         for row in rows:
             item = dict(row)
@@ -294,12 +321,13 @@ class ErrorStore:
             items.append(item)
         return {"items": items, "total": total, "page": page,
                 "pages": max(1, (total + 19) // 20), "builds": builds, "mod_versions": versions,
-                "stored_reports": stored, "stored_groups": stored_groups, "report_limit": MAX_REPORTS, "group_limit": MAX_GROUPS,
+                "stored_reports": stored, "stored_groups": stored_groups, "retired_groups": retired, "receipt_reports": receipts, "report_limit": MAX_REPORTS, "group_limit": MAX_GROUPS,
                 "verification": "unverified_client", "core_versions": core_versions, "source_mods": source_mods}
 
     def detail(self, fingerprint):
         with self.store.connect() as db:
-            row = db.execute("SELECT error_groups.*,env.payload AS environment_payload FROM error_groups "
+            row = db.execute("SELECT error_groups.*,env.payload AS environment_payload,"
+                             "(SELECT COUNT(*) FROM error_sessions WHERE group_id=error_groups.id) AS sessions FROM error_groups "
                              "LEFT JOIN error_environments AS env ON env.key=error_groups.environment_id WHERE id=?", (fingerprint,)).fetchone()
         if not row:
             return None
@@ -307,4 +335,5 @@ class ErrorStore:
         environment = self.restore_environment(result)
         for key in ("environment", "environment_id", "environment_payload"):
             result.pop(key, None)
-        return result | environment | {"verification": "unverified_client"}
+        return result | environment | {"verification": "unverified_client",
+                                       "data_state": "retired" if result["retired_at"] else "active"}

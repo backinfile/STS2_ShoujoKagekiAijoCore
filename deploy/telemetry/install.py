@@ -22,6 +22,8 @@ parser.add_argument("--public-origin", "--page-origin", default=os.environ.get("
 parser.add_argument("--upload-origin", default=os.environ.get("TELEMETRY_UPLOAD_ORIGIN"))
 parser.add_argument("--error-max-groups", type=int)
 parser.add_argument("--error-max-reports", type=int)
+parser.add_argument("--error-retention-days", type=int)
+parser.add_argument("--error-ignored-retention-days", type=int)
 parser.add_argument("--page-access", choices=("link", "password"))
 args = parser.parse_args()
 if os.geteuid() != 0 or not Path("/etc/nginx/karen-services.d").is_dir():
@@ -75,17 +77,22 @@ password_file.write_text(access["username"] + ":" + hashed + "\n")
 password_file.chmod(0o640)
 os.chown(password_file, 0, grp.getgrnam("www-data").gr_gid)
 environment = CONFIG / "service.env"
-limits = {"ERROR_MAX_GROUPS": 20000, "ERROR_MAX_REPORTS": 250000}
+limits = {"ERROR_MAX_GROUPS": 20000, "ERROR_MAX_REPORTS": 250000, "ERROR_RETENTION_DAYS": 7, "ERROR_IGNORED_RETENTION_DAYS": 3}
 if environment.exists():
     for line in environment.read_text().splitlines():
         key, _, value = line.partition("=")
         if key in limits:
             limits[key] = int(value)
-for key, value in (("ERROR_MAX_GROUPS", args.error_max_groups), ("ERROR_MAX_REPORTS", args.error_max_reports)):
+for key, value in (("ERROR_MAX_GROUPS", args.error_max_groups), ("ERROR_MAX_REPORTS", args.error_max_reports),
+                   ("ERROR_RETENTION_DAYS", args.error_retention_days),
+                   ("ERROR_IGNORED_RETENTION_DAYS", args.error_ignored_retention_days)):
     if value is not None:
         limits[key] = value
 if not 1 <= limits["ERROR_MAX_GROUPS"] <= 100000 or not 1 <= limits["ERROR_MAX_REPORTS"] <= 1000000:
     raise SystemExit("Error limits out of bounds: groups 1..100000, reports 1..1000000")
+if any(not 1 <= limits[key] <= 3650 for key in ("ERROR_RETENTION_DAYS", "ERROR_IGNORED_RETENTION_DAYS")):
+    raise SystemExit("Error retention days must be 1..3650")
+
 environment.write_text(f"DATABASE_PATH={DATA}/history.sqlite3\nPORT=42767\n"
                        f"RAW_SUBMISSIONS_PATH={DATA}/raw-submissions\n"
                        f"READ_KEY={access['read_key']}\n"
@@ -407,3 +414,36 @@ subprocess.run(["systemctl", "start", "karen-observatory-backup.service"], check
 subprocess.run(["systemctl", "enable", "--now", "karen-observatory-monitor.timer"], check=True)
 subprocess.run(["systemctl", "start", "karen-observatory-monitor.service"], check=True)
 print("Installed isolated collector, protected random routes and daily backups. Access data remains in /etc/karen-observatory/access.json")
+
+Path("/etc/systemd/system/karen-observatory-error-retention.service").write_text(f"""[Unit]
+Description=Retire inactive error bodies and unreferenced environments
+After=karen-observatory.service
+[Service]
+Type=oneshot
+User={USER}
+Group={USER}
+WorkingDirectory={ROOT}/current
+EnvironmentFile={CONFIG}/service.env
+Environment=PYTHONDONTWRITEBYTECODE=1
+UMask=0077
+ExecStart=/usr/bin/python3 {ROOT}/current/app.py --prune-errors
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths={DATA}
+MemoryMax=256M
+CPUQuota=25%
+TimeoutStartSec=10min
+""")
+Path("/etc/systemd/system/karen-observatory-error-retention.timer").write_text("""[Unit]
+Description=Daily error retention after the morning review
+[Timer]
+OnCalendar=*-*-* 02:30:00 UTC
+Persistent=true
+RandomizedDelaySec=10m
+[Install]
+WantedBy=timers.target
+""")
+subprocess.run(["systemctl", "daemon-reload"], check=True)
+subprocess.run(["systemctl", "enable", "--now", "karen-observatory-error-retention.timer"], check=True)
