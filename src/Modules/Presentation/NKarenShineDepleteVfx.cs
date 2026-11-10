@@ -32,7 +32,10 @@ public partial class NKarenShineDepleteVfx : Node2D
     private bool _cardVisible;
     private Color _cardColor;
     private Control.MouseFilterEnum _mouseFilter;
-    private readonly Vector2[] _star = new Vector2[8];
+    private static int _reservedParticles;
+    private int _particleBudget;
+    private bool _counted;
+    private readonly Vector2[] _edges = new Vector2[40], _tangents = new Vector2[40];
     private static readonly Color Gold = new("#ffc96c");
     private static readonly Color Hot = new("#fff5dc");
 
@@ -60,6 +63,13 @@ public partial class NKarenShineDepleteVfx : Node2D
         effect._gatherDuration = effect._fuel
             ? (speed == FastModeType.Instant ? .025f : speed == FastModeType.Fast ? .07f : .10f)
             : (speed == FastModeType.Instant ? .07f : speed == FastModeType.Fast ? .24f : .34f);
+        for (int i = 0; i < effect._edges.Length; i++)
+        {
+            float angle = i * 2.399963f;
+            var offset = new Vector2(Mathf.Cos(angle) * (180 + i % 4 * 18), Mathf.Sin(angle) * (245 + i % 5 * 16));
+            effect._edges[i] = source.BasisXform(offset);
+            effect._tangents[i] = new Vector2(-effect._edges[i].Y, effect._edges[i].X).Normalized() * (22 + i % 7 * 7);
+        }
         ui!.AddChild(effect);
         effect._pileButton?.BeginDepletion(effect);
         // Removing the visual from the play container prevents native RemoveFromCombat
@@ -79,7 +89,10 @@ public partial class NKarenShineDepleteVfx : Node2D
     {
         ZIndex = 110;
         TopLevel = true;
-        Material = new CanvasItemMaterial { BlendMode = CanvasItemMaterial.BlendModeEnum.Add };
+        Material = ShineVfx.AdditiveMaterial;
+        _particleBudget = Math.Min(KarenVfxQuality.ParticleCount(40), Math.Max(0, 160 - _reservedParticles));
+        _reservedParticles += _particleBudget;
+        _counted = true;
         GlobalTransform = GetCanvasTransform().AffineInverse();
     }
 
@@ -120,45 +133,38 @@ public partial class NKarenShineDepleteVfx : Node2D
 
     public override void _Draw()
     {
+        var drawBatch = ShineVfx.DrawBatch;
+        drawBatch.Clear();
         float gather = Ease(_age / _gatherDuration);
         if (!_fuel && _age < _gatherDuration)
         {
             // A loose, card-sized outer cloud curls inward as the actual face shrinks.
             // The whole silhouette participates into a compact light at the original card position.
-            for (int i = 0; i < 40; i += KarenVfxQuality.ParticleStride)
+            // At most 160 gather particles across concurrent depletion visuals.
+            int count = Math.Min(_particleBudget, KarenVfxQuality.ParticleCount(40));
+            for (int particle = 0; particle < count; particle++)
             {
+                int i = particle * KarenVfxQuality.ParticleStride;
                 float u = Mathf.Clamp((gather - i % 5 * .022f) / (1 - i % 5 * .022f), 0, 1);
-                float angle = i * 2.399963f;
-                var offset = new Vector2(Mathf.Cos(angle) * (180 + i % 4 * 18), Mathf.Sin(angle) * (245 + i % 5 * 16));
-                var edge = _source * offset - _source.Origin;
-                var tangent = new Vector2(-edge.Y, edge.X).Normalized() * (22 + i % 7 * 7);
+                var edge = _edges[i];
+                var tangent = _tangents[i];
                 var point = _source.Origin + edge * (1-u) + tangent * Mathf.Sin(u * Mathf.Pi);
                 float previous = Mathf.Max(0, u - .09f);
                 var tail = _source.Origin + edge * (1-previous) + tangent * Mathf.Sin(previous * Mathf.Pi);
                 float light = Mathf.Sin(u * Mathf.Pi) * (.55f + i % 3 * .12f);
-                DrawLine(tail, point, new Color(Gold, light * .15f), 8, true);
-                DrawLine(tail, point, new Color(Gold, light), 2.2f, true);
-                DrawCircle(point, i % 4 == 0 ? 4 : 2.2f, new Color(Hot, light));
+                drawBatch.Line(tail, point, new Color(Gold, light * .15f), 8);
+                drawBatch.Line(tail, point, new Color(Gold, light), 2.2f);
+                drawBatch.Circle(point, i % 4 == 0 ? 4 : 2.2f, new Color(Hot, light));
             }
         }
         var p = _source.Origin;
         float headLight = gather;
         float r = 17 * (.65f + .35f * gather);
         for (int layer = 8; layer > 0; layer--)
-            DrawCircle(p, r * 2 * layer / 8f, new Color(Gold, headLight * .22f * Mathf.Pow(1 - layer / 9f, 2)));
-        for (int i = 0; i < _star.Length; i++)
-        {
-            float angle = i * Mathf.Pi / 4 - Mathf.Pi / 2;
-            _star[i] = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * (i % 2 == 0 ? 1 : .20f);
-        }
+            drawBatch.Circle(p, r * 2 * layer / 8f, new Color(Gold, headLight * .22f * Mathf.Pow(1 - layer / 9f, 2)));
         if (headLight > .001f && r > .2f)
-        {
-            // Triangulate at unit scale: shrinking absolute screen coordinates
-            // eventually merges vertices at the last, almost-transparent frame.
-            DrawSetTransform(p, 0, Vector2.One * r);
-            DrawColoredPolygon(_star, new Color(Hot, headLight));
-            DrawSetTransform(Vector2.Zero);
-        }
+            drawBatch.Star(p, r, .20f, new Color(Hot, headLight));
+        drawBatch.Flush(this);
     }
 
     private static float Ease(float progress)
@@ -181,5 +187,9 @@ public partial class NKarenShineDepleteVfx : Node2D
             GodotTreeExtensions.QueueFreeSafely(_card);
         }
     }
-    public override void _ExitTree() => Release();
+    public override void _ExitTree()
+    {
+        if (_counted) { _reservedParticles -= _particleBudget; _counted = false; }
+        Release();
+    }
 }

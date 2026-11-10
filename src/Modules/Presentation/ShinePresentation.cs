@@ -41,7 +41,7 @@ public sealed class ShinePresentation : ICoreModule, IShinePresentation, IShineP
 internal static class ShineExtension
 {
     public static bool IsShineCard(this CardModel card) => V1.Shine.IsShineCard(card);
-    public static bool HasShine(this CardModel card) => V1.Shine.GetState(card)?.Remaining > 0;
+    public static bool HasShine(this CardModel card) => ShineService.Instance.GetVisualState(card)?.Remaining > 0;
 }
 internal static class ShinePileManager
 {

@@ -21,20 +21,24 @@ public partial class NKarenShineWarningVfx(NCard card, CardModel model) : Node2D
     private readonly ShineCardBorder _border = new(card);
     private float _spawnClock;
     private int _sparkIndex;
-    private sealed class Spark(Vector2 position, Vector2 velocity, float life, float radius, float phase)
+    private struct Spark(Vector2 position, Vector2 velocity, float life, float radius, float phase)
     {
         public Vector2 Position = position, Velocity = velocity;
         public float Age;
         public readonly float Life = life, Radius = radius, Phase = phase;
     }
     private readonly List<Spark> _sparks = new(40);
-    private readonly CanvasGeometryBatch _drawBatch = new();
     public bool BelongsTo(CardModel? candidate) => ReferenceEquals(candidate, model);
     public override void _Ready() => Visible = false;
 
     public override void _Process(double delta)
     {
         if (!GodotObject.IsInstanceValid(card) || !BelongsTo(card.Model)) { Hide(); QueueFree(); return; }
+        if (!KarenVfxQuality.Enabled || !card.IsVisibleInTree())
+        {
+            Visible = false; _sparks.Clear(); _hasPose = false; _spawnClock = 0;
+            return;
+        }
         bool inHand = model.Pile?.Type == PileType.Hand;
         bool inPlay = model.Pile?.Type == PileType.Play;
         if (inHand) _warnedInHand = ShineVfx.WillDeplete(model);
@@ -61,6 +65,7 @@ public partial class NKarenShineWarningVfx(NCard card, CardModel model) : Node2D
             spark.Velocity += new Vector2(Mathf.Sin(spark.Age * 6 + spark.Phase) * 12, -6) * (unit * dt);
             spark.Position += spark.Velocity * dt;
             if (spark.Age >= spark.Life) _sparks.RemoveAt(i);
+            else _sparks[i] = spark;
         }
         _spawnClock += dt;
         float interval = KarenVfxQuality.SpawnInterval(.025f);
@@ -77,38 +82,39 @@ public partial class NKarenShineWarningVfx(NCard card, CardModel model) : Node2D
 
     public override void _Draw()
     {
+        var drawBatch = ShineVfx.DrawBatch;
         var canvas = GetGlobalTransformWithCanvas();
-        _drawBatch.Clear(1f / Mathf.Max(.1f, canvas.X.Length()));
+        drawBatch.Clear(1f / Mathf.Max(.1f, canvas.X.Length()));
         float pulse = .5f + .5f * Mathf.Sin(_age * 3.6f);
         var gold = new Color("#ffcb62"); var hot = new Color("#fff4ce");
         if (_border.Outline.Length > 1)
         {
-            _drawBatch.Polyline(_border.Outline, new Color(gold, .08f + pulse * .10f), 20);
-            _drawBatch.Polyline(_border.Outline, new Color(gold, .25f + pulse * .25f), 7);
+            drawBatch.Polyline(_border.Outline, new Color(gold, .08f + pulse * .10f), 20);
+            drawBatch.Polyline(_border.Outline, new Color(gold, .25f + pulse * .25f), 7);
             for (int j = 0; j < 10; j += KarenVfxQuality.ParticleStride)
             {
                 float t = Mathf.PosMod(_age * (.065f + j * .003f) + j * .101f, 1);
                 float ember = Mathf.Sin(t * Mathf.Pi) * (.65f + .35f * Mathf.Sin(_age * 3.6f - j * .7f));
-                _drawBatch.Polyline(_border.Segment(t, 18 + j % 3 * 6), new Color(hot, ember * .9f), 3.5f);
+                drawBatch.Polyline(_border.Segment(t, 18 + j % 3 * 6), new Color(hot, ember * .9f), 3.5f);
             }
         }
         var lastLight = canvas.AffineInverse() * _lightWorld;
         float radius = 13 + pulse * 5;
         for (int layer = 8; layer > 0; layer--)
-            _drawBatch.Circle(lastLight, radius * 2 * layer / 8f,
+            drawBatch.Circle(lastLight, radius * 2 * layer / 8f,
                 new Color(gold, (.12f + pulse * .12f) * Mathf.Pow(1 - layer / 9f, 2)));
-        _drawBatch.Star(lastLight, radius, .23f, new Color(hot, .75f + pulse * .25f),
+        drawBatch.Star(lastLight, radius, .23f, new Color(hot, .75f + pulse * .25f),
             Mathf.Sin(_age * 1.5f) * .12f);
-        _drawBatch.SetTransform(canvas.AffineInverse());
+        drawBatch.SetTransform(canvas.AffineInverse());
         foreach (var spark in _sparks)
         {
             float t = spark.Age / spark.Life;
             float a = Mathf.Sin(Mathf.Min(1, t * 5) * Mathf.Pi / 2) * Mathf.Pow(1 - t, 1.2f);
-            _drawBatch.Circle(spark.Position, spark.Radius * 2.4f, new Color(gold, a * .16f));
-            _drawBatch.Line(spark.Position - spark.Velocity * .055f, spark.Position,
+            drawBatch.Circle(spark.Position, spark.Radius * 2.4f, new Color(gold, a * .16f));
+            drawBatch.Line(spark.Position - spark.Velocity * .055f, spark.Position,
                 new Color(gold, a * .7f), spark.Radius * .7f);
-            _drawBatch.Circle(spark.Position, spark.Radius, new Color(hot, a));
+            drawBatch.Circle(spark.Position, spark.Radius, new Color(hot, a));
         }
-        _drawBatch.Flush(this);
+        drawBatch.Flush(this);
     }
 }

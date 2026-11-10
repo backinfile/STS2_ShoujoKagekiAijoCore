@@ -2,13 +2,22 @@ using Godot;
 using MegaCrit.Sts2.Core.Nodes.Cards;
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace ShoujoKageki.Core.Runtime.Modules.Presentation;
 
 /// <summary>Both Shine rims follow the actual frame texture, including its rounded corners.</summary>
 internal sealed class ShineCardBorder(NCard card)
 {
-    private static readonly Dictionary<Texture2D, Vector2[]> Contours = new();
+    private sealed class Contour
+    {
+        internal Vector2[]? Points;
+        internal ulong RetryAfter;
+        internal bool IsCurrent => Points != null && (Points.Length > 0 || Time.GetTicksMsec() < RetryAfter);
+        internal Contour(Texture2D texture) => texture.Changed += () => Points = null;
+    }
+    private static readonly ConditionalWeakTable<Texture2D, Contour> Contours = new();
+    private static readonly List<Texture2D> NativeFrames = new(5);
     private TextureRect? _frame;
     private Vector2[] _outline = Array.Empty<Vector2>();
     private float[] _distance = Array.Empty<float>();
@@ -26,16 +35,48 @@ internal sealed class ShineCardBorder(NCard card)
             GetContour(texture);
     }
 
-    internal static void Prepare(Texture2D texture) => GetContour(texture);
+    internal static void Prepare(Texture2D texture)
+    {
+        if (Contours.TryGetValue(texture, out var cached) && cached.Points?.Length == 0) cached.Points = null;
+        GetContour(texture);
+    }
+
+    internal static void PrepareNativeFrames()
+    {
+        var images = new Dictionary<Texture2D, Image>();
+        NativeFrames.Clear();
+        try
+        {
+            foreach (string kind in new[] { "attack", "skill", "power", "quest", "ancient" })
+            {
+                var texture = ResourceLoader.Load<Texture2D>("res://images/atlases/ui_atlas.sprites/card/card_frame_" + kind + "_s.tres");
+                if (texture != null)
+                {
+                    NativeFrames.Add(texture);
+                    CacheContour(texture, images);
+                }
+            }
+        }
+        finally { foreach (var image in images.Values) image.Dispose(); }
+    }
 
     private static Vector2[] GetContour(Texture2D texture)
     {
-        if (!Contours.TryGetValue(texture, out var contour))
+        if (Contours.TryGetValue(texture, out var cached) && cached.IsCurrent) return cached.Points!;
+        var images = new Dictionary<Texture2D, Image>();
+        try { return CacheContour(texture, images); }
+        finally { foreach (var image in images.Values) image.Dispose(); }
+    }
+
+    private static Vector2[] CacheContour(Texture2D texture, Dictionary<Texture2D, Image> images)
+    {
+        var cached = Contours.GetValue(texture, static value => new Contour(value));
+        if (!cached.IsCurrent)
         {
-            contour = ReadContour(texture);
-            if (contour.Length > 0) Contours[texture] = contour;
+            cached.Points = ReadContour(texture, images);
+            cached.RetryAfter = Time.GetTicksMsec() + 500;
         }
-        return contour;
+        return cached.Points!;
     }
 
     public void Update(Node2D overlay)
@@ -43,6 +84,14 @@ internal sealed class ShineCardBorder(NCard card)
         _frame ??= card.GetNode<TextureRect>("%Frame");
         if (_frame.Texture is not {} texture) return;
         var contour = GetContour(texture);
+        if (contour.Length < 2)
+        {
+            _outline = Array.Empty<Vector2>();
+            _distance = Array.Empty<float>();
+            _previousContour = null;
+            TopCenter = Vector2.Zero;
+            return;
+        }
         if (_outline.Length != contour.Length)
         {
             _outline = new Vector2[contour.Length];
@@ -68,9 +117,9 @@ internal sealed class ShineCardBorder(NCard card)
         }
     }
 
-    private static Vector2[] ReadContour(Texture2D texture)
+    private static Vector2[] ReadContour(Texture2D texture, Dictionary<Texture2D, Image> images)
     {
-        using var image = ReadImage(texture);
+        var image = ReadImage(texture, images);
         if (image == null || image.IsEmpty()) return Array.Empty<Vector2>();
         int width = image.GetWidth(), height = image.GetHeight();
         // Imported card atlases decompress to RGBA8. Read their pixels once:
@@ -95,22 +144,32 @@ internal sealed class ShineCardBorder(NCard card)
         return left.ToArray();
     }
 
-    private static Image? ReadImage(Texture2D texture)
+    private static Image? ReadImage(Texture2D texture, Dictionary<Texture2D, Image> images)
     {
-        // AtlasTexture.GetImage crops before decompression and fails on the game's
-        // compressed atlases. Decompress the source atlas before extracting its region.
+        if (images.TryGetValue(texture, out var cached)) return cached;
+        Image? image;
+        // Keep each decompressed source alive for this preparation batch only.
+        // Regions from the same atlas then share a single source read and decode.
         if (texture is AtlasTexture atlas)
         {
             if (atlas.Atlas is not { } atlasTexture) return null;
-            using var source = ReadImage(atlasTexture);
+            var source = ReadImage(atlasTexture, images);
             if (source == null || source.IsEmpty()) return null;
             var size = (Vector2I)atlas.Region.Size;
             if (size.X == 0) size.X = source.GetWidth();
             if (size.Y == 0) size.Y = source.GetHeight();
-            return source.GetRegion(new Rect2I((Vector2I)atlas.Region.Position, size));
+            image = source.GetRegion(new Rect2I((Vector2I)atlas.Region.Position, size));
         }
-        var image = texture.GetImage();
-        if (image != null && image.IsCompressed() && image.Decompress() != Error.Ok) { image.Dispose(); return null; }
+        else
+        {
+            image = texture.GetImage();
+            if (image != null && image.IsCompressed() && image.Decompress() != Error.Ok)
+            {
+                image.Dispose();
+                return null;
+            }
+        }
+        if (image != null) images.Add(texture, image);
         return image;
     }
 

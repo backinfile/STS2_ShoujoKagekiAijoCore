@@ -19,8 +19,7 @@ public partial class NKarenShineAmbientVfx(NCard card, CardModel model, NKarenSh
     private Transform2D _previousPose;
     private Vector2 _lightWorld;
     private readonly ShineCardBorder _border = new(card);
-    private readonly CanvasGeometryBatch _drawBatch = new();
-    private sealed class Spark(Vector2 position, Vector2 velocity, float life, float radius)
+    private struct Spark(Vector2 position, Vector2 velocity, float life, float radius)
     {
         public Vector2 Position = position, Velocity = velocity;
         public float Age;
@@ -53,6 +52,7 @@ public partial class NKarenShineAmbientVfx(NCard card, CardModel model, NKarenSh
             var spark = _sparks[i]; spark.Age += dt;
             spark.Position += spark.Velocity*dt;
             if (spark.Age >= spark.Life) _sparks.RemoveAt(i);
+            else _sparks[i] = spark;
         }
         _spawnClock += dt;
         if (_spawnClock >= KarenVfxQuality.SpawnInterval(.065f) && _sparks.Count < KarenVfxQuality.ParticleCount(14))
@@ -68,32 +68,33 @@ public partial class NKarenShineAmbientVfx(NCard card, CardModel model, NKarenSh
 
     public override void _Draw()
     {
+        var drawBatch = ShineVfx.DrawBatch;
         var canvas = GetGlobalTransformWithCanvas();
-        _drawBatch.Clear(1f / Mathf.Max(.1f, canvas.X.Length()));
+        drawBatch.Clear(1f / Mathf.Max(.1f, canvas.X.Length()));
         float pulse = .5f + .5f * Mathf.Sin(_age * 1.7f + _phase);
         var gold = new Color("#ffd48b"); var hot = new Color("#fff1cc");
         if (_border.Outline.Length > 1)
         {
-            _drawBatch.Polyline(_border.Outline, new Color(gold, .10f + pulse * .06f), 12);
-            _drawBatch.Polyline(_border.Outline, new Color(gold, .36f + pulse * .12f), 3);
+            drawBatch.Polyline(_border.Outline, new Color(gold, .10f + pulse * .06f), 12);
+            drawBatch.Polyline(_border.Outline, new Color(gold, .36f + pulse * .12f), 3);
         }
         var lightPoint = canvas.AffineInverse() * _lightWorld;
         float radius = 7 + pulse * 2;
         for (int layer = 5; layer > 0; layer--)
-            _drawBatch.Circle(lightPoint, radius * 2 * layer / 5f,
+            drawBatch.Circle(lightPoint, radius * 2 * layer / 5f,
                 new Color(gold, .14f * Mathf.Pow(1 - layer / 6f, 2)));
-        _drawBatch.Star(lightPoint, radius, .22f, new Color(hot, .55f + pulse * .15f));
+        drawBatch.Star(lightPoint, radius, .22f, new Color(hot, .55f + pulse * .15f));
         // Old sparks keep their viewport-space motion while all geometry shares one submission.
-        _drawBatch.SetTransform(canvas.AffineInverse());
+        drawBatch.SetTransform(canvas.AffineInverse());
         foreach (var spark in _sparks)
         {
             float t = spark.Age / spark.Life;
             float a = Mathf.Sin(Mathf.Min(1, t * 4) * Mathf.Pi / 2) * Mathf.Pow(1 - t, 1.2f) * .68f;
-            _drawBatch.Circle(spark.Position, spark.Radius * 2.2f, new Color(gold, a * .15f));
-            _drawBatch.Line(spark.Position - spark.Velocity * .05f, spark.Position,
+            drawBatch.Circle(spark.Position, spark.Radius * 2.2f, new Color(gold, a * .15f));
+            drawBatch.Line(spark.Position - spark.Velocity * .05f, spark.Position,
                 new Color(gold, a * .65f), spark.Radius * .7f);
-            _drawBatch.Circle(spark.Position, spark.Radius, new Color(hot, a));
+            drawBatch.Circle(spark.Position, spark.Radius, new Color(hot, a));
         }
-        _drawBatch.Flush(this);
+        drawBatch.Flush(this);
     }
 }

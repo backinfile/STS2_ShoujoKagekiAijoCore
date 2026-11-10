@@ -7,16 +7,44 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Cards;
 
 using System.Linq;
+using System.Runtime.CompilerServices;
+using ShoujoKageki.Core.Runtime.Modules.Shine;
+using ShoujoKageki.Core.V1.Presentation;
 
 namespace ShoujoKageki.Core.Runtime.Modules.Presentation;
 
 public static class ShineVfx
 {
+    // Flush copies geometry synchronously. All card overlays reuse one scratch batch
+    // on the drawing thread, including after a native NCard returns to its pool.
+    [ThreadStatic] private static CanvasGeometryBatch? _drawBatch;
+    internal static CanvasGeometryBatch DrawBatch => _drawBatch ??= new();
+    internal static readonly CanvasItemMaterial AdditiveMaterial = new() { BlendMode = CanvasItemMaterial.BlendModeEnum.Add };
+
     // Canonical preview cards have no combat depletion state; their Owner getter requires mutability.
     public static bool WillDeplete(CardModel card, bool shineAlreadyDecreased = false) => card.IsMutable
-        && V1.Shine.GetState(card) is { } state && !card.IsDupe
+        && ShineService.Instance.GetVisualState(card) is { } state && !card.IsDupe
         && (state.Remaining <= (shineAlreadyDecreased ? 0 : 1) || state.PendingDepletion)
-        && !card.Keywords.Contains(CardKeyword.Eternal);
+        && !HasEternalKeyword(card);
+
+    private sealed class KeywordFrame
+    {
+        internal ulong Frame = ulong.MaxValue;
+        internal bool Eternal;
+        internal KeywordFrame(CardModel card) => card.KeywordsChanged += () => Frame = ulong.MaxValue;
+    }
+    private static readonly ConditionalWeakTable<CardModel, KeywordFrame> KeywordFrames = new();
+    private static bool HasEternalKeyword(CardModel card)
+    {
+        var cached = KeywordFrames.GetValue(card, static value => new KeywordFrame(value));
+        ulong frame = Engine.GetProcessFrames();
+        if (cached.Frame != frame)
+        {
+            cached.Eternal = card.Keywords.Contains(CardKeyword.Eternal);
+            cached.Frame = frame;
+        }
+        return cached.Eternal;
+    }
 
     private static readonly SpireField<NCard, NKarenShineWarningVfx?> Warnings = new(() => null);
     private static readonly SpireField<NCard, NKarenShineAmbientVfx?> Ambients = new(() => null);

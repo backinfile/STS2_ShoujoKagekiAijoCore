@@ -22,7 +22,7 @@ public partial class NKarenShinePileArrivalVfx(TextureRect icon, Control visual)
     public override void _Ready()
     {
         TopLevel = true; ZIndex = 111;
-        Material = new CanvasItemMaterial { BlendMode = CanvasItemMaterial.BlendModeEnum.Add };
+        Material = ShineVfx.AdditiveMaterial;
         Restart();
     }
 

@@ -35,6 +35,19 @@ public partial class Probe : Node
    ShineCardBorder.Prepare(nestedAtlas);
    if (((Vector2[])read.Invoke(null, new object[] { nestedAtlas })!).Length == 0) throw new Exception("Nested atlas must recover when its source becomes available");
    GD.Print("PASS nested unavailable atlas recovers without native image errors");
+   var beforeChange = (Vector2[])read.Invoke(null, new object[] { atlas })!;
+   atlas.Region = new Rect2(0, 0, 4, 4);
+   var afterChange = (Vector2[])read.Invoke(null, new object[] { atlas })!;
+   if (ReferenceEquals(beforeChange, afterChange)) throw new Exception("Changed atlas must invalidate its contour");
+   GD.Print("PASS texture changes invalidate cached contours");
+   using var transparentImage = Image.CreateEmpty(8, 8, false, Image.Format.Rgba8);
+   using var transparentTexture = ImageTexture.CreateFromImage(transparentImage);
+   using var replacedSource = new AtlasTexture { Atlas = transparentTexture };
+   ShineCardBorder.Prepare(replacedSource);
+   replacedSource.Atlas = texture;
+   ShineCardBorder.Prepare(replacedSource);
+   if (((Vector2[])read.Invoke(null, new object[] { replacedSource })!).Length == 0) throw new Exception("A replaced transparent source must recover its contour");
+   GD.Print("PASS replacing an empty source restores its contour");
    GetTree().Quit();
   }
   catch (Exception error) { GD.Print("FAIL " + error); GetTree().Quit(1); }

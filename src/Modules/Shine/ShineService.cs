@@ -39,7 +39,7 @@ public sealed class ShineService : IShineService, ICoreModule
         context.Services.Add<IShineService>(this);
         ShoujoKageki.Core.Runtime.Modules.Execution.ModelExecutionModule.RegisterNative(BeginNativePlay);
     }
-    public ShineState? GetState(CardModel card)
+    private static void InitializeState(CardModel card)
     {
         if (Maximum.Get(card) < 0)
         {
@@ -48,6 +48,16 @@ public sealed class ShineService : IShineService, ICoreModule
             if (legacyMax >= 0) { Maximum.Set(card, legacyMax); Remaining.Set(card, Math.Max(0, LegacyRemaining.Get(card))); }
             else if (attribute != null) { Maximum.Set(card, attribute.Uses); Remaining.Set(card, attribute.Uses); }
         }
+    }
+    internal readonly record struct VisualState(int Remaining, bool PendingDepletion);
+    internal VisualState? GetVisualState(CardModel card)
+    {
+        InitializeState(card);
+        return Maximum.Get(card) < 0 ? null : new VisualState(Remaining.Get(card), Pending.Get(card));
+    }
+    public ShineState? GetState(CardModel card)
+    {
+        InitializeState(card);
         if (Maximum.Get(card) < 0) return null;
         var temporary = Temporary.Get(card) || !Depleted.Get(card) && !PermanentOrigins.TryGetValue(card, out _)
             && card.IsMutable && card.Owner is { } owner
