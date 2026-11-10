@@ -98,12 +98,14 @@ internal static class ShineButtonPatch
 internal static class ShineDescriptionPatch
 {
     private static System.Reflection.MethodBase TargetMethod() => AccessTools.GetDeclaredMethods(typeof(CardModel)).Single(x => x.Name == "GetDescriptionForPile" && x.GetParameters().Length == 3);
-    private static void Postfix(CardModel __instance, ref string __result)
+    private static void Postfix(CardModel __instance, object previewType, ref string __result)
     {
         if (V1.Shine.GetState(__instance) is not { } state) return;
         var label = new LocString("gameplay_ui", "CORE_SHINE_LABEL").GetFormattedText();
         var suffix = new LocString("gameplay_ui", "CORE_SHINE_SUFFIX").GetFormattedText();
         var number = state.Remaining < state.Maximum ? $"[red]{state.Remaining}[/red]" : state.Remaining.ToString();
+        if (previewType.ToString() == "Upgrade" || state.Remaining > state.Maximum)
+            number = $"[gold]{Math.Max(state.Remaining, state.Maximum)}[/gold]";
         var exhaustTitle = new LocString("card_keywords", "EXHAUST.title").GetFormattedText();
         var exhaustBadge = $"[gold]{exhaustTitle}[/gold]{new LocString("card_keywords", "PERIOD").GetRawText()}";
         var separator = __instance.Keywords.Contains(CardKeyword.Exhaust)

@@ -46,12 +46,13 @@ public sealed class CoreRoleCommand : AbstractConsoleCmd
 {
     private static string _result = "No checks have run.";
     public override string CmdName => "core_roles";
-    public override string Args => "run | status | config | archive | error | export-one";
+    public override string Args => "run | status | config | archive | error | export-one | shine-description";
     public override string Description => "Targeted Core and Junna adoption checks in an isolated game.";
     public override bool IsNetworked => false;
 
     public override CmdResult Process(Player? player, string[] args)
     {
+        if (args.FirstOrDefault() == "shine-description") return new(true, ShineDescriptionProbe.Run(player));
         if (args.FirstOrDefault() == "status") return new(true, _result);
         if (args.FirstOrDefault() == "error")
         {
