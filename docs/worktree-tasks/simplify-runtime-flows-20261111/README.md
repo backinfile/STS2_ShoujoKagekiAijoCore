@@ -17,7 +17,7 @@
 
 ## 结果
 
-实现及定向验证完成，待集成确认。保留公开接口、存档语义与现有玩法。内部调用复用可信结果，必要校验留在输入和状态提交处。
+实现及定向验证完成，用户已批准合并与清理。保留公开接口、存档语义与现有玩法。内部调用复用可信结果，必要校验留在输入和状态提交处。
 
 ## 用户原始输入（按顺序，路径已脱敏）
 # AGENTS.md instructions for <Core repository>
@@ -219,3 +219,14 @@
 - 原检出的未提交内容保留，逐项哈希核对结果见上述汇总；任务代码仅位于隔离工作树，集成目标为各自 main。
 
 - 完整暂存索引、归档内文本及公开提交身份审计通过，发现数为 0；全部跟踪文档的本机绝对路径检查通过。SDK 共享加载源码可由官方 CoreApiPath 自动定位，构建检查通过。
+
+## 用户合并与清理确认
+
+<send_user_message_question_reply>
+[{"questionItemId":"[\"request_user_input_async\",\"call_6fa8179e7e8647869934b6afc8ac08d8\",0]","question":"是否将 Core a08dff6、Karen d4d66ed、Junna 264579e 合并回各自 main？选择清理会删除本次三个工作树、任务分支及其中的临时构建和隔离游戏文件；最终包、验证日志、截图、录像、哈希及脚本已保留到 Core 原目录 out/tmp/simplify-runtime-flows-20261111/。","answer":"合并并清理（推荐）"}]
+</send_user_message_question_reply>
+
+## 同步与集成
+
+- 等待确认期间 Junna main 新增知识牌入牌组动画及相关资料记录，已在任务工作树无冲突同步；双版本重新编译，组合安装复验及最终包哈希记入 Core 项目 out/tmp/simplify-runtime-flows-20261111/validation-integrated.json。
+- 集成目标为三个项目各自 main，保留原检出的未提交内容；最终包、验证日志、截图、录像、哈希、探针与运行脚本保留到 Core 原目录同名 out/tmp 目录后，清理本任务三个工作树和分支。实际回执见同目录 integration.json。
