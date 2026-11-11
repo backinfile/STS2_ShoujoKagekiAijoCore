@@ -1,6 +1,6 @@
 # ShoujoKagekiAijoCore 使用说明
 
-本文面向使用 Core 的玩家和 Mod 作者，说明 Core 1.3.0 的能力、配置与 API V1 接入方式。SDK 随完整 Core 构建产物提供。
+本文面向使用 Core 的玩家和 Mod 作者，说明 Core 1.5.0 的能力、配置与 API V1 接入方式。SDK 随完整 Core 构建产物提供。
 
 引导、服务端、存档与发布方面的实现约定见 [Core 实现文档](docs/IMPLEMENTATION.md)。[GitHub 仓库](https://github.com/backinfile/STS2_ShoujoKagekiAijoCore)
 
@@ -231,3 +231,8 @@ Core 更新以旧角色 DLL 直接运行和旧存档读取作为验收条件。�
 ### 实际卡牌选择、升级与临时音乐
 
 Core 1.4 提供 `CardPicking.Pick`，统一实际卡牌选择和结果校验。`CardUpgrades.Upgrade` 等待升级产生的后续牌效，原生模型与动作内的升级由 Core 自动衔接。`IMusicOverrides` 提供临时曲目和静默租约，释放后恢复被中断的音乐。能力声明见 `sdk/README.md`，接口见 `src/Api.V1/`。
+
+
+## 1.5 自定义选择同步
+
+PlayerChoices.ChooseIndex(context, player, optionCount, selectLocal) 统一自定义界面的原生选择编号、联机传输和重放。仅本地实时玩家调用 selectLocal，返回选项索引或 -1 取消；越界结果抛出异常，空选项直接返回 -1。传入选择上下文时，Core 在完成和异常时平衡选择信号；奖励同步等已经管理生命周期的入口传 null。角色负责候选顺序、界面显示和结果执行，使用该入口声明 player-choices@1，要求 Core 1.5.0。公开程序集版本保持 1.0.0.0。

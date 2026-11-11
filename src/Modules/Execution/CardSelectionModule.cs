@@ -38,7 +38,7 @@ public sealed class CardSelectionModule : ICoreModule, ICardSelection, ICardOpti
         if (maximum == 0) return [];
         var piles = cards.ToDictionary(card => card, card => card.Pile);
         var preferences = new CardSelectorPrefs(request.Prompt, Math.Min(request.Minimum, maximum), maximum);
-        await using var choice = new ChoiceContext(context);
+        await using var choice = new ScopedChoiceContext(context);
         var selected = request.PreferHand && cards.All(card => card.Pile?.Type == MegaCrit.Sts2.Core.Entities.Cards.PileType.Hand && card.Owner == player)
             ? await CardSelectCmd.FromHand(choice, player, preferences, cards.Contains, request.Source!)
             : await CardSelectCmd.FromSimpleGrid(choice, cards, player, preferences);
@@ -81,7 +81,7 @@ public sealed class CardSelectionModule : ICoreModule, ICardSelection, ICardOpti
         Title.Value = title;
         try
         {
-            await using var choice = new ChoiceContext(context);
+            await using var choice = new ScopedChoiceContext(context);
             CardModel? selected;
             if (cards.Count <= 3)
                 selected = await CardSelectCmd.FromChooseACardScreen(choice, cards, player, canSkip);
@@ -97,44 +97,6 @@ public sealed class CardSelectionModule : ICoreModule, ICardSelection, ICardOpti
             return selected;
         }
         finally { Title.Value = previous; }
-    }
-    private sealed class ChoiceContext : PlayerChoiceContext, IAsyncDisposable
-    {
-        private readonly PlayerChoiceContext _original;
-        private int _open;
-        internal ChoiceContext(PlayerChoiceContext original)
-        {
-            _original = original;
-#if STS2_BETA
-            foreach (var model in original.ModelStack?.Reverse() ?? []) PushModel(model);
-#else
-            if (original.LastInvolvedModel is { } model) PushModel(model);
-#endif
-        }
-
-#if STS2_BETA
-        public override ulong? OwnerId => _original.OwnerId;
-#endif
-#if STS2_BETA
-        public override async Task SignalPlayerChoiceBegun(Player chooser, PlayerChoiceOptions options)
-        {
-            await _original.SignalPlayerChoiceBegun(chooser, options);
-#else
-        public override async Task SignalPlayerChoiceBegun(PlayerChoiceOptions options)
-        {
-            await _original.SignalPlayerChoiceBegun(options);
-#endif
-            _open++;
-        }
-        public override async Task SignalPlayerChoiceEnded()
-        {
-            if (_open > 0) _open--;
-            await _original.SignalPlayerChoiceEnded();
-        }
-        public async ValueTask DisposeAsync()
-        {
-            while (_open > 0) await SignalPlayerChoiceEnded();
-        }
     }
     [HarmonyPatch(typeof(NChooseACardSelectionScreen), "_Ready")]
     private static class ChoiceTitle

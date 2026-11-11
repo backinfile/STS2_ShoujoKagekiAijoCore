@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../src/Modules/Execution/SynchronizedChoice.cs" Link="SynchronizedChoice.cs" />
+  </ItemGroup>
+</Project>
