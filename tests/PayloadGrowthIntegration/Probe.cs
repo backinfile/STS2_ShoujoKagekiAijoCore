@@ -184,7 +184,7 @@ public sealed class PayloadGrowthFixture : AbstractConsoleCmd
             var links = Field<string>("ResearchLinks");
             var completed = Field<bool>("ResearchCompleted");
             var hits = Field<int>("ExtraHits");
-            var depleted = Field<int>("ResearchCount");
+            var legacyDepleted = Field<int>("LegacyDepletedPartners");
             void Bind(IEnumerable<CardModel> cards) => AccessTools.Method(typeof(KnowledgeProgress), "BindResearch").Invoke(null, [cards]);
             async Task<CatalogCard> Deck(string id)
             {
@@ -192,11 +192,10 @@ public sealed class PayloadGrowthFixture : AbstractConsoleCmd
                 await CardPileCmd.Add(card, PileType.Deck);
                 return card;
             }
-            foreach (var (mainId, memberIds, countField, maximum) in new[]
+            foreach (var (mainId, memberIds, maximum) in new[]
             {
-                ("JK148", new[] { "JK148B", "JK148C", "JK148D", "JK148E", "JK148F" }, false, (int?)null),
-                ("JK184", new[] { "JK184B", "JK184C", "JK184D" }, false, (int?)6),
-                ("JK314", new[] { "JK122B", "JK122B", "JK122B" }, true, (int?)3)
+                ("JK148", new[] { "JK148B", "JK148C", "JK148D", "JK148E", "JK148F" }, (int?)null),
+                ("JK184", new[] { "JK184B", "JK184C", "JK184D" }, (int?)6)
             })
             {
                 var main = await Deck(mainId);
@@ -224,8 +223,7 @@ public sealed class PayloadGrowthFixture : AbstractConsoleCmd
                     && links.Get(restoredMain) == links.Get(main) && completed.Get(restoredMember));
                 await Deplete(restoredMember);
                 Check(mainId + " restored completed partner cannot advance again", KnowledgeProgress.PermanentHits(main) == 1);
-                var progress = countField ? depleted : hits;
-                progress.Set(main, maximum is { } cap ? cap - 1 : 7);
+                hits.Set(main, maximum is { } cap ? cap - 1 : 7);
                 await Deplete(members[1]);
                 await Deplete(members[2]);
                 int expected = maximum ?? 9;
@@ -233,6 +231,47 @@ public sealed class PayloadGrowthFixture : AbstractConsoleCmd
                     && KnowledgeProgress.PermanentHits(inCombat) == expected);
                 Check(mainId + " keeps its description counter", KnowledgeProgress.DepletedPartners(main) == (mainId == "JK148" ? 0 : expected));
             }
+            var archiveMain = await Deck("JK314");
+            var firstDesire = await Deck("JK122B");
+            Bind(new CardModel[] { archiveMain, firstDesire });
+            Check("archive research does not acquire a batch identity",
+                string.IsNullOrEmpty(links.Get(archiveMain)) && string.IsNullOrEmpty(links.Get(firstDesire)));
+            var archiveLive = (CatalogCard)CardCopies.ForCombat(archiveMain, player, CardCopyPurpose.Transfer, archiveMain);
+            await CardPileCmd.Add(archiveLive, PileType.Hand);
+            int archivedBefore = Shine.GetDepletedCards(player).Count(entry => entry.ModelId == firstDesire.Id.ToString());
+            legacyDepleted.Set(archiveMain, 999);
+            Check("archive research ignores old counters and canonical cards have no owner count",
+                KnowledgeProgress.DepletedPartners(archiveMain) == archivedBefore
+                && KnowledgeProgress.DepletedPartners(CardCatalog.Model("JK314")) == 0);
+            for (int i = 0; i < 4; i++)
+            {
+                var permanent = i == 0 ? firstDesire : await Deck("JK122B");
+                Shine.SetState(permanent, 1, 3);
+                var desire = (CatalogCard)CardCopies.ForCombat(permanent, player, CardCopyPurpose.Transfer, permanent);
+                Shine.SetState(desire, 1, 3);
+                await CardPileCmd.Add(desire, PileType.Hand);
+                await CardExecution.Play(context, desire, new CardExecutionRequest { Target = enemy });
+                Check("archive research counts native depletion across batches " + i,
+                    KnowledgeProgress.DepletedPartners(archiveMain) == archivedBefore + i + 1
+                    && KnowledgeProgress.DepletedPartners(archiveLive) == archivedBefore + i + 1);
+                await KnowledgeProgress.Depleted(desire, new ShineDepletionContext(desire, permanent, player, "repeat"));
+                Check("repeat callbacks do not duplicate archive progress " + i,
+                    KnowledgeProgress.DepletedPartners(archiveLive) == archivedBefore + i + 1);
+            }
+            var restoredArchiveMain = (CatalogCard)CardModel.FromSerializable(archiveMain.ToSerializable());
+            restoredArchiveMain.Owner = player;
+            Check("legacy field roundtrips while archive progress exceeds three",
+                legacyDepleted.Get(restoredArchiveMain) == 999
+                && KnowledgeProgress.DepletedPartners(restoredArchiveMain) == archivedBefore + 4);
+            Check("archive hits remain separate from permanent and invested hits",
+                KnowledgeProgress.PermanentHits(archiveLive) == 0
+                && DamageModifiers.CaptureDamageModifierSnapshot(archiveLive).ExtraHits == 0);
+            DamageModifiers.Add(archiveLive, extraHits: 1);
+            int archiveHp = enemy.CurrentHp;
+            await CardExecution.Play(context, archiveLive, new CardExecutionRequest { Target = enemy });
+            Check("archive hits combine with external investment during native play",
+                archiveHp - enemy.CurrentHp == 8 * (2 + archivedBefore + 4 + 1));
+
             var unbound = await Deck("JK148B");
             Bind(new[] { unbound });
             Check("partner-only acquisition cannot start a research batch", string.IsNullOrEmpty(links.Get(unbound)));
