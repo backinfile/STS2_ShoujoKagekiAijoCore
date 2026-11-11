@@ -80,6 +80,75 @@ new ShoujoKageki.Core.Runtime.Modules.Execution.ModelExecutionModule().Initializ
 var service = new ShineService();
 service.Initialize(context);
 CoreApi.Bind(services);
+if (args.Contains("--payloads-only"))
+{
+    var routing = new ShoujoKageki.Core.Runtime.Modules.Execution.CardPlayRoutingModule();
+    routing.Initialize(context);
+    var source = new PayloadCard { Value = 3 };
+    var copy = new PayloadCard { Value = 7 };
+    var initialContext = new ThrowingPlayerChoiceContext();
+    var resumedContext = new ThrowingPlayerChoiceContext();
+    var effects = new List<(CardModel Card, PlayerChoiceContext Context)>();
+    ICardEffectPayload? retained = null;
+    using var scheduler = CoreApi.Get<ICardPayloadRouting>().Register((card, choice, play, next) =>
+    { retained = next; return Task.CompletedTask; }, _ => null);
+    var downstream = CoreApi.Get<ICardEffectRouting>().Register(async (card, choice, play, next) =>
+    { effects.Add((card, choice)); await next(choice, play); }, _ => null);
+    int checks = 0;
+    void Verify(bool condition, string label)
+    {
+        if (!condition) throw new InvalidOperationException(label);
+        checks++;
+    }
+    CardPlay Play(CardModel card) => new() { Card = card, Target = null, ResultPile = PileType.Discard,
+        Resources = default, IsAutoPlay = true, PlayIndex = 0, PlayCount = 1,
+#if STS2_BETA
+        Player = null!,
+#endif
+    };
+    await ShoujoKageki.Core.Runtime.Modules.Execution.CardPlayRoutingModule.Dispatch(source, initialContext, Play(source));
+    Verify(source.Effects == 0 && retained != null, "Deployment captures rather than executing the downstream effect");
+    downstream.Dispose();
+    await retained!.Bind(copy)(resumedContext, Play(copy));
+    Verify(copy.Effects == 7 && source.Effects == 0, "Copy binding invokes the copy model");
+    Verify(effects.Count == 1 && effects[0].Card == copy && effects[0].Context == resumedContext,
+        "Retained snapshot uses the copy and current choice context after registration disposal");
+    await retained.Bind(source)(initialContext, Play(source));
+    Verify(source.Effects == 3 && copy.Effects == 7, "Bindings remain independent");
+    scheduler.Dispose();
+
+    var failure = new SynchronousFailureCard();
+    try { await routing.Native.Bind(failure)(resumedContext, Play(failure)); }
+    catch (Exception actual) when (ReferenceEquals(actual, SynchronousFailureCard.Failure)) { checks++; }
+    Verify(checks == 5, "Native binding preserves synchronous exception identity");
+
+    ICardEffectPayload? hooked = null;
+    using var hookScheduler = CoreApi.Get<ICardPayloadRouting>().Register((card, choice, play, next) =>
+    { hooked = next; return Task.CompletedTask; }, _ => null);
+    CardModel? hookCard = null; PlayerChoiceContext? hookContext = null; CardPlay? hookPlay = null;
+    Func<CardModel, PlayerChoiceContext, CardPlay, Task> hook = (card, choice, play) =>
+    { hookCard = card; hookContext = choice; hookPlay = play; return Task.CompletedTask; };
+    await ShoujoKageki.Core.Runtime.Modules.Execution.CardPlayRoutingModule.DispatchFromHook(hook, source, initialContext, Play(source));
+    await hooked!.Bind(copy)(resumedContext, Play(copy));
+    Verify(hookCard == copy && hookContext == resumedContext && hookPlay!.Card == copy,
+        "Third-party original delegates receive the rebound card, play and choice context");
+    Func<CardModel, PlayerChoiceContext, CardPlay, Task> failedHook = (_, _, _) => throw SynchronousFailureCard.Failure;
+    await ShoujoKageki.Core.Runtime.Modules.Execution.CardPlayRoutingModule.DispatchFromHook(failedHook, source, initialContext, Play(source));
+    bool failed = false;
+    try { await hooked!.Bind(copy)(resumedContext, Play(copy)); }
+    catch (Exception actual) when (ReferenceEquals(actual, SynchronousFailureCard.Failure)) { failed = true; }
+    Verify(failed, "Third-party binding preserves synchronous exception identity");
+    hookScheduler.Dispose();
+
+    using var legacy = CoreApi.Get<ICardEffectRouting>().Register((card, choice, play, next) =>
+        next(choice, Play(copy)), _ => null);
+    int originalEffects = source.Effects, copiedEffects = copy.Effects;
+    await ShoujoKageki.Core.Runtime.Modules.Execution.CardPlayRoutingModule.Dispatch(source, initialContext, Play(source));
+    Verify(source.Effects == originalEffects + source.Value && copy.Effects == copiedEffects,
+        "Published continuations stay bound to their original model");
+    Console.WriteLine($"PASS {checks} rebindable payload checks.");
+    return;
+}
 if (args.Contains("--routing-only"))
 {
     new ShoujoKageki.Core.Runtime.Modules.Execution.CardPlayRoutingModule().Initialize(context);
@@ -399,4 +468,15 @@ public sealed class SynchronousFailureCard() : CardModel(0, CardType.Skill, Card
 {
     public static readonly Exception Failure = new IOException("expected synchronous failure");
     protected override Task OnPlay(PlayerChoiceContext context, CardPlay play) => throw Failure;
+}
+
+
+public sealed class PayloadCard() : CardModel(0, CardType.Skill, CardRarity.Token, TargetType.Self)
+{
+    public int Effects, Value;
+    protected override Task OnPlay(PlayerChoiceContext context, CardPlay play)
+    {
+        Effects += Value;
+        return Task.CompletedTask;
+    }
 }

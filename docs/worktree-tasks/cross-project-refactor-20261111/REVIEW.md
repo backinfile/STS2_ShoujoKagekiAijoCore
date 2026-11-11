@@ -51,3 +51,5 @@
 - 完整暂存索引隐私审计：Core 992、Karen 5546、Junna 2648 个跟踪文件均为 0 项发现；提交使用公开 noreply 身份。
 
 - 用户已批准合并与清理；最终产物和证据的 1,161 个文件已保留到 Core 原仓库同名 out/tmp 目录并逐项核对哈希。
+
+后续三项已在 [payload-growth-export-20261111](../payload-growth-export-20261111/README.md) 完成重构和定向验证。

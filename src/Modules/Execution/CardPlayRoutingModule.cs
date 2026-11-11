@@ -9,9 +9,9 @@ using MegaCrit.Sts2.Core.Models;
 namespace ShoujoKageki.Core.Runtime.Modules.Execution;
 
 /// <summary>One native effect/destination adapter, preserving third-party dispatch hooks.</summary>
-public sealed class CardPlayRoutingModule : ICoreModule, ICardPlayRouting, ICardEffectRouting
+public sealed class CardPlayRoutingModule : ICoreModule, ICardPlayRouting, ICardEffectRouting, ICardPayloadRouting
 {
-    private sealed record Route(CardEffectMiddleware Middleware, Func<CardModel, PileType?> Destination);
+    private sealed record Route(CardPayloadMiddleware Middleware, Func<CardModel, PileType?> Destination);
     private static CardPlayRoutingModule _instance = null!;
     private readonly List<Route> _routes = [];
     private static readonly ConcurrentDictionary<Type, MethodInfo> Effects = new();
@@ -23,6 +23,7 @@ public sealed class CardPlayRoutingModule : ICoreModule, ICardPlayRouting, ICard
         _instance = this;
         context.Services.Add<ICardPlayRouting>(this);
         context.Services.Add<ICardEffectRouting>(this);
+        context.Services.Add<ICardPayloadRouting>(this);
         context.ModelsReady += Install;
     }
     private bool _installed;
@@ -41,10 +42,17 @@ public sealed class CardPlayRoutingModule : ICoreModule, ICardPlayRouting, ICard
     public IDisposable Register(CardPlayMiddleware middleware, Func<CardModel, PileType?> destination)
     {
         ArgumentNullException.ThrowIfNull(middleware);
-        return Register((card, context, play, next) =>
+        return Register((CardModel card, PlayerChoiceContext context, CardPlay play, CardEffectContinuation next) =>
             middleware(card, context, play, payload => next(context, payload)), destination);
     }
     public IDisposable Register(CardEffectMiddleware middleware, Func<CardModel, PileType?> destination)
+    {
+        ArgumentNullException.ThrowIfNull(middleware);
+        return Register((CardModel card, PlayerChoiceContext context, CardPlay play, ICardEffectPayload next) =>
+            middleware(card, context, play, next.Bind(card)), destination);
+    }
+    public ICardEffectPayload Native { get; } = new Payload([], 0, InvokeNative);
+    public IDisposable Register(CardPayloadMiddleware middleware, Func<CardModel, PileType?> destination)
     {
         ArgumentNullException.ThrowIfNull(middleware);
         ArgumentNullException.ThrowIfNull(destination);
@@ -57,11 +65,14 @@ public sealed class CardPlayRoutingModule : ICoreModule, ICardPlayRouting, ICard
         private Action? _remove = remove;
         public void Dispose() => Interlocked.Exchange(ref _remove, null)?.Invoke();
     }
+    private static Task InvokeNative(CardModel card, PlayerChoiceContext context, CardPlay play)
+        => (Task)Effects.GetOrAdd(card.GetType(), type =>
+            AccessTools.Method(type, "OnPlay", [typeof(PlayerChoiceContext), typeof(CardPlay)]))
+            .Invoke(card, BindingFlags.DoNotWrapExceptions, null, [context, play], null)!;
     public static Task Dispatch(CardModel card, PlayerChoiceContext context, CardPlay play)
-        => Execute(card, context, play, (choice, payload) => (Task)Effects.GetOrAdd(card.GetType(), type =>
-            AccessTools.Method(type, "OnPlay", [typeof(PlayerChoiceContext), typeof(CardPlay)])).Invoke(card, BindingFlags.DoNotWrapExceptions, null, [choice, payload], null)!);
+        => Execute(card, context, play, InvokeNative);
     public static Task DispatchFromHook(Delegate original, CardModel card, PlayerChoiceContext context, CardPlay play)
-        => Execute(card, context, play, (choice, payload) => InvokeHook(original, card, choice, payload));
+        => Execute(card, context, play, (boundCard, choice, payload) => InvokeHook(original, boundCard, choice, payload));
     private static Task InvokeHook(Delegate original, CardModel card, PlayerChoiceContext context, CardPlay play)
     {
         try { return (Task)original.DynamicInvoke(card, context, play)!; }
@@ -71,17 +82,20 @@ public sealed class CardPlayRoutingModule : ICoreModule, ICardPlayRouting, ICard
             throw;
         }
     }
-    private static Task Execute(CardModel card, PlayerChoiceContext context, CardPlay play, CardEffectContinuation original)
+    private sealed class Payload(Route[] routes, int index,
+        Func<CardModel, PlayerChoiceContext, CardPlay, Task> original) : ICardEffectPayload
     {
-        var routes = _instance._routes.ToArray();
-        Task Next(int index, PlayerChoiceContext choice, CardPlay payload)
+        public CardEffectContinuation Bind(CardModel card)
         {
-            if (index == routes.Length) return original(choice, payload);
-            return routes[index].Middleware(card, choice, payload,
-                (nextChoice, nextPlay) => Next(index + 1, nextChoice, nextPlay));
+            ArgumentNullException.ThrowIfNull(card);
+            return (context, play) => index == routes.Length
+                ? original(card, context, play)
+                : routes[index].Middleware(card, context, play, new Payload(routes, index + 1, original));
         }
-        return Next(0, context, play);
     }
+    private static Task Execute(CardModel card, PlayerChoiceContext context, CardPlay play,
+        Func<CardModel, PlayerChoiceContext, CardPlay, Task> original)
+        => new Payload(_instance._routes.ToArray(), 0, original).Bind(card)(context, play);
     private static PileType? Destination(CardModel card)
     {
         foreach (var route in _instance._routes)

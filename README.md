@@ -1,6 +1,6 @@
 # ShoujoKagekiAijoCore 使用说明
 
-本文面向使用 Core 的玩家和 Mod 作者，说明 Core 1.5.0 的能力、配置与 API V1 接入方式。SDK 随完整 Core 构建产物提供。
+本文面向使用 Core 的玩家和 Mod 作者，说明 Core 1.6.0 的能力、配置与 API V1 接入方式。SDK 随完整 Core 构建产物提供。
 
 引导、服务端、存档与发布方面的实现约定见 [Core 实现文档](docs/IMPLEMENTATION.md)。[GitHub 仓库](https://github.com/backinfile/STS2_ShoujoKagekiAijoCore)
 
@@ -236,3 +236,9 @@ Core 1.4 提供 `CardPicking.Pick`，统一实际卡牌选择和结果校验。`
 ## 1.5 自定义选择同步
 
 PlayerChoices.ChooseIndex(context, player, optionCount, selectLocal) 统一自定义界面的原生选择编号、联机传输和重放。仅本地实时玩家调用 selectLocal，返回选项索引或 -1 取消；越界结果抛出异常，空选项直接返回 -1。传入选择上下文时，Core 在完成和异常时平衡选择信号；奖励同步等已经管理生命周期的入口传 null。角色负责候选顺序、界面显示和结果执行，使用该入口声明 player-choices@1，要求 Core 1.5.0。公开程序集版本保持 1.0.0.0。
+
+## 1.6 可绑定牌效载体
+
+延迟牌效和复制箭矢可通过 `CoreApi.Get<ICardPayloadRouting>()` 接入，声明 `card-payloads@1` 并要求 Core 1.6.0。中间件收到的 `ICardEffectPayload` 保留当次剩余路由与第三方牌效入口；实际结算时调用 `next.Bind(actualCard)(currentContext, actualPlay)`，将牌效绑定到原牌或副本。`actualPlay.Card` 和测试版的 `actualPlay.Player` 由调度器按实际结算对象填写。闪耀仍在实际执行时通过结算作用域计次。
+
+旧 `ICardPlayRouting`、`ICardEffectRouting` 与公开程序集版本 `1.0.0.0` 保持兼容。

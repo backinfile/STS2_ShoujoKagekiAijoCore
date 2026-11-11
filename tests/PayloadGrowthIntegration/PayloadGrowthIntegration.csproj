@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><AssemblyName>CorePayloadGrowthIntegration</AssemblyName></PropertyGroup>
+  <Import Project="../../build/GameReferences.props" />
+  <ItemGroup>
+    <Reference Include="ShoujoKagekiAijoCore.Api.V1" HintPath="$(CoreApiPath)" Private="false" />
+    <Reference Include="CoreRuntime" HintPath="$(CoreRuntimePath)" Private="false" />
+    <Reference Include="ShoujoKagekiJunna" HintPath="$(JunnaAssemblyPath)" Private="false" />
+    <Reference Include="BaseLib" HintPath="$(BaseLibPath)" Private="false" />
+  </ItemGroup>
+</Project>

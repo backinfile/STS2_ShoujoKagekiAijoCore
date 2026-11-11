@@ -4,7 +4,7 @@ param(
     [string]$Godot = $env:GODOT_BIN,
     [string]$TelemetryEndpointPath = $env:SHOUJO_TELEMETRY_ENDPOINT_PATH,
     [string]$OutputDirectory = '',
-    [string]$Version = '1.5.0'
+    [string]$Version = '1.6.0'
 )
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
@@ -56,9 +56,9 @@ Get-ChildItem -LiteralPath $staging -Recurse -File | Sort-Object FullName | ForE
     $files[$relative] = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 $bundle = [ordered]@{
-    format=1; bootstrapProtocol=1; releaseVersion=$Version; apiMajor=1; apiVersion='1.5.0'; apiAssembly="lib/$Version/api/ShoujoKagekiAijoCore.Api.V1.dll"
+    format=1; bootstrapProtocol=1; releaseVersion=$Version; apiMajor=1; apiVersion='1.6.0'; apiAssembly="lib/$Version/api/ShoujoKagekiAijoCore.Api.V1.dll"
     baseLibMinimumVersion='3.4.7'; resourceVersion=$Version; resourcePack="resources/$Version/Core.Resources.pck"; saveProtocol=2; networkProtocol=2
-    features=@('player-choices@1','card-picking@1','card-upgrades@1','music-overrides@1','shine@1','diagnostics@1','music@1','configuration@1','card-play-routing@1','card-effects@1','card-execution@1','card-options@1','effect-registration@1','movement-pipeline@1','model-execution@1','card-copies@1','card-snapshots@1','card-selection@1','presentation@1','temporary-music@1') + @(if (Test-Path (Join-Path $root 'src/Modules/Telemetry')) { 'telemetry@1' }) + @(if (Test-Path (Join-Path $root 'src/Modules/Exports')) { 'card-export@1' })
+    features=@('card-payloads@1','player-choices@1','card-picking@1','card-upgrades@1','music-overrides@1','shine@1','diagnostics@1','music@1','configuration@1','card-play-routing@1','card-effects@1','card-execution@1','card-options@1','effect-registration@1','movement-pipeline@1','model-execution@1','card-copies@1','card-snapshots@1','card-selection@1','presentation@1','temporary-music@1') + @(if (Test-Path (Join-Path $root 'src/Modules/Telemetry')) { 'telemetry@1' }) + @(if (Test-Path (Join-Path $root 'src/Modules/Exports')) { 'card-export@1' })
     targets=[ordered]@{
         stable=[ordered]@{ minimumGameVersion='0.107.1'; maximumGameVersion='0.107.1'; assembly="lib/$Version/stable/ShoujoKagekiAijoCore.Runtime.Stable.dll" }
         beta=[ordered]@{ minimumGameVersion='0.111.0'; maximumGameVersion='0.111.0'; assembly="lib/$Version/beta/ShoujoKagekiAijoCore.Runtime.Beta.dll" }

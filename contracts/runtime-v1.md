@@ -104,3 +104,11 @@ SDK 与引导均执行 src/Bootstrap/Bundle.cs；发行将同一源码放入 sdk
 ## 1.5 自定义选择同步
 
 PlayerChoices.ChooseIndex(context, player, optionCount, selectLocal) 统一自定义界面的原生选择编号、联机传输和重放。仅本地实时玩家调用 selectLocal，返回选项索引或 -1 取消；越界结果抛出异常，空选项直接返回 -1。传入选择上下文时，Core 在完成和异常时平衡选择信号；奖励同步等已经管理生命周期的入口传 null。角色负责候选顺序、界面显示和结果执行，使用该入口声明 player-choices@1，要求 Core 1.5.0。公开程序集版本保持 1.0.0.0。
+
+## 1.6 可绑定牌效载体
+
+- `ICardPayloadRouting.Register(CardPayloadMiddleware, destination)` 与既有路由共用登记顺序。中间件收到的 `ICardEffectPayload` 捕获当次后续路由及原生或第三方终端委托，登记随后释放不改变已部署任务。
+- `ICardEffectPayload.Bind(card)` 返回绑定指定模型的 `CardEffectContinuation`。原牌与多个副本可以独立绑定，并在执行时传入当前 `PlayerChoiceContext` 与相应 `CardPlay`。绑定不改写 `CardPlay`；调度器提供实际 `Card`、测试版 `Player`、目标、支付及重放信息。
+- `ICardPayloadRouting.Native` 提供直接部署所用的原生 `OnPlay` 载体。经路由部署时保留收到的 `next`，复制时重新绑定，不重新进入部署入口。
+- 旧两种中间件契约保持签名和绑定语义；旧 continuation 继续绑定登记时的卡牌，改变 `play.Card` 不会重新绑定。原生与第三方终端同步抛错保留原异常身份。
+- 新能力声明为 `card-payloads@1`，最低 Core 1.6.0。API V1 程序集版本继续为 `1.0.0.0`。
