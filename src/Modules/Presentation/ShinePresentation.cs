@@ -103,7 +103,8 @@ internal static class ShineDescriptionPatch
         if (V1.Shine.GetState(__instance) is not { } state) return;
         var label = new LocString("gameplay_ui", "CORE_SHINE_LABEL").GetFormattedText();
         var suffix = new LocString("gameplay_ui", "CORE_SHINE_SUFFIX").GetFormattedText();
-        var number = state.Remaining < state.Maximum ? $"[red]{state.Remaining}[/red]" : state.Remaining.ToString();
+        var remaining = ShineService.Instance.IsArchivedModel(__instance) ? state.Maximum : state.Remaining;
+        var number = remaining < state.Maximum ? $"[red]{remaining}[/red]" : remaining.ToString();
         if (previewType.ToString() == "Upgrade" || state.Remaining > state.Maximum)
             number = $"[gold]{Math.Max(state.Remaining, state.Maximum)}[/gold]";
         var exhaustTitle = new LocString("card_keywords", "EXHAUST.title").GetFormattedText();

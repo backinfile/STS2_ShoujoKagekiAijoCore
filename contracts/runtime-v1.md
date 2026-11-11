@@ -40,7 +40,7 @@ Shine.DepleteAfterCurrentResolution 仅请求合法结算点耗尽。Shine.Copy(
 
 ## 已落地的增量契约
 
-Shine.SetState(card, remaining, maximum, temporary=false)、ChangeMaximum、RestoreToMaximum 供真实永久牌效调整状态。Copy(Reacquire) 与 Reacquire(player,entry) 恢复完整 SerializableCard，重置临时、待耗尽和已耗尽标记。GetDepletedModels 返回独立预览实例。
+Shine.SetState(card, remaining, maximum, temporary=false)、ChangeMaximum、RestoreToMaximum 供真实永久牌效调整状态。Copy(Reacquire) 与 Reacquire(player,entry) 恢复完整 SerializableCard，重置临时、待耗尽和已耗尽标记。GetDepletedModels 返回独立预览实例，内部保留零余量；档案卡面及其只读快照显示闪耀上限，重新获得后按新生命周期的实际余量显示。
 
 IShineDepletionListener.OnShineDepleted(context) 可由遗物实现。Core 在真实永久来源耗尽时调用卡自身处理器与拥有者遗物监听器各一次。ChoiceContext 在回调时提供合法的模型栈，CombatState 保留实际结算状态。Shine.IsDepletionAnimating 查询公共耗尽表现。
 

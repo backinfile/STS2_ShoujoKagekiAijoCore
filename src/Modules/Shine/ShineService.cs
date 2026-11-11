@@ -205,8 +205,11 @@ public sealed class ShineService : IShineService, ICoreModule
                 await handler.AfterShineResolution(context, play);
         }
     }
+    private static readonly ConditionalWeakTable<CardModel, object> ArchivedModels = new();
+    internal bool IsArchivedModel(CardModel card) => ArchivedModels.TryGetValue(card, out _);
     internal void MarkArchived(CardModel card)
     {
+        ArchivedModels.GetOrCreateValue(card);
         var state = GetState(card);
         Depleted.Set(card, true);
         Pending.Set(card, false);
@@ -225,6 +228,7 @@ public sealed class ShineService : IShineService, ICoreModule
     }
     internal void ResetLifecycle(CardModel card)
     {
+        ArchivedModels.Remove(card);
         PermanentOrigins.GetOrCreateValue(card);
         Depleted.Set(card, false);
         Pending.Set(card, false);
@@ -249,6 +253,7 @@ public sealed class ShineService : IShineService, ICoreModule
     public CardModel Copy(CardModel card, CardCopyPurpose purpose) => CardCopyService.CopyDetached(card, purpose);
     internal void PreserveSnapshotOrigin(CardModel source, CardModel snapshot)
     {
+        if (IsArchivedModel(source)) ArchivedModels.GetOrCreateValue(snapshot);
         if (GetState(source) is { Temporary: false }) PermanentOrigins.GetOrCreateValue(snapshot);
     }
     internal bool IsDepletedCopySource(CardModel card) => Depleted.Get(card) || GetState(card) is { Remaining: <= 0 };
