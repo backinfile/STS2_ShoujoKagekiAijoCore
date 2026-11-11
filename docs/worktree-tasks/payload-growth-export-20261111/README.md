@@ -37,7 +37,7 @@
 
 - Core 工作树 out/tmp/payload-growth-export-20261111/package-confirmed/ 为最终测试包；live-verified/ 保存最终断言、日志、前后截图、导出图与录像。
 - 同目录保留早期尝试、运行脚本、包哈希、严格包校验、API 兼容检查和原检出状态；构建日志在 artifacts/，Junna 构建日志在其 artifacts/refactor/。
-- 使用 $worktree-task；实现完成，等待本轮合并与清理确认。若批准清理，先将最终包、必要构建日志、验证、截图、录像、哈希和运行脚本保留到 Core 原仓库同名 out/tmp/ 目录，再删除本轮两个工作树与任务分支。
+- 使用 $worktree-task；实现与定向验证完成。用户本轮选择“暂不合并”，保留两个工作树与任务分支。最终包、验证日志、截图、录像、哈希和运行脚本已保留到 Core 原仓库 out/tmp/payload-growth-export-20261111/，84 个证据文件逐文件哈希核验通过。
 
 ## 本项目起点
 
@@ -242,3 +242,10 @@
 
 
 执行修复吧
+
+
+## 本轮合并与清理选择
+
+<send_user_message_question_reply>
+[{"questionItemId":"[\"request_user_input_async\",\"call_e91ba43e525c4c5ea0bec9f2c2e60071\",0]","question":"是否将 Core f35fd79、Junna 3af6ad2（含重构提交 fe675ab）合并回各自 main？最终包、日志、截图、录像、哈希和运行脚本已保留到 Core 原仓库 out/tmp/payload-growth-export-20261111。选择清理会删除本轮两个工作树、各自的 codex/payload-growth-export-20261111 分支，以及其中临时构建和隔离游戏文件。","answer":"暂不合并"}]
+</send_user_message_question_reply>
