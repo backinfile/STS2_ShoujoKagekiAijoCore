@@ -19,3 +19,11 @@ internal static class KarenMusicPlayerPatch
         __instance.AddChild(new NKarenMusicPlayer { Name = "KarenMusicPlayer" });
     }
 }
+
+// Capture before character-specific exit hooks stop the local queue.
+[HarmonyPatch(typeof(NGame), nameof(NGame.ReturnToMainMenu))]
+internal static class KarenMusicPlayerSessionPatch
+{
+    [HarmonyPriority(Priority.First)]
+    private static void Prefix() => KarenMusicPlayback.Current?.RememberSession();
+}

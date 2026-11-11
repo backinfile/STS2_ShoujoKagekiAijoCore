@@ -25,6 +25,9 @@ internal sealed class KarenMusicPlayback : IDisposable
     private double? _pausedSeek;
     private string? _forcedPath;
     private bool _disposed;
+    private static SessionPlayback? _session;
+    private bool _sessionCaptured, _restoreSession = true;
+    private sealed record SessionPlayback(string Directory, string? Path, double Position, bool Playing, bool Paused);
     private InterruptedPlayback? _interrupted;
     internal bool TemporaryLoop { get; set; }
     internal sealed record InterruptedPlayback(AudioStream? Stream, string? Path, int Index, double Position,
@@ -62,6 +65,8 @@ internal sealed class KarenMusicPlayback : IDisposable
 
     internal void Reload()
     {
+        var session = _restoreSession ? _session : null;
+        _restoreSession = false;
         Stop();
         Tracks.Clear();
         _titles.Clear();
@@ -109,6 +114,16 @@ internal sealed class KarenMusicPlayback : IDisposable
                 CoreLog.Logger.Info($"[MusicPlayer] Directory unavailable ({error.GetType().Name}).");
             }
         }
+        if (CoreModConfig.EnableMusicPlayer && session?.Directory == CoreModConfig.MusicDirectory)
+        {
+            int index = session.Path == null ? -1 : Tracks.IndexOf(session.Path);
+            if (index >= 0)
+            {
+                Index = index;
+                if (session.Playing || session.Paused)
+                    _ = PlayTrack(index, Tracks[index], position: session.Position, paused: session.Paused);
+            }
+        }
         Changed?.Invoke();
         MusicModule.RefreshPlayback();
     }
@@ -116,7 +131,7 @@ internal sealed class KarenMusicPlayback : IDisposable
     internal Task Play(int index) => index < 0 || index >= Tracks.Count ? Task.CompletedTask : PlayTrack(index, Tracks[index]);
     internal Task ForceTrack(string resourcePath) => PlayTrack(-1, resourcePath, true);
 
-    private async Task PlayTrack(int index, string path, bool forced = false)
+    private async Task PlayTrack(int index, string path, bool forced = false, double position = 0, bool paused = false)
     {
         if (_disposed || (FormPriority && !forced)) return;
 
@@ -154,9 +169,11 @@ internal sealed class KarenMusicPlayback : IDisposable
             if (stream == null || stream.GetLength() <= 0) throw new InvalidDataException("Unsupported audio data");
             _player.Stream = stream;
             _player.VolumeLinear = CoreModConfig.MusicPlayerMuted ? 0 : Math.Clamp(CoreModConfig.MusicPlayerVolume, 0, 1);
-            _player.Play();
-            _player.StreamPaused = FormPriority && !forced;
-            Status = FormPriority ? "awakening" : "playing";
+            double target = Math.Clamp(position, 0, Math.Max(0, stream.GetLength() - .02));
+            _player.Play((float)target);
+            _player.StreamPaused = paused || (FormPriority && !forced);
+            _pausedSeek = paused ? target : null;
+            Status = FormPriority ? "awakening" : paused ? "paused" : "playing";
         }
         catch (Exception error)
         {
@@ -322,9 +339,20 @@ internal sealed class KarenMusicPlayback : IDisposable
         AudioServer.SetBusSend(index, "Master");
     }
 
+    internal void RememberSession()
+    {
+        if (_disposed || _sessionCaptured) return;
+        _sessionCaptured = true;
+        var previous = FormPriority ? _interrupted : null;
+        string? path = previous?.Path ?? (_forcedPath ?? (Index >= 0 && Index < Tracks.Count ? Tracks[Index] : null));
+        _session = new SessionPlayback(CoreModConfig.MusicDirectory, path, previous?.Position ?? Position,
+            previous == null ? IsPlaying || Loading : previous.Playing || previous.Loading, previous?.Paused ?? IsPaused);
+    }
+
     public void Dispose()
     {
         if (_disposed) return;
+        RememberSession();
         Stop();
         _disposed = true;
         _player.Finished -= OnFinished;

@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><AssemblyName>CoreMusicSessionIntegration</AssemblyName></PropertyGroup>
+  <Import Project="../../build/GameReferences.props" />
+</Project>
