@@ -13,20 +13,24 @@ using System.Threading.Tasks;
 namespace ShoujoKageki.Core.Telemetry;
 
 /// <summary>Durable, bounded delivery; no game objects are accessed by the retry worker.</summary>
-internal sealed class RunHistoryUploadQueue
+internal sealed class TelemetryUploadQueue
 {
     internal const int MaxItems = 64;
     internal const long MaxBytes = 64 * 1024 * 1024;
     internal const int MaxAttempts = 5;
     private readonly string _directory;
     private readonly Uri _endpoint;
+    internal Uri Endpoint => _endpoint;
     private readonly HttpClient _client;
     private readonly Func<bool> _enabled;
     private readonly Func<string, string>? _preparePayload;
     private readonly Action<string> _log;
     private readonly Func<DateTimeOffset> _clock;
     private readonly Func<TimeSpan, Task> _delay;
-    private readonly SemaphoreSlim _worker = new(1, 1);
+    private readonly object _worker = new();
+    private Task _upload = Task.CompletedTask;
+    private bool _requested;
+    private CancellationTokenSource? _stop;
     private readonly object _files = new();
     private readonly int _maxItems, _maxPayloadBytes;
     private readonly long _maxBytes;
@@ -44,7 +48,7 @@ internal sealed class RunHistoryUploadQueue
     internal static bool ShouldUploadCharacters(IEnumerable<string> characters) =>
         characters.Any(character => !string.IsNullOrWhiteSpace(character));
 
-    internal RunHistoryUploadQueue(string root, Uri endpoint, HttpClient client, Func<bool> enabled,
+    internal TelemetryUploadQueue(string root, Uri endpoint, HttpClient client, Func<bool> enabled,
         Action<string> log, Func<DateTimeOffset>? clock = null, Func<TimeSpan, Task>? delay = null,
         int maxItems = MaxItems, long maxBytes = MaxBytes, int maxPayloadBytes = 8 * 1024 * 1024,
         TimeSpan requestInterval = default, bool conflictIsSuccess = true, Func<string, string>? preparePayload = null)
@@ -97,12 +101,50 @@ internal sealed class RunHistoryUploadQueue
         return true;
     }
 
-    internal async Task FlushAsync()
+    internal Task FlushAsync()
     {
-        await _worker.WaitAsync().ConfigureAwait(false);
+        lock (_worker)
+        {
+            _requested = true;
+            if (_upload.IsCompleted) _upload = Task.Run(FlushRequested);
+            return _upload;
+        }
+    }
+
+    internal void Pause()
+    {
+        lock (_worker)
+        {
+            _requested = false;
+            _stop?.Cancel();
+        }
+    }
+
+    private async Task FlushRequested()
+    {
+        while (true)
+        {
+            CancellationTokenSource stop;
+            lock (_worker)
+            {
+                if (!_requested) { _upload = Task.CompletedTask; return; }
+                _requested = false;
+                _stop = stop = new CancellationTokenSource();
+            }
+            try { await FlushCore(stop.Token).ConfigureAwait(false); }
+            finally
+            {
+                lock (_worker) _stop = null;
+                stop.Dispose();
+            }
+        }
+    }
+
+    private async Task FlushCore(CancellationToken cancellation)
+    {
         try
         {
-            while (_enabled())
+            while (_enabled() && !cancellation.IsCancellationRequested)
             {
                 var items = Directory.GetFiles(_directory, "*.json").Select(path => (Path: path, Item: Read(path)))
                     .Where(entry => entry.Item != null && entry.Item.Attempts < MaxAttempts)
@@ -112,10 +154,10 @@ internal sealed class RunHistoryUploadQueue
                 TimeSpan wait = (pending!.NextAttempt > _nextRequest ? pending.NextAttempt : _nextRequest) - _clock();
                 if (wait > TimeSpan.Zero)
                 {
-                    await _delay(wait < TimeSpan.FromSeconds(30) ? wait : TimeSpan.FromSeconds(30)).ConfigureAwait(false);
+                    await _delay(wait < TimeSpan.FromSeconds(30) ? wait : TimeSpan.FromSeconds(30)).WaitAsync(cancellation).ConfigureAwait(false);
                     continue;
                 }
-                if (!_enabled()) return;
+                if (!_enabled() || cancellation.IsCancellationRequested) return;
                 _nextRequest = _clock() + _requestInterval;
                 pending.Payload = _preparePayload?.Invoke(pending.Payload) ?? pending.Payload;
                 pending.Attempts++;
@@ -128,7 +170,7 @@ internal sealed class RunHistoryUploadQueue
                     {
                         Content = new StringContent(pending.Payload, Encoding.UTF8, "application/json")
                     };
-                    using var response = await _client.SendAsync(request).ConfigureAwait(false);
+                    using var response = await _client.SendAsync(request, cancellation).ConfigureAwait(false);
                     if (response.IsSuccessStatusCode || (_conflictIsSuccess && response.StatusCode == HttpStatusCode.Conflict))
                     {
                         File.Delete(path);
@@ -147,7 +189,7 @@ internal sealed class RunHistoryUploadQueue
                     if (retryAfter > backoff) backoff = retryAfter.Value;
                     _log($"[RunHistoryUploadPatch] 上传暂未成功（{(int)response.StatusCode}），已保留并安排重试");
                 }
-                catch (Exception error) when (error is HttpRequestException or TaskCanceledException)
+                catch (Exception error) when (!cancellation.IsCancellationRequested && error is HttpRequestException or TaskCanceledException)
                 {
                     _log("[RunHistoryUploadPatch] 上传连接暂不可用，已保留并安排重试");
                 }
@@ -157,13 +199,10 @@ internal sealed class RunHistoryUploadQueue
                 Write(path, pending);
             }
         }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
         catch (Exception error)
         {
             _log($"[RunHistoryUploadPatch] 队列处理暂停，记录保留：{error.GetType().Name}");
-        }
-        finally
-        {
-            _worker.Release();
         }
     }
 

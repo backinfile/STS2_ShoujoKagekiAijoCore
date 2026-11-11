@@ -128,7 +128,7 @@ using var client = new HttpClient(new TestHandler(_ => {
     if (calls == 1) response.Headers.RetryAfter = new System.Net.Http.Headers.RetryConditionHeaderValue(TimeSpan.FromSeconds(90));
     return response;
 }));
-RunHistoryUploadQueue Queue(string dir) => new(dir, new Uri("https://example.invalid/errors"), client, () => enabled, _ => {},
+TelemetryUploadQueue Queue(string dir) => new(dir, new Uri("https://example.invalid/errors"), client, () => enabled, _ => {},
     () => now, span => { now += span; return Task.CompletedTask; }, maxItems:2, maxBytes:65536, maxPayloadBytes:1024, requestInterval:TimeSpan.FromMinutes(1));
 var queue = Queue(Path.Combine(root, Guid.NewGuid().ToString("N")));
 Check(queue.Enqueue("{\"id\":1}") && queue.Enqueue("{\"id\":2}"), "Error queue accepts bounded entries");
@@ -141,7 +141,7 @@ Console.WriteLine("PASS persistence, setting, request spacing and Retry-After");
 using (var conflictClient = new HttpClient(new TestHandler(_ => new HttpResponseMessage(HttpStatusCode.Conflict))))
 {
     string directory = Path.Combine(root, Guid.NewGuid().ToString("N"));
-    var conflictQueue = new RunHistoryUploadQueue(directory, new Uri("https://example.invalid/errors"), conflictClient, () => true, _ => { }, conflictIsSuccess: false);
+    var conflictQueue = new TelemetryUploadQueue(directory, new Uri("https://example.invalid/errors"), conflictClient, () => true, _ => { }, conflictIsSuccess: false);
     conflictQueue.Enqueue("{\"report_id\":\"conflict\"}");
     await conflictQueue.FlushAsync();
     Check(Directory.GetFiles(directory, "*.rejected", SearchOption.AllDirectories).Length == 1, "Error identity conflicts must remain available for diagnosis");

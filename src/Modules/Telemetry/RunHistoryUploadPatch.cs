@@ -16,7 +16,8 @@ namespace ShoujoKageki.Core.Telemetry;
 internal static class RunHistoryUploadPatch
 {
     private static readonly HttpClient HttpClient = new() { Timeout = TimeSpan.FromSeconds(30), MaxResponseContentBufferSize = 4096 };
-    private static readonly Dictionary<string, RunHistoryUploadQueue> Queues = new(StringComparer.Ordinal);
+    private static readonly Dictionary<string, TelemetryUploadQueue> Queues = new(StringComparer.Ordinal);
+    private static TelemetryUploadQueue? _activeQueue;
     private static readonly Lazy<string> DefaultUrl = new(LoadDefaultUrl);
     internal static Uri? Endpoint
     {
@@ -39,25 +40,40 @@ internal static class RunHistoryUploadPatch
         }
         catch (Exception) { TelemetryModule.Warn("数据上传配置无效"); return ""; }
     }
-    private static RunHistoryUploadQueue? Queue()
+    private static TelemetryUploadQueue? Queue()
     {
-        if (Endpoint is not { } endpoint) return null;
+        var endpoint = Endpoint;
         lock (Queues)
         {
+            if (endpoint == null)
+            {
+                _activeQueue?.Pause();
+                return _activeQueue = null;
+            }
             if (!Queues.TryGetValue(endpoint.AbsoluteUri, out var queue))
             {
-                queue = new RunHistoryUploadQueue(Path.Combine(TelemetryModule.Context.DataDirectory, "telemetry", "pending"),
+                queue = new TelemetryUploadQueue(Path.Combine(TelemetryModule.Context.DataDirectory, "telemetry", "pending"),
                     endpoint, HttpClient, () => TelemetryModule.Active && TelemetryModule.DataUploadEnabled && Endpoint == endpoint, TelemetryModule.Warn,
                     preparePayload: RunHistorySanitizer.Sanitize);
                 Queues.Add(endpoint.AbsoluteUri, queue);
             }
-            return queue;
+            if (!ReferenceEquals(_activeQueue, queue)) _activeQueue?.Pause();
+            return _activeQueue = queue;
         }
+    }
+    internal static void Shutdown()
+    {
+        lock (Queues)
+            foreach (var queue in Queues.Values) queue.Pause();
     }
     internal static void ResumePendingUploads()
     {
-        if (!TelemetryModule.DataUploadEnabled) return;
-        try { if (Queue() is { } queue) _ = queue.FlushAsync(); }
+        try
+        {
+            if (Queue() is not { } queue) return;
+            if (TelemetryModule.DataUploadEnabled) _ = queue.FlushAsync();
+            else queue.Pause();
+        }
         catch (Exception error) { TelemetryModule.Warn($"暂无法恢复对局队列 {error.GetType().Name}"); }
     }
     private static void Postfix()

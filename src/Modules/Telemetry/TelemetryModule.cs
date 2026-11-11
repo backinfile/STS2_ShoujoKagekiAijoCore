@@ -32,7 +32,7 @@ public sealed class TelemetryModule : ICoreModule, IDisposable
     private static void ConfigurationChanged(CoreSettings oldSettings, CoreSettings newSettings)
     {
         CoreErrorReporter.ConfigurationChanged();
-        if (newSettings.EnableInformationCollection && newSettings.EnableDataUpload) RunHistoryUploadPatch.ResumePendingUploads();
+        RunHistoryUploadPatch.ResumePendingUploads();
     }
     internal static void Warn(string message) => Context.Diagnostics.Report(DiagnosticSeverity.Warning, "telemetry", "delivery", message);
     private static string Version(string modId, string version) => string.IsNullOrWhiteSpace(version) ? (modId == "sts2" ? Context.GameVersion : "unknown") : version;
@@ -84,6 +84,7 @@ public sealed class TelemetryModule : ICoreModule, IDisposable
         _context.ShuttingDown -= Dispose;
         Active = false;
         CoreErrorReporter.Shutdown();
+        RunHistoryUploadPatch.Shutdown();
         _context = null;
     }
 }

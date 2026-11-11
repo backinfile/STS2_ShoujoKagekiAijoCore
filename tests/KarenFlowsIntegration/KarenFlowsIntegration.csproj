@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><AssemblyName>CoreKarenIntegration</AssemblyName></PropertyGroup>
+  <Import Project="../../build/GameReferences.props" />
+  <ItemGroup>
+    <Reference Include="ShoujoKagekiAijoCore.Api.V1" HintPath="$(CoreApiPath)" Private="false" />
+    <Reference Include="Karen" HintPath="$(KarenAssemblyPath)" Private="false" />
+    <Reference Include="BaseLib" HintPath="$(GameDir)/mods/BaseLib/BaseLib.dll" Private="false" />
+    <Compile Include="../ReviewIntegration/KarenFlowChecks.cs" Link="KarenFlowChecks.cs" />
+  </ItemGroup>
+</Project>

@@ -35,3 +35,5 @@ Core 上传端点构建输入可通过 `SHOUJO_TELEMETRY_ENDPOINT_PATH` 指定�
 validate-package.ps1 与引导编译同一份 BundleValidation.cs 校验实现，-Strict 同时检查未列出文件与链接。
 
 实际卡牌选择声明 `card-picking@1`，升级后续牌效声明 `card-upgrades@1`，临时曲目与静默租约声明 `music-overrides@1`。这些增量能力要求 Core 1.4.0。角色继续保留各自牌效、箭矢调度和约定牌堆规则。
+
+角色双版本 loader 可编译共享源码 sdk/CharacterLoader.cs，通过 CoreLoaderSource 指定该文件，或由官方包内的 CoreApiPath 推导。角色入口提供 Mod ID、初始化类型和版本选择；共享实现负责程序集加载、关联和模型发现桥。此源码编入角色 DLL，不增加运行时加载依赖。

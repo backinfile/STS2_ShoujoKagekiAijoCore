@@ -15,7 +15,7 @@ internal static class Program
     private static string Folder() { var path = Path.Combine(Root, Guid.NewGuid().ToString("N")); Directory.CreateDirectory(path); return path; }
     private static void Check(bool condition, string message) { if (!condition) throw new Exception(message); }
     private static Task Advance(TimeSpan value) { Now += value; return Task.CompletedTask; }
-    private static RunHistoryUploadQueue Queue(string root, HttpClient client, Func<bool>? enabled = null) =>
+    private static TelemetryUploadQueue Queue(string root, HttpClient client, Func<bool>? enabled = null) =>
         new(root, Endpoint, client, enabled ?? (() => true), _ => { }, () => Now, Advance, preparePayload: RunHistorySanitizer.Sanitize);
 
     private static async Task Main(string[] args)
@@ -39,10 +39,10 @@ internal static class Program
 
         Root = Path.GetFullPath(args[0]);
         Directory.CreateDirectory(Root);
-        Check(RunHistoryUploadQueue.ShouldUploadCharacters(new[] { "custom_host", "KAREN" }), "Karen in second seat must upload");
-        Check(RunHistoryUploadQueue.ShouldUploadCharacters(new[] { "REGENT" }), "Regent must upload");
-        Check(RunHistoryUploadQueue.ShouldUploadCharacters(new[] { "NECROBINDER" }), "Necrobinder must upload");
-        Check(RunHistoryUploadQueue.ShouldUploadCharacters(new[] { "custom_character" }), "Discovered custom characters must upload");
+        Check(TelemetryUploadQueue.ShouldUploadCharacters(new[] { "custom_host", "KAREN" }), "Karen in second seat must upload");
+        Check(TelemetryUploadQueue.ShouldUploadCharacters(new[] { "REGENT" }), "Regent must upload");
+        Check(TelemetryUploadQueue.ShouldUploadCharacters(new[] { "NECROBINDER" }), "Necrobinder must upload");
+        Check(TelemetryUploadQueue.ShouldUploadCharacters(new[] { "custom_character" }), "Discovered custom characters must upload");
         Console.WriteLine("PASS party selection");
 
         const string payload = "{\"card\":\"华恋\",\"id\":76561199000000001}";
@@ -71,7 +71,7 @@ internal static class Program
             var queue = Queue(restartRoot, client);
             queue.Enqueue(payload);
             await queue.FlushAsync();
-            Check(offline.Calls == RunHistoryUploadQueue.MaxAttempts, "Attempts must be bounded");
+            Check(offline.Calls == TelemetryUploadQueue.MaxAttempts, "Attempts must be bounded");
             Check(Directory.GetFiles(restartRoot, "*.json", SearchOption.AllDirectories).Length == 1, "Exhausted payload must survive");
         }
         Now += TimeSpan.FromHours(1);
@@ -116,10 +116,10 @@ internal static class Program
         var legacyHandler = new Handler((_, _) => new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
         using (var client = new HttpClient(legacyHandler))
         {
-            var oldQueue = new RunHistoryUploadQueue(legacyRoot, Endpoint, client, () => true, _ => { }, () => Now, Advance);
+            var oldQueue = new TelemetryUploadQueue(legacyRoot, Endpoint, client, () => true, _ => { }, () => Now, Advance);
             Check(oldQueue.Enqueue(legacyPayload), "Legacy queued payload fixture");
             await Queue(legacyRoot, client).FlushAsync();
-            Check(legacyHandler.Calls == RunHistoryUploadQueue.MaxAttempts && !legacyHandler.LastBody!.Contains("shine_current") && legacyHandler.LastBody.Contains("other"), "Recovered queue must sanitize before sending");
+            Check(legacyHandler.Calls == TelemetryUploadQueue.MaxAttempts && !legacyHandler.LastBody!.Contains("shine_current") && legacyHandler.LastBody.Contains("other"), "Recovered queue must sanitize before sending");
             string path = Directory.GetFiles(legacyRoot, "*.json", SearchOption.AllDirectories).Single();
             Check(!File.ReadAllText(path).Contains("shine_current"), "Retried legacy snapshot must be saved without counters");
         }
@@ -129,11 +129,94 @@ internal static class Program
         using (var client = new HttpClient(new Handler((_, _) => new HttpResponseMessage(HttpStatusCode.Created))))
         {
             var queue = Queue(boundRoot, client);
-            for (int index = 0; index < RunHistoryUploadQueue.MaxItems; index++) Check(queue.Enqueue("{\"id\":" + index + "}"), "Queue must accept within limit");
+            for (int index = 0; index < TelemetryUploadQueue.MaxItems; index++) Check(queue.Enqueue("{\"id\":" + index + "}"), "Queue must accept within limit");
             Check(!queue.Enqueue("{\"id\":999}"), "Full queue must reject without deleting earlier data");
-            Check(Directory.GetFiles(boundRoot, "*.json", SearchOption.AllDirectories).Length == RunHistoryUploadQueue.MaxItems, "Existing queue must stay intact");
+            Check(Directory.GetFiles(boundRoot, "*.json", SearchOption.AllDirectories).Length == TelemetryUploadQueue.MaxItems, "Existing queue must stay intact");
         }
         Console.WriteLine("PASS capacity bound");
+        await WorkerLifecycle();
+    }
+
+    private static async Task WorkerLifecycle()
+    {
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        int calls = 0, active = 0, maximum = 0;
+        using (var client = new HttpClient(new AsyncHandler(async (_, token) =>
+        {
+            int running = Interlocked.Increment(ref active);
+            maximum = Math.Max(maximum, running);
+            if (Interlocked.Increment(ref calls) == 1)
+            {
+                entered.SetResult();
+                await release.Task.WaitAsync(token);
+            }
+            Interlocked.Decrement(ref active);
+            return new HttpResponseMessage(HttpStatusCode.Created);
+        })))
+        {
+            var queue = Queue(Folder(), client);
+            queue.Enqueue("{\"id\":1}");
+            var first = queue.FlushAsync();
+            await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            var wakes = Enumerable.Range(0, 20).Select(_ => queue.FlushAsync()).ToArray();
+            Check(wakes.All(task => ReferenceEquals(first, task)), "Repeated wakeups must share the running task");
+            queue.Enqueue("{\"id\":2}");
+            release.SetResult();
+            await first.WaitAsync(TimeSpan.FromSeconds(5));
+            Check(calls == 2 && maximum == 1, "New payloads must drain through one worker");
+        }
+        Console.WriteLine("PASS coalesced wakeups and enqueue during delivery");
+
+        var waiting = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var blockedDelay = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        bool recovered = false;
+        string pausedRoot = Folder();
+        var handler = new Handler((_, _) => new HttpResponseMessage(recovered ? HttpStatusCode.Created : HttpStatusCode.ServiceUnavailable));
+        using (var client = new HttpClient(handler))
+        {
+            var queue = new TelemetryUploadQueue(pausedRoot, Endpoint, client, () => true, _ => {}, () => Now,
+                _ => { waiting.TrySetResult(); return blockedDelay.Task; });
+            queue.Enqueue("{\"id\":3}");
+            var worker = queue.FlushAsync();
+            await waiting.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            queue.Pause();
+            await worker.WaitAsync(TimeSpan.FromSeconds(5));
+            Check(handler.Calls == 1 && Directory.GetFiles(pausedRoot, "*.json", SearchOption.AllDirectories).Length == 1,
+                "Pause during backoff must stop promptly and retain the payload");
+            recovered = true;
+            Now += TimeSpan.FromHours(1);
+            await queue.FlushAsync().WaitAsync(TimeSpan.FromSeconds(5));
+            Check(handler.Calls == 2 && Directory.GetFiles(pausedRoot, "*.json", SearchOption.AllDirectories).Length == 0,
+                "The same queue must resume preserved data after a pause");
+        }
+        Console.WriteLine("PASS pause and resume during retry backoff");
+
+        entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        string interruptedRoot = Folder();
+        using (var client = new HttpClient(new AsyncHandler(async (_, token) =>
+        {
+            entered.SetResult();
+            await Task.Delay(Timeout.Infinite, token);
+            return new HttpResponseMessage(HttpStatusCode.Created);
+        })))
+        {
+            var queue = Queue(interruptedRoot, client);
+            queue.Enqueue("{\"id\":4}");
+            var worker = queue.FlushAsync();
+            await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            queue.Pause();
+            await worker.WaitAsync(TimeSpan.FromSeconds(5));
+            Check(Directory.GetFiles(interruptedRoot, "*.json", SearchOption.AllDirectories).Length == 1,
+                "Stopping an in-flight request must preserve its unacknowledged payload");
+        }
+        Console.WriteLine("PASS request cancellation retains unacknowledged data");
+    }
+
+    private sealed class AsyncHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> response) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            => response(request, cancellationToken);
     }
 
     private sealed class Handler(Func<int, HttpRequestMessage, HttpResponseMessage> response) : HttpMessageHandler

@@ -43,7 +43,7 @@ $manifest = Get-Content -LiteralPath (Join-Path $root 'ShoujoKagekiAijoCore.json
 $manifest.version = $Version
 $manifest | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $staging 'ShoujoKagekiAijoCore.json') -Encoding UTF8
 New-Item -ItemType Directory -Force -Path (Join-Path $staging "resources/$Version"), (Join-Path $staging 'sdk') | Out-Null
-Copy-Item -LiteralPath (Join-Path $root 'sdk/pack-character.ps1'), (Join-Path $root 'sdk/validate-package.ps1') -Destination (Join-Path $staging 'sdk')
+Copy-Item -LiteralPath (Join-Path $root 'sdk/pack-character.ps1'), (Join-Path $root 'sdk/validate-package.ps1'), (Join-Path $root 'sdk/CharacterLoader.cs') -Destination (Join-Path $staging 'sdk')
 Copy-Item -LiteralPath (Join-Path $root 'src/Bootstrap/Bundle.cs') -Destination (Join-Path $staging 'sdk/BundleValidation.cs')
 $import = Start-Process -FilePath $Godot -ArgumentList '--headless','--editor','--path',('"'+$root+'"'),'--import','--quit' -WindowStyle Hidden -Wait -PassThru -RedirectStandardOutput (Join-Path $root 'artifacts/import.log') -RedirectStandardError (Join-Path $root 'artifacts/import-errors.log')
 if ($import.ExitCode) { throw 'Godot resource import failed. See artifacts/import-errors.log.' }
