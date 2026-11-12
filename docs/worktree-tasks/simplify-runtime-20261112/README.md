@@ -233,6 +233,12 @@ Report the resulting branch, commit, verification, cleanup state, and task docum
 [{"questionItemId":"<问题条目标识>","question":"是否将 Core、Karen、Junna 本次重构分别合并回各自的 main，并按上述范围处理工作树？","answer":"合并并清理（先保留构建包和验证证据）"}]
 </send_user_message_question_reply>
 
+## 继续同步、验证与清理确认
+
+<send_user_message_question_reply>
+[{"questionItemId":"<问题条目标识>","question":"Junna main 第三次前进，新增了无目标流星回收修复。是否继续同步这项修复，定向验证后合并并清理？","answer":"继续同步、验证后合并并清理"}]
+</send_user_message_question_reply>
+
 # 简要计划
 
 - 三项目使用同名隔离工作树，位置为 ../worktrees/STS2_ShoujoKagekiAijoCore/simplify-runtime-20261112；目标分支固定为 main。
@@ -280,3 +286,17 @@ Report the resulting branch, commit, verification, cleanup state, and task docum
 - 用户已批准将三个任务分支合并回各自 main，并清理本次工作树与任务分支。
 - 按授权先将本次构建包、摘要、哈希、录像、截图和定向报告保留到 Core 原检出的 artifacts/task-deliverables/simplify-runtime-20261112/，再删除本次三个工作树、任务分支及临时游戏目录。
 - 本次授权包含清理；其他工作树、分支和原有未提交文件保留。
+
+## 继续同步流星修复
+
+用户在第三次主分支前进后明确授权继续。已同步 Junna main 的 cf653a1，保留无可命中目标时通过原生结果牌堆规则消耗流星的修复。Junna 双版本重新编译通过；三项目共存实机各通过 7 项流星断言，共 14 项，覆盖正常部署、替代目标、无目标消耗、洗牌与抽牌；与此前 146 项重构断言分开记录。探针清牌改为原生视觉清理，复验两版手牌模型与可见节点一致。最小化运行无焦点抢占，两版内部有声录像已归档并查看帧图；正式版录像复制时补建目标目录后恢复归档。
+
+构建包及新增证据继续保留于 Core 原检出的 artifacts/task-deliverables/simplify-runtime-20261112/。此前 Core 与 Karen 重构已合入各自 main；本次授权及后续同步记录使用追加提交保留。
+
+## 后续抽牌时机同步
+
+继续执行期间 Junna main 前进到 9706cca，包含稳步前进在抽牌前生成的修复及工作台主牌入口修复。已保留工作台代码，并将稳步前进的原生 BeforeHandDraw 实现收拢到 JunnaPowerJA144；其余能力仍按独立 partial 实现分派。合并冲突已解决，Junna 双版本重新编译均为零警告、零错误。
+
+正式版与测试版原生回合各通过 23 项断言，共 46 项，覆盖普通牌、升级牌、叠加、连续回合及生成先于抽牌；最终手牌模型与视觉节点一致。两版实际回合有声录像完成，帧图已查看，最小化采样全部通过，焦点抢占为零。工作台领域及主牌入口定向测试 27 项全部通过。
+
+验证按构建阶段记录：原重构 146 项、流星同步 14 项、抽牌时机同步 46 项，共 206 项；对应旧运行库与最终构建包、报告、哈希、截图和录像均保留于 Core 原检出的 artifacts/task-deliverables/simplify-runtime-20261112/。最终集成与清理状态由该目录 integration.json 记录。
