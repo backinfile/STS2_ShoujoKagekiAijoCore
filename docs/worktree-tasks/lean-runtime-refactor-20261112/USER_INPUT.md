@@ -234,3 +234,11 @@ Before each commit, check the input record against the user messages, finalize t
 Report the resulting branch, commit, verification, cleanup state, and task document path.
 
 </skill>
+
+## 6. 说明要求
+
+解释下你都是怎么改的
+
+## 7. 合并与清理授权
+
+合并并清理分支
