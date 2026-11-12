@@ -37,3 +37,5 @@ validate-package.ps1 与引导编译同一份 BundleValidation.cs 校验实现�
 实际卡牌选择声明 `card-picking@1`，升级后续牌效声明 `card-upgrades@1`，临时曲目与静默租约声明 `music-overrides@1`。这些增量能力要求 Core 1.4.0。角色继续保留各自牌效、箭矢调度和约定牌堆规则。
 
 角色双版本 loader 可编译共享源码 sdk/CharacterLoader.cs，通过 CoreLoaderSource 指定该文件，或由官方包内的 CoreApiPath 推导。角色入口提供 Mod ID、初始化类型和版本选择；共享实现负责程序集加载、关联和模型发现桥。此源码编入角色 DLL，不增加运行时加载依赖。
+
+闪耀牌奖励使用 `ShineRewards.Add(player, except)`，声明 `shine-rewards@1` 并要求 Core 1.8.0。候选检查使用 `GetCandidates`，仅抽牌使用 `Roll`；任意指定牌的同款奖励显示使用 `Create`。角色可以实现 `IShineRewardEligibility` 追加掉落条件。具体规则见 [闪耀牌奖励](../docs/shine-card-rewards.md)。

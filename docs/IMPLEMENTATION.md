@@ -346,7 +346,7 @@ Core 对普通玩家的更新流程为更新独立 Core 订阅或 Karen 包、�
 | 公共绘制与预热，随闪耀特效迁移 | Vfx/KarenVfxCanvasBatch、KarenLightRibbon、KarenPowerVfxAnchor、KarenVfxWarmup | 共用轮廓、锚点、缓存、资源清单和绘制准备，内部统一预算与释放 |
 | 触摸输入与牌堆界面，工具阶段 | Utils/KarenPileInput、KarenTapGesture、CombatPileCountCmd 及牌堆按钮 | 共用点击、长按、拖动取消、触摸模拟鼠标去重、焦点与退出清理 |
 | 选牌与选项，工具阶段 | Commands/CardSelectCmdEx、CardPileCmdEx、NChooseACardSelectionScreenPatch | 复用原生选择上下文，封装标题、取消、清理和结果回调，保留联机同步 |
-| 奖励调度与分组，工具阶段 | Commands/ExtraRewardCmd、Rewards/KarenShineCardReward、KarenShineCardRewardChoice | 战后预约、已生成奖励分组、领取、跳过、存档和去重，候选由具体效果提供 |
+| 奖励调度与分组，工具阶段 | Commands/ExtraRewardCmd、Rewards/KarenShineCardReward、KarenShineCardRewardChoice | 已迁入 Modules/Shine：按接收玩家选池、再生产、战后预约、已生成奖励分组、领取、跳过、存档和去重 |
 | 移牌通知，工具阶段 | GlobalMoveSystem | 提供实际移牌通知与可选的整次出牌汇总，保留原生各阶段顺序 |
 | 卡牌导出与 Web 资料，随数据服务迁移 | Utils/CardPngExportUtil、tools/telemetry-server/build_native_assets.py | 自动发现模型，生成 JSON、卡面、关联牌和页面资料，使用完整模型 ID 与所属 Mod |
 
@@ -765,9 +765,9 @@ Karen 的公共闪耀特效与规则、牌堆一起迁入 Core，由共享状态
 
 顶栏按钮以当前玩家为对象，按本局使用情况显示。牌堆查看使用快照，具体复原或重打由牌效通过合法选择和原生命令执行。
 
-“打出闪耀牌后抽牌”等效果通过公共识别接口作用于其拥有者的闪耀牌。闪耀牌奖励通过显式注册的候选池提供，调用方声明来源、接收玩家及排除项。跨角色候选由对应效果的配置或注册声明决定。
+“打出闪耀牌后抽牌”等效果通过公共识别接口作用于其拥有者的闪耀牌。闪耀牌奖励由 Core 的 IShineRewards 按接收玩家选池：少歌角色优先自身合法候选，无候选或非少歌角色回退 Karen；公共再生产独立参与掉落。规则、权重与排除项见 [闪耀牌奖励](shine-card-rewards.md)。
 
-Starlight、再生产、指定耗尽回血或遗物奖励等具体牌效由角色定义。Core 负责识别、查询、档案、奖励预约与共用执行工具。
+Starlight、指定耗尽回血或遗物奖励由角色定义。Core 负责识别、查询、档案、再生产、奖励选池、预约与共用执行工具。
 
 历史记录以可序列化快照展示耗尽牌，保留完整来源。统计上传读取同一份已完成历史快照。
 

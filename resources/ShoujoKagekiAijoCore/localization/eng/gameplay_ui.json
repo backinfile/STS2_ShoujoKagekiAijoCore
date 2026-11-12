@@ -8,5 +8,7 @@
   "CORE_SHINE_PILE_INFO": "Depleted Shine Pile",
   "CORE_RUN_HISTORY_SHINE_EXHAUST_HEADER": "[gold][b]Shine Depleted ({Count}):[/b][/gold]",
   "CORE_SHINE_PILE_BUTTON_TITLE": "Shine Pile",
-  "CORE_SHINE_PILE_BUTTON_DESC": "View cards whose Shine has run out."
+  "CORE_SHINE_PILE_BUTTON_DESC": "View cards whose Shine has run out.",
+  "KAREN_SHINE_CARD_REWARD": "Shine Card Rewards ×{Count}",
+  "KAREN_SHINE_CARD_REWARD_SELECT": "Shine Card Rewards ×{MaxCount}"
 }

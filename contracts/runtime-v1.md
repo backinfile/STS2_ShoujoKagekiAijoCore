@@ -118,3 +118,7 @@ PlayerChoices.ChooseIndex(context, player, optionCount, selectLocal) 统一自�
 - `card-staging@1` 由独立 `ICardStaging` 提供，`CardExecution.PlayStaged` 统一暂存实际牌、顺序执行与未执行牌恢复，保留惰性候选顺序。角色决定恢复目标与战斗结束策略。
 - 结算与清理同时失败时保留两者异常；单独牌效失败保持原异常身份。模型作用域逆序逐项释放，Runtime 退出逐项通知并释放模块。
 - API V1 程序集版本保持 `1.0.0.0`，原有接口签名和保存协议沿用。
+
+## 闪耀牌奖励
+
+Core 1.8.0 的 `shine-rewards@1` 通过独立 `IShineRewards` 和静态 `ShineRewards` 提供 GetCandidates(recipient, except)、Roll(recipient, rng, except)、Add(recipient, except)、Create(card, recipient) 及 Reproduction 原型。少歌角色优先自身合法闪耀卡池，空池和非少歌角色回退 Karen；公共再生产独立加入。候选遵循单人／多人、非基础牌、except 和可选 IShineRewardEligibility.CanDropAsShineReward(recipient)。权重为普通 42、罕见 42、稀有 15、再生产 1，空类别在全部候选中均匀回退。完整排除时抛出 InvalidOperationException。Add 使用接收者 Rewards 随机数，预约或立即展示原生单牌奖励。再生产与标记保留旧 ModelId 和三语键以读取旧存档，资源和实现迁入 Core。公开程序集版本保持 1.0.0.0。

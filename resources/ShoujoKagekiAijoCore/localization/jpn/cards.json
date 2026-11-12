@@ -1,4 +1,9 @@
 {
   "CORE_EMPTY_SHELL.title": "Empty Shell",
-  "CORE_EMPTY_SHELL.description": ""
+  "CORE_EMPTY_SHELL.description": "",
+  "KAREN_SHINE_REPRODUCE.title": "キラめきの再生産",
+  "KAREN_SHINE_REPRODUCE.description": "[gold]キラめき[/gold]が尽きたカードを{Cards:diff()}枚選び、デッキに戻す。",
+  "KAREN_SHINE_REPRODUCE.tip.title": "ヒント",
+  "KAREN_SHINE_REPRODUCE.tip": "このカードは[gold]キラめきカード報酬[/gold]に出現する。",
+  "KAREN_SHINE_REPRODUCE.select_title": "キラめきが尽きたカードを選ぶ"
 }

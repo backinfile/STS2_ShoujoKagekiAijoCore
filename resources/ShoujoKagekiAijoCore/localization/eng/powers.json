@@ -1,0 +1,5 @@
+{
+  "KAREN_SHINE_CARD_REWARD_POWER.title": "Shine Card Reward",
+  "KAREN_SHINE_CARD_REWARD_POWER.description": "After combat, gain 1 additional Shine Card Reward.",
+  "KAREN_SHINE_CARD_REWARD_POWER.smartDescription": "After combat, gain {Amount} additional Shine Card {Amount:plural:Reward|Rewards}."
+}

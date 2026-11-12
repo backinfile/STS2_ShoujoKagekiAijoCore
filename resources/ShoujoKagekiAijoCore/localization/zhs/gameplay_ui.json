@@ -8,5 +8,7 @@
   "CORE_SHINE_PILE_INFO": "闪耀耗尽牌堆",
   "CORE_RUN_HISTORY_SHINE_EXHAUST_HEADER": "[gold][b]耗尽（{Count}）：[/b][/gold]",
   "CORE_SHINE_PILE_BUTTON_TITLE": "闪耀牌堆",
-  "CORE_SHINE_PILE_BUTTON_DESC": "查看已耗尽闪耀的卡牌。"
+  "CORE_SHINE_PILE_BUTTON_DESC": "查看已耗尽闪耀的卡牌。",
+  "KAREN_SHINE_CARD_REWARD": "闪耀牌奖励×{Count}",
+  "KAREN_SHINE_CARD_REWARD_SELECT": "闪耀牌奖励×{MaxCount}"
 }
