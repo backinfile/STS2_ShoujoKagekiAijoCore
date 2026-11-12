@@ -10,6 +10,7 @@ namespace ShoujoKageki.Core.Runtime;
 public static class RuntimeEntry
 {
     private static readonly List<ICoreModule> Modules = [];
+    private static bool _shutdown;
     public static CoreContext Context { get; private set; } = null!;
     public static string Fingerprint { get; private set; } = "";
     public static void Initialize(string releaseVersion, string gameVersion, string fingerprint)
@@ -43,8 +44,13 @@ public static class RuntimeEntry
     }
     internal static void Shutdown()
     {
-        Context.NotifyShutdown();
-        foreach (var module in Modules.AsEnumerable().Reverse().OfType<IDisposable>()) module.Dispose();
+        if (_shutdown) return;
+        _shutdown = true;
+        var actions = Modules.AsEnumerable().Reverse().OfType<IDisposable>()
+            .Select<IDisposable, Action>(module => module.Dispose).Prepend(Context.NotifyShutdown).ToArray();
+        Modules.Clear();
+        if (Cleanup.Capture(actions) is { } error)
+            Context.Diagnostics.Report(DiagnosticSeverity.Error, "runtime", "shutdown.failed", "Core cleanup failed.", error);
     }
 }
 [HarmonyPatch(typeof(ModelDb), nameof(ModelDb.InitIds))]

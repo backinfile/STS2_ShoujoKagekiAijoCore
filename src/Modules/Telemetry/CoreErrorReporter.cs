@@ -16,7 +16,11 @@ internal static class CoreErrorReporter
 {
     private static readonly System.Net.Http.HttpClient Client = new() { Timeout = TimeSpan.FromSeconds(15), MaxResponseContentBufferSize = 4096 };
     private static ClientErrorBuffer? _buffer;
-    private static TelemetryUploadQueue? _queue;
+    private static readonly TelemetryChannel Channel = new(endpoint => new TelemetryUploadQueue(
+        Path.Combine(TelemetryModule.Context.DataDirectory, "telemetry", "errors"), endpoint, Client,
+        () => TelemetryModule.Active && TelemetryModule.ErrorUploadEnabled && RunHistoryUploadPatch.ErrorEndpoint == endpoint,
+        _ => { }, maxItems: 32, maxBytes: 2 * 1024 * 1024, maxPayloadBytes: 64 * 1024,
+        requestInterval: TimeSpan.FromMinutes(1), conflictIsSuccess: false));
     private static CoreErrorLogger? _logger;
     private static System.Threading.Timer? _timer;
     private static int _ticking;
@@ -42,7 +46,7 @@ internal static class CoreErrorReporter
                 .OrderBy(mod => mod.id, StringComparer.Ordinal).Take(129).ToArray();
             _buffer = new ClientErrorBuffer(release?.Version ?? "unknown", version, platform,
                 os: os, gameCommit: release?.Commit ?? "unknown", mods: mods, coreContext: () => TelemetryModule.Snapshot());
-            SetQueue(endpoint);
+            Channel.Select(endpoint);
             _logger = new CoreErrorLogger();
             OS.AddLogger(_logger);
             // Do not mark unobserved exceptions as handled or alter normal crash behavior.
@@ -59,29 +63,20 @@ internal static class CoreErrorReporter
     internal static void ConfigurationChanged()
     {
         if (_timer == null) Initialize();
-        if (RunHistoryUploadPatch.ErrorEndpoint is { } endpoint && endpoint != _queue?.Endpoint) SetQueue(endpoint);
-        if (TelemetryModule.ErrorUploadEnabled && RunHistoryUploadPatch.ErrorEndpoint == _queue?.Endpoint)
-            _ = _queue?.FlushAsync();
+        var queue = Channel.Select(RunHistoryUploadPatch.ErrorEndpoint);
+        if (TelemetryModule.ErrorUploadEnabled) _ = queue?.FlushAsync();
         else
         {
             _buffer?.Clear();
-            _queue?.Pause();
+            Channel.Pause();
         }
     }
 
-    private static void SetQueue(Uri endpoint)
-    {
-        _queue?.Pause();
-        _queue = new TelemetryUploadQueue(Path.Combine(TelemetryModule.Context.DataDirectory, "telemetry", "errors"),
-            endpoint, Client, () => TelemetryModule.Active && TelemetryModule.ErrorUploadEnabled && RunHistoryUploadPatch.ErrorEndpoint == endpoint, _ => { },
-            maxItems: 32, maxBytes: 2 * 1024 * 1024, maxPayloadBytes: 64 * 1024,
-            requestInterval: TimeSpan.FromMinutes(1), conflictIsSuccess: false);
-    }
     private static void OnUnobserved(object? sender, UnobservedTaskExceptionEventArgs args) => CaptureException(args.Exception);
     private static void OnUnhandled(object sender, UnhandledExceptionEventArgs args) => CaptureException(args.ExceptionObject);
     internal static void Shutdown()
     {
-        _queue?.Pause();
+        Channel.Pause();
         _timer?.Dispose();
         _timer = null;
         TaskScheduler.UnobservedTaskException -= OnUnobserved;
@@ -116,7 +111,7 @@ internal static class CoreErrorReporter
         if (Interlocked.Exchange(ref _ticking, 1) != 0) return;
         try
         {
-            var queue = _queue;
+            var queue = Channel.Select(RunHistoryUploadPatch.ErrorEndpoint);
             if (!TelemetryModule.Active || !TelemetryModule.ErrorUploadEnabled || _buffer == null
                 || queue == null || RunHistoryUploadPatch.ErrorEndpoint != queue.Endpoint) return;
             _buffer.Persist(payload => TelemetryModule.ErrorUploadEnabled

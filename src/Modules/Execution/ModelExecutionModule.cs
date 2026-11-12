@@ -72,10 +72,9 @@ public sealed class ModelExecutionModule : ICoreModule, IModelExecutionScopes
         internal readonly List<Func<Task, Task>> Completions = [];
         public void Dispose()
         {
-            // Dispose is also called by Harmony's exception finalizer.
-            for (int index = Scopes.Count - 1; index >= 0; index--) Scopes[index].Dispose();
+            var scopes = Scopes.ToArray();
             Scopes.Clear();
-            Effects.Dispose();
+            Cleanup.Run(scopes.Reverse().Select<IDisposable, Action>(scope => scope.Dispose).Append(Effects.Dispose));
         }
     }
     private static Invocation Enter(AbstractModel model, CardPlay? play)
@@ -87,7 +86,7 @@ public sealed class ModelExecutionModule : ICoreModule, IModelExecutionScopes
                 if (observer(model, play) is { } scope) invocation.Scopes.Add(scope);
             return invocation;
         }
-        catch { invocation.Dispose(); throw; }
+        catch (Exception error) { Cleanup.Run([invocation.Dispose], error); throw; }
     }
     private static void ModelPrefix(AbstractModel __instance, out Invocation __state) => __state = Enter(__instance, null);
     private static void CardPrefix(CardModel __instance, PlayerChoiceContext __0, CardPlay __1, out Invocation __state)
@@ -98,22 +97,24 @@ public sealed class ModelExecutionModule : ICoreModule, IModelExecutionScopes
             foreach (var begin in _instance._native)
                 if (begin(__instance, __0, __1) is { } complete) __state.Completions.Add(complete);
         }
-        catch { __state.Dispose(); throw; }
+        catch (Exception error) { Cleanup.Run([__state.Dispose], error); throw; }
     }
     private static void ModelPostfix(ref Task __result, Invocation __state)
     {
         __result = __state.Effects.Complete(__result);
-        __state.Dispose();
+        Release(ref __result, __state);
     }
     private static void CardPostfix(ref Task __result, Invocation __state)
     {
         __result = __state.Effects.Complete(__result);
         foreach (var complete in __state.Completions.AsEnumerable().Reverse()) __result = complete(__result);
-        __state.Dispose();
+        Release(ref __result, __state);
+    }
+    private static void Release(ref Task result, Invocation state)
+    {
+        if (Cleanup.Capture([state.Dispose]) is { } error)
+            result = Cleanup.Complete(result, () => ValueTask.FromException(error));
     }
     private static Exception? Finalizer(Exception? __exception, Invocation? __state)
-    {
-        __state?.Dispose();
-        return __exception;
-    }
+        => __state == null ? __exception : Cleanup.Capture([__state.Dispose], __exception);
 }

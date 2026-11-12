@@ -176,16 +176,12 @@ public sealed class ShineService : IShineService, ICoreModule
         }
         return new ResolutionLease(batch, card, own, counted);
     }
-    private static async Task Exit(Task task, ResolutionLease lease)
+    private static Task Exit(Task task, ResolutionLease lease) => Cleanup.Complete(task, async () =>
     {
-        try { await task; }
-        finally
-        {
-            var count = lease.Batch.Running[lease.Card] - 1;
-            if (count == 0) lease.Batch.Running.Remove(lease.Card); else lease.Batch.Running[lease.Card] = count;
-            if (lease.OwnBatch) await lease.Batch.DisposeAsync();
-        }
-    }
+        var count = lease.Batch.Running[lease.Card] - 1;
+        if (count == 0) lease.Batch.Running.Remove(lease.Card); else lease.Batch.Running[lease.Card] = count;
+        if (lease.OwnBatch) await lease.Batch.DisposeAsync();
+    });
     public Task ResolveAsync(CardModel card, Func<Task> resolution, CardResolutionKind kind)
         => Resolve(card, null, null, resolution, kind);
     public Task ResolveAsync(CardModel card, PlayerChoiceContext context, CardPlay play, Func<Task> resolution, CardResolutionKind kind)
@@ -479,7 +475,7 @@ public sealed class ShineService : IShineService, ICoreModule
         private static async Task FinishAsync(AsyncTaskMethodBuilder builder, ValueTask completion, Exception? error)
         {
             try { await completion; }
-            catch (Exception cleanupError) { error = cleanupError; }
+            catch (Exception cleanupError) { error = Cleanup.Combine(error, cleanupError); }
             CompleteBuilder(ref builder, error);
         }
         private static void CompleteBuilder(ref AsyncTaskMethodBuilder builder, Exception? error)

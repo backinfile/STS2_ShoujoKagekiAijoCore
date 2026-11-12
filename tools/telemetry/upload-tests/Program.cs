@@ -211,6 +211,58 @@ internal static class Program
                 "Stopping an in-flight request must preserve its unacknowledged payload");
         }
         Console.WriteLine("PASS request cancellation retains unacknowledged data");
+        using (var client = new HttpClient(new Handler((_, _) => new HttpResponseMessage(HttpStatusCode.Created))))
+        {
+            int created = 0;
+            string channelRoot = Folder();
+            var channel = new TelemetryChannel(endpoint =>
+            {
+                created++;
+                return new TelemetryUploadQueue(channelRoot, endpoint, client, () => true, _ => { });
+            });
+            var first = channel.Select(Endpoint);
+            var other = channel.Select(new Uri("http://127.0.0.1:9/other"));
+            Check(ReferenceEquals(first, channel.Select(Endpoint)) && created == 2,
+                "Switching back must reuse the same endpoint queue");
+            Check(channel.Select(null) == null && ReferenceEquals(other, channel.Select(new Uri("http://127.0.0.1:9/other"))),
+                "Disabling and restoring an endpoint retains its queue");
+            channel.Pause();
+        }
+        Console.WriteLine("PASS channel endpoint ownership");
+        entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        int channelActive = 0, channelMaximum = 0;
+        using (var client = new HttpClient(new AsyncHandler(async (_, _) =>
+        {
+            int running = Interlocked.Increment(ref channelActive);
+            channelMaximum = Math.Max(channelMaximum, running);
+            try
+            {
+                entered.TrySetResult();
+                await release.Task;
+                return new HttpResponseMessage(HttpStatusCode.Created);
+            }
+            finally { Interlocked.Decrement(ref channelActive); }
+        })))
+        {
+            string channelRoot = Folder();
+            var channel = new TelemetryChannel(endpoint => new TelemetryUploadQueue(channelRoot, endpoint, client, () => true, _ => { }));
+            var firstQueue = channel.Select(Endpoint)!;
+            firstQueue.Enqueue("{\"id\":5}");
+            var inFlight = firstQueue.FlushAsync();
+            await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            channel.Select(new Uri("http://127.0.0.1:9/other"));
+            var resumed = channel.Select(Endpoint)!;
+            var resumedTask = resumed.FlushAsync();
+            Check(ReferenceEquals(inFlight, resumedTask), "Switching back during cancellation must retain the in-flight worker");
+            release.TrySetResult();
+            await resumedTask.WaitAsync(TimeSpan.FromSeconds(5));
+            Check(channelMaximum == 1, "A delayed cancellation must not run concurrent endpoint requests");
+            channel.Pause();
+        }
+        Console.WriteLine("PASS endpoint switch during an in-flight request");
+
+
     }
 
     private sealed class AsyncHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> response) : HttpMessageHandler

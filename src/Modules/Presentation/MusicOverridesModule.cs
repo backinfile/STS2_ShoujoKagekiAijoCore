@@ -39,7 +39,6 @@ public sealed class MusicOverridesModule : ICoreModule, IMusicOverrides, IDispos
         _context = context;
         context.Services.Add<IMusicOverrides>(this);
         context.Configuration.Changed += ConfigurationChanged;
-        context.ShuttingDown += Dispose;
     }
     private void ConfigurationChanged(CoreSettings previous, CoreSettings current) => Refresh();
     public IDisposable AcquireTrack(string owner, MusicOverrideRequest request)
@@ -170,7 +169,6 @@ public sealed class MusicOverridesModule : ICoreModule, IMusicOverrides, IDispos
         if (_context != null)
         {
             _context.Configuration.Changed -= ConfigurationChanged;
-            _context.ShuttingDown -= Dispose;
             _context = null;
         }
     }

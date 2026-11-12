@@ -23,7 +23,6 @@ public sealed class TelemetryModule : ICoreModule, IDisposable
         Context = _context = context;
         Active = true;
         context.Configuration.Changed += ConfigurationChanged;
-        context.ShuttingDown += Dispose;
         try { LegacyQueueMigration.Import(); }
         catch (Exception error) { Warn($"旧遥测队列迁移暂停，原记录保留 {error.GetType().Name}"); }
         CoreErrorReporter.Initialize();
@@ -81,7 +80,6 @@ public sealed class TelemetryModule : ICoreModule, IDisposable
     {
         if (_context == null) return;
         _context.Configuration.Changed -= ConfigurationChanged;
-        _context.ShuttingDown -= Dispose;
         Active = false;
         CoreErrorReporter.Shutdown();
         RunHistoryUploadPatch.Shutdown();

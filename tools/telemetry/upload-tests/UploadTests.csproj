@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../../src/Modules/Telemetry/TelemetryChannel.cs" Link="TelemetryChannel.cs" />
     <Compile Include="../../../src/Modules/Telemetry/TelemetryUploadQueue.cs" Link="TelemetryUploadQueue.cs" />
     <Compile Include="../../../src/Modules/Telemetry/RunHistorySanitizer.cs" Link="RunHistorySanitizer.cs" />
   </ItemGroup>

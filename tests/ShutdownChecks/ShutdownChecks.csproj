@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+ <PropertyGroup><OutputType>Exe</OutputType><Optimize>true</Optimize><GodotProjectDir>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../../'))</GodotProjectDir></PropertyGroup>
+ <Import Project="../../build/GameReferences.props" />
+ <ItemGroup>
+  <CompilerVisibleProperty Include="GodotProjectDir" />
+  <Reference Update="@(Reference)"><Private>true</Private></Reference>
+  <Reference Include="BaseLib"><HintPath>$(BaseLibPath)</HintPath><Private>true</Private></Reference>
+  <ProjectReference Include="../../src/Runtime/ShoujoKagekiAijoCore.Runtime.csproj" />
+ </ItemGroup>
+</Project>

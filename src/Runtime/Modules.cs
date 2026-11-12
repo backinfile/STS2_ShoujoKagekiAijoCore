@@ -31,5 +31,6 @@ public sealed class CoreContext(CoreServices services, string releaseVersion, st
     public event Action? ModelsReady;
     public event Action? ShuttingDown;
     internal void NotifyModelsReady() => ModelsReady?.Invoke();
-    internal void NotifyShutdown() => ShuttingDown?.Invoke();
+    internal void NotifyShutdown() => Cleanup.Run(
+        ShuttingDown?.GetInvocationList().Cast<Action>() ?? []);
 }

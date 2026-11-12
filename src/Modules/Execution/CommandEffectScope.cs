@@ -39,16 +39,8 @@ internal sealed class CommandEffectScope : IDisposable
                 return (Task)CompleteResult.MakeGenericMethod(type.GenericTypeArguments).Invoke(this, [task])!;
         return CompleteVoid(task);
     }
-    private async Task CompleteVoid(Task task)
-    {
-        try { await task; }
-        finally { await Drain(); }
-    }
-    private async Task<T> CompleteGeneric<T>(Task<T> task)
-    {
-        try { return await task; }
-        finally { await Drain(); }
-    }
+    private Task CompleteVoid(Task task) => Cleanup.Complete(task, () => new ValueTask(Drain()));
+    private Task<T> CompleteGeneric<T>(Task<T> task) => Cleanup.Complete(task, () => new ValueTask(Drain()));
     public void Dispose()
     {
         if (_disposed) return;

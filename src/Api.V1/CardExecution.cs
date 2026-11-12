@@ -17,8 +17,17 @@ public interface ICardExecution
 {
     Task<bool> Play(PlayerChoiceContext context, CardModel card, CardExecutionRequest request);
 }
+/// <summary>Stages actual cards in Play, executes them in order and restores unplayed cards.</summary>
+public interface ICardStaging
+{
+    Task Play(IEnumerable<CardModel> cards, Func<CardModel, Task> play,
+        Func<IReadOnlyList<CardModel>, Task> restore);
+}
 public static class CardExecution
 {
     public static Task<bool> Play(PlayerChoiceContext context, CardModel card, CardExecutionRequest request)
         => CoreApi.Get<ICardExecution>().Play(context, card, request);
+    public static Task PlayStaged(IEnumerable<CardModel> cards, Func<CardModel, Task> play,
+        Func<IReadOnlyList<CardModel>, Task> restore)
+        => CoreApi.Get<ICardStaging>().Play(cards, play, restore);
 }

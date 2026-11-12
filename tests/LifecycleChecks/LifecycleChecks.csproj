@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../src/Runtime/Cleanup.cs" Link="Cleanup.cs" />
+    <Compile Include="../../src/Modules/Execution/CommandEffectScope.cs" Link="CommandEffectScope.cs" />
+  </ItemGroup>
+</Project>

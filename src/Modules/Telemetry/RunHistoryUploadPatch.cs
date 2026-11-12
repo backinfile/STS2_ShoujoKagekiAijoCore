@@ -16,8 +16,10 @@ namespace ShoujoKageki.Core.Telemetry;
 internal static class RunHistoryUploadPatch
 {
     private static readonly HttpClient HttpClient = new() { Timeout = TimeSpan.FromSeconds(30), MaxResponseContentBufferSize = 4096 };
-    private static readonly Dictionary<string, TelemetryUploadQueue> Queues = new(StringComparer.Ordinal);
-    private static TelemetryUploadQueue? _activeQueue;
+    private static readonly TelemetryChannel Channel = new(endpoint => new TelemetryUploadQueue(
+        Path.Combine(TelemetryModule.Context.DataDirectory, "telemetry", "pending"), endpoint, HttpClient,
+        () => TelemetryModule.Active && TelemetryModule.DataUploadEnabled && Endpoint == endpoint,
+        TelemetryModule.Warn, preparePayload: RunHistorySanitizer.Sanitize));
     private static readonly Lazy<string> DefaultUrl = new(LoadDefaultUrl);
     internal static Uri? Endpoint
     {
@@ -40,32 +42,8 @@ internal static class RunHistoryUploadPatch
         }
         catch (Exception) { TelemetryModule.Warn("数据上传配置无效"); return ""; }
     }
-    private static TelemetryUploadQueue? Queue()
-    {
-        var endpoint = Endpoint;
-        lock (Queues)
-        {
-            if (endpoint == null)
-            {
-                _activeQueue?.Pause();
-                return _activeQueue = null;
-            }
-            if (!Queues.TryGetValue(endpoint.AbsoluteUri, out var queue))
-            {
-                queue = new TelemetryUploadQueue(Path.Combine(TelemetryModule.Context.DataDirectory, "telemetry", "pending"),
-                    endpoint, HttpClient, () => TelemetryModule.Active && TelemetryModule.DataUploadEnabled && Endpoint == endpoint, TelemetryModule.Warn,
-                    preparePayload: RunHistorySanitizer.Sanitize);
-                Queues.Add(endpoint.AbsoluteUri, queue);
-            }
-            if (!ReferenceEquals(_activeQueue, queue)) _activeQueue?.Pause();
-            return _activeQueue = queue;
-        }
-    }
-    internal static void Shutdown()
-    {
-        lock (Queues)
-            foreach (var queue in Queues.Values) queue.Pause();
-    }
+    private static TelemetryUploadQueue? Queue() => Channel.Select(Endpoint);
+    internal static void Shutdown() => Channel.Pause();
     internal static void ResumePendingUploads()
     {
         try

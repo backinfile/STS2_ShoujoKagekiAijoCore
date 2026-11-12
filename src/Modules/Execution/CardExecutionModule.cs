@@ -12,7 +12,7 @@ using MegaCrit.Sts2.Core.Models;
 namespace ShoujoKageki.Core.Runtime.Modules.Execution;
 
 /// <summary>Resource payment surrounds the native automatic-play pipeline.</summary>
-public sealed class CardExecutionModule : ICoreModule, ICardExecution
+public sealed class CardExecutionModule : ICoreModule, ICardExecution, ICardStaging
 {
     private sealed class Invocation(CardModel card, CardExecutionRequest request, ResourceInfo resources)
     {
@@ -26,7 +26,34 @@ public sealed class CardExecutionModule : ICoreModule, ICardExecution
     private static readonly AsyncLocal<Invocation?> Current = new();
     public string Id => "card-execution";
     public int Order => -300;
-    public void Initialize(CoreContext context) => context.Services.Add<ICardExecution>(this);
+    public void Initialize(CoreContext context)
+    {
+        context.Services.Add<ICardExecution>(this);
+        context.Services.Add<ICardStaging>(this);
+    }
+
+    public Task Play(IEnumerable<CardModel> cards, Func<CardModel, Task> play,
+        Func<IReadOnlyList<CardModel>, Task> restore)
+    {
+        ArgumentNullException.ThrowIfNull(cards);
+        ArgumentNullException.ThrowIfNull(play);
+        ArgumentNullException.ThrowIfNull(restore);
+        var staged = new List<CardModel>();
+        return Cleanup.Complete(Execute(), () => new ValueTask(restore(
+            staged.Where(card => card.Pile?.Type == PileType.Play).ToArray())));
+        async Task Execute()
+        {
+            foreach (var card in cards)
+            {
+                staged.Add(card);
+                var result = await CardPileCmd.Add(card, PileType.Play);
+                if (!result.success) break;
+                staged[^1] = result.cardAdded;
+            }
+            foreach (var card in staged)
+                if (card.Pile?.Type == PileType.Play) await play(card);
+        }
+    }
 
     public async Task<bool> Play(PlayerChoiceContext context, CardModel card, CardExecutionRequest request)
     {

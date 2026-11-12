@@ -112,3 +112,9 @@ PlayerChoices.ChooseIndex(context, player, optionCount, selectLocal) 统一自�
 - `ICardPayloadRouting.Native` 提供直接部署所用的原生 `OnPlay` 载体。经路由部署时保留收到的 `next`，复制时重新绑定，不重新进入部署入口。
 - 旧两种中间件契约保持签名和绑定语义；旧 continuation 继续绑定登记时的卡牌，改变 `play.Card` 不会重新绑定。原生与第三方终端同步抛错保留原异常身份。
 - 新能力声明为 `card-payloads@1`，最低 Core 1.6.0。API V1 程序集版本继续为 `1.0.0.0`。
+
+## 1.7 执行收尾
+
+- `card-staging@1` 由独立 `ICardStaging` 提供，`CardExecution.PlayStaged` 统一暂存实际牌、顺序执行与未执行牌恢复，保留惰性候选顺序。角色决定恢复目标与战斗结束策略。
+- 结算与清理同时失败时保留两者异常；单独牌效失败保持原异常身份。模型作用域逆序逐项释放，Runtime 退出逐项通知并释放模块。
+- API V1 程序集版本保持 `1.0.0.0`，原有接口签名和保存协议沿用。
