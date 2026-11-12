@@ -80,6 +80,29 @@ new ShoujoKageki.Core.Runtime.Modules.Execution.ModelExecutionModule().Initializ
 var service = new ShineService();
 service.Initialize(context);
 CoreApi.Bind(services);
+if (args.Contains("--method-scopes-only"))
+{
+    var scopes = CoreApi.Get<IModelMethodScopes>();
+    var probe = new MethodScopeProbe();
+    using (scopes.Register(AccessTools.Method(typeof(MethodScopeProbe), nameof(MethodScopeProbe.Execute)),
+        owner => new MethodScopeProbe.Scope("source")))
+    {
+        var pending = probe.Execute(false);
+        if (MethodScopeProbe.Current.Value != null) throw new InvalidOperationException("Method scope leaked to its caller.");
+        if (await pending != "source/source") throw new InvalidOperationException("Async continuation lost its source.");
+        try { await probe.Execute(true); throw new InvalidOperationException("Expected method failure."); }
+        catch (IOException) { }
+        if (MethodScopeProbe.Current.Value != null) throw new InvalidOperationException("Failed method leaked its source.");
+    }
+    if (await probe.Execute(false) != "/") throw new InvalidOperationException("Disposed registration remained active.");
+    using (scopes.Register(AccessTools.Method(typeof(MethodScopeProbe), nameof(MethodScopeProbe.Immediate)),
+        _ => new MethodScopeProbe.Scope("static")))
+        if (MethodScopeProbe.Immediate() != "static" || MethodScopeProbe.Current.Value != null)
+            throw new InvalidOperationException("Static synchronous method did not restore its caller.");
+    Console.WriteLine("Method scopes passed: async capture, caller restoration, failures, disposal and static methods.");
+    return;
+}
+
 if (args.Contains("--payloads-only"))
 {
     var routing = new ShoujoKageki.Core.Runtime.Modules.Execution.CardPlayRoutingModule();
@@ -169,16 +192,24 @@ if (args.Contains("--copies-only"))
 {
     var copies = new CardCopyService();
     copies.Initialize(context);
+    var clones = new ShoujoKageki.Core.Runtime.Modules.Execution.CardCloneModule();
+    clones.Initialize(context);
+    var metadata = new Dictionary<CardModel, int>();
+    clones.Cloned += (original, clone) => { if (metadata.TryGetValue(original, out var value)) metadata[clone] = value; };
     var patcher = new Harmony("Core.CopyChecks");
+    patcher.CreateClassProcessor(typeof(ShoujoKageki.Core.Runtime.Modules.Execution.CardCloneModule).GetNestedType("NativeClone", BindingFlags.NonPublic)!).Patch();
     patcher.CreateClassProcessor(typeof(ShineService).GetNestedType("ClonePatch", BindingFlags.NonPublic)!).Patch();
     ModelDb.Inject(typeof(ResolutionCard));
     ModelDb.Inject(typeof(CoreEmptyShell));
     var source = (ResolutionCard)ModelDb.Card<ResolutionCard>().MutableClone();
     source.RuntimeValue = 17;
+    metadata[source] = 41;
     source.EnergyCost.SetThisCombat(4);
     service.SetState(source, 2, 6);
     var snapshot = CardCopies.Snapshot(source);
     var temporary = (ResolutionCard)CardCopies.Preview(source, CardCopyPurpose.TemporaryCopy);
+    if (metadata.GetValueOrDefault(snapshot) != 41 || metadata.GetValueOrDefault(temporary) != 41)
+        throw new InvalidOperationException("Native clone observers lost external card state.");
     if (snapshot.RuntimeValue != 17 || temporary.RuntimeValue != 17 || snapshot.EnergyCost.GetWithModifiers(CostModifiers.Local) != 4
         || temporary.EnergyCost.GetWithModifiers(CostModifiers.Local) != 4 || ReferenceEquals(source, snapshot))
         throw new InvalidOperationException("Runtime snapshots and combat previews must preserve local card data and cost.");
@@ -478,5 +509,27 @@ public sealed class PayloadCard() : CardModel(0, CardType.Skill, CardRarity.Toke
     {
         Effects += Value;
         return Task.CompletedTask;
+    }
+}
+
+
+public sealed class MethodScopeProbe
+{
+    public static readonly AsyncLocal<string?> Current = new();
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public async Task<string> Execute(bool fail)
+    {
+        string? before = Current.Value;
+        await Task.Yield();
+        if (fail) throw new IOException("Expected source failure.");
+        return before + "/" + Current.Value;
+    }
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static string? Immediate() => Current.Value;
+    public sealed class Scope : IDisposable
+    {
+        private readonly string? _previous = Current.Value;
+        public Scope(string value) => Current.Value = value;
+        public void Dispose() => Current.Value = _previous;
     }
 }

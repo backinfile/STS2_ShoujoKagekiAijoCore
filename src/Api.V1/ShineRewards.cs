@@ -9,6 +9,11 @@ public interface IShineRewardEligibility
 {
     bool CanDropAsShineReward(Player recipient);
 }
+/// <summary>A character may supply the shared fallback reward pool.</summary>
+public interface IShineRewardFallback
+{
+    CardPoolModel ShineRewardFallback { get; }
+}
 public interface IShineRewards
 {
     IReadOnlyList<CardModel> GetCandidates(Player recipient, CardModel? except = null);

@@ -9,7 +9,7 @@ using MegaCrit.Sts2.Core.Multiplayer.Serialization;
 using MegaCrit.Sts2.Core.Saves.Runs;
 namespace ShoujoKageki.Core.Runtime.Modules.Shine.Saves;
 
-public sealed class CorePlayerSave : ICoreModule
+public sealed class CorePlayerSave : ICoreModule, IPlayerStateEvents
 {
     private sealed class CardConverter : JsonConverter<SerializableCard>
     {
@@ -29,11 +29,15 @@ public sealed class CorePlayerSave : ICoreModule
     private const string SaveId = "ShoujoKagekiAijoCore.player-state@1";
     private sealed record Snapshot(int Format, List<SerializableCard> Cards, CoreRunRules Rules);
     private static readonly ConditionalWeakTable<SerializablePlayer, Snapshot> Legacy = new();
-    private static readonly ConditionalWeakTable<Player, object> Restored = new();
+    private static readonly ConditionalWeakTable<Player, object> Applied = new();
+    private static CorePlayerSave _instance = null!;
+    public event Action<Player>? Restored;
     public string Id => "player-save";
     public int Order => -450;
     public void Initialize(CoreContext context)
     {
+        _instance = this;
+        context.Services.Add<IPlayerStateEvents>(this);
         ExtendedSaveTypes.RegisterSavedValue<Player, string>(SaveId, Capture, Restore,
             (json, writer) => writer.WriteString(json), ReadNetwork);
     }
@@ -61,7 +65,7 @@ public sealed class CorePlayerSave : ICoreModule
     private static void Restore(Player player, string? json)
     {
         if (json == null) return;
-        Apply(player, Decode(json)); Restored.GetOrCreateValue(player);
+        Apply(player, Decode(json)); Applied.GetOrCreateValue(player);
     }
     private static void Apply(Player player, Snapshot state)
     {
@@ -95,7 +99,8 @@ public sealed class CorePlayerSave : ICoreModule
         [HarmonyPostfix, HarmonyPriority(Priority.Last)]
         private static void Postfix(SerializablePlayer save, Player __result)
         {
-            if (!Restored.TryGetValue(__result, out _) && Legacy.TryGetValue(save, out var old)) Apply(__result, old);
+            if (!Applied.TryGetValue(__result, out _) && Legacy.TryGetValue(save, out var old)) Apply(__result, old);
+            _instance.Restored?.Invoke(__result);
         }
     }
     [HarmonyPatch(typeof(Player), nameof(Player.SyncWithSerializedPlayer))]
@@ -104,9 +109,10 @@ public sealed class CorePlayerSave : ICoreModule
         [HarmonyPostfix, HarmonyPriority(Priority.Last)]
         private static void Postfix(Player __instance, SerializablePlayer player)
         {
-            Restored.Remove(__instance);
+            Applied.Remove(__instance);
             ExtendedSaveHandlers<Player, SerializablePlayer>.Load(player, __instance);
-            if (!Restored.TryGetValue(__instance, out _) && Legacy.TryGetValue(player, out var old)) Apply(__instance, old);
+            if (!Applied.TryGetValue(__instance, out _) && Legacy.TryGetValue(player, out var old)) Apply(__instance, old);
+            _instance.Restored?.Invoke(__instance);
         }
     }
 }

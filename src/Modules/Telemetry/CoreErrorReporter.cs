@@ -34,12 +34,12 @@ internal static class CoreErrorReporter
         {
             var endpoint = RunHistoryUploadPatch.ErrorEndpoint;
             if (endpoint == null) return;
-            string version = ModManager.Mods.FirstOrDefault(mod => mod.manifest?.id == "ShoujoKagekiAijoKaren")?.manifest?.version ?? "unknown";
+            string version = TelemetryModule.Context.ReleaseVersion;
             string os = OS.GetName();
             string platform = os == "Android" ? "android" : "pc";
             var release = ReleaseInfoManager.Instance.ReleaseInfo;
             // Discovery and disabled-mod filtering precede ModInitializer callbacks. Include mods
-            // scheduled after Karen and failed initializers, not just those already fully loaded.
+            // scheduled after Core and failed initializers, not just those already fully loaded.
             var mods = ModManager.Mods.Where(mod => mod.manifest?.id != null && mod.manifest.id != CoreApi.ModId &&
                     mod.state is ModLoadState.None or ModLoadState.Loaded or ModLoadState.Failed)
                 .Select(mod => new ClientErrorBuffer.ModInfo(mod.manifest!.id!, mod.manifest.name ?? mod.manifest.id!, mod.manifest.version ?? "unknown"))

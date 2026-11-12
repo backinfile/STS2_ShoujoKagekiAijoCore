@@ -122,3 +122,13 @@ PlayerChoices.ChooseIndex(context, player, optionCount, selectLocal) 统一自�
 ## 闪耀牌奖励
 
 Core 1.8.0 的 `shine-rewards@1` 通过独立 `IShineRewards` 和静态 `ShineRewards` 提供 GetCandidates(recipient, except)、Roll(recipient, rng, except)、Add(recipient, except)、Create(card, recipient) 及 Reproduction 原型。少歌角色优先自身合法闪耀卡池，空池和非少歌角色回退 Karen；公共再生产独立加入。候选遵循单人／多人、非基础牌、except 和可选 IShineRewardEligibility.CanDropAsShineReward(recipient)。权重为普通 42、罕见 42、稀有 15、再生产 1，空类别在全部候选中均匀回退。完整排除时抛出 InvalidOperationException。Add 使用接收者 Rewards 随机数，预约或立即展示原生单牌奖励。再生产与标记保留旧 ModelId 和三语键以读取旧存档，资源和实现迁入 Core。公开程序集版本保持 1.0.0.0。
+
+## 1.9 生命周期收口
+
+公开程序集版本继续为 1.0.0.0，新增能力不修改已有接口成员。新增接口见 src/Api.V1/CardLifecycle.cs 与 ShineRewards.cs。
+
+- 玩家恢复及同步由 Core 在 BaseLib 扩展字段与旧存档桥接完成后统一发布 IPlayerStateEvents.Restored；角色回调只处理自身规则。
+- 原生 MutableClone 在闪耀处理后发布 ICardCloneEvents.Cloned，仅处理相同实际模型的复制。跨模型空壳替换不复制原牌的角色字段。复制用途和快照语义继续使用已有入口。
+- IModelMethodScopes.Register(method, enter) 与自动模型扫描共用一份原生方法挂钩；模型级观察器先进入，方法级观察器后进入，按相反顺序释放。异步返回值、异常及同步命令后续效果保留原有处理。
+- IShineRewardFallback 由角色模型提供回退池。领取者自身没有有效候选时，按已发现模型的稳定顺序选首个有效回退池，再加入公共重现牌。
+- 新报错的兼容字段 mod_version 表示 Core 采集端版本；旧记录保持原值，页面统一显示“采集版本”。具体来源继续读取 core_telemetry.source_mods。

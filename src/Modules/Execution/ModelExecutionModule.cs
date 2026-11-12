@@ -7,19 +7,21 @@ using MegaCrit.Sts2.Core.Models;
 namespace ShoujoKageki.Core.Runtime.Modules.Execution;
 
 /// <summary>Owns the native model-method hooks shared by all rule consumers.</summary>
-public sealed class ModelExecutionModule : ICoreModule, IModelExecutionScopes
+public sealed class ModelExecutionModule : ICoreModule, IModelExecutionScopes, IModelMethodScopes
 {
     private static ModelExecutionModule _instance = null!;
     private readonly Harmony _patcher = new(CoreApi.ModId + ".ModelExecution");
     private readonly HashSet<MethodInfo> _patched = [];
     private readonly List<Func<AbstractModel, CardPlay?, IDisposable?>> _observers = [];
     private readonly List<Func<CardModel, PlayerChoiceContext, CardPlay, Func<Task, Task>?>> _native = [];
+    private readonly Dictionary<MethodBase, List<Func<object?, IDisposable?>>> _methods = [];
     public string Id => "model-execution";
     public int Order => -600;
     public void Initialize(CoreContext context)
     {
         _instance = this;
         context.Services.Add<IModelExecutionScopes>(this);
+        context.Services.Add<IModelMethodScopes>(this);
         context.ModelsReady += Install;
         context.Discovery.ModelsChanged += Install;
     }
@@ -29,6 +31,26 @@ public sealed class ModelExecutionModule : ICoreModule, IModelExecutionScopes
         _observers.Add(enter);
         return new Subscription(() => _observers.Remove(enter));
     }
+    public IDisposable Register(MethodInfo method, Func<object?, IDisposable?> enter)
+    {
+        if (!_methods.TryGetValue(method, out var handlers))
+        {
+            _methods.Add(method, handlers = []);
+            Patch(method, typeof(CardModel).IsAssignableFrom(method.DeclaringType!) && method.Name == "OnPlay");
+        }
+        handlers.Add(enter);
+        return new Subscription(() => handlers.Remove(enter));
+    }
+    private void Patch(MethodInfo method, bool card)
+    {
+        if (!_patched.Add(method)) return;
+        _patcher.Patch(method,
+            prefix: new(typeof(ModelExecutionModule), card ? nameof(CardPrefix) : nameof(ModelPrefix)),
+            postfix: typeof(Task).IsAssignableFrom(method.ReturnType)
+                ? new(typeof(ModelExecutionModule), card ? nameof(CardPostfix) : nameof(ModelPostfix)) : null,
+            finalizer: new(typeof(ModelExecutionModule), nameof(Finalizer)));
+    }
+
     internal static void RegisterNative(Func<CardModel, PlayerChoiceContext, CardPlay, Func<Task, Task>?> enter)
         => _instance._native.Add(enter);
     private sealed class Subscription(Action remove) : IDisposable
@@ -51,11 +73,8 @@ public sealed class ModelExecutionModule : ICoreModule, IModelExecutionScopes
                 var method = AccessTools.DeclaredMethod(candidate.DeclaringType, candidate.Name,
                     candidate.GetParameters().Select(parameter => parameter.ParameterType).ToArray());
                 if (method.IsAbstract || method.ContainsGenericParameters || !typeof(Task).IsAssignableFrom(method.ReturnType)
-                    || method.GetMethodBody() == null || !_patched.Add(method)) continue;
-                _patcher.Patch(method,
-                    prefix: new(typeof(ModelExecutionModule), card ? nameof(CardPrefix) : nameof(ModelPrefix)),
-                    postfix: new(typeof(ModelExecutionModule), card ? nameof(CardPostfix) : nameof(ModelPostfix)),
-                    finalizer: new(typeof(ModelExecutionModule), nameof(Finalizer)));
+                    || method.GetMethodBody() == null) continue;
+                Patch(method, card);
             }
         }
     }
@@ -77,21 +96,26 @@ public sealed class ModelExecutionModule : ICoreModule, IModelExecutionScopes
             Cleanup.Run(scopes.Reverse().Select<IDisposable, Action>(scope => scope.Dispose).Append(Effects.Dispose));
         }
     }
-    private static Invocation Enter(AbstractModel model, CardPlay? play)
+    private static Invocation Enter(object? model, CardPlay? play, MethodBase method)
     {
         var invocation = new Invocation();
         try
         {
-            foreach (var observer in _instance._observers.ToArray())
-                if (observer(model, play) is { } scope) invocation.Scopes.Add(scope);
+            if (model is AbstractModel abstractModel)
+                foreach (var observer in _instance._observers.ToArray())
+                    if (observer(abstractModel, play) is { } scope) invocation.Scopes.Add(scope);
+            if (_instance._methods.TryGetValue(method, out var handlers))
+                foreach (var enter in handlers.ToArray())
+                    if (enter(model) is { } scope) invocation.Scopes.Add(scope);
             return invocation;
         }
         catch (Exception error) { Cleanup.Run([invocation.Dispose], error); throw; }
     }
-    private static void ModelPrefix(AbstractModel __instance, out Invocation __state) => __state = Enter(__instance, null);
-    private static void CardPrefix(CardModel __instance, PlayerChoiceContext __0, CardPlay __1, out Invocation __state)
+    private static void ModelPrefix(object? __instance, MethodBase __originalMethod, out Invocation __state)
+        => __state = Enter(__instance, null, __originalMethod);
+    private static void CardPrefix(CardModel __instance, PlayerChoiceContext __0, CardPlay __1, MethodBase __originalMethod, out Invocation __state)
     {
-        __state = Enter(__instance, __1);
+        __state = Enter(__instance, __1, __originalMethod);
         try
         {
             foreach (var begin in _instance._native)

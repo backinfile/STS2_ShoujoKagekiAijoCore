@@ -1,6 +1,6 @@
 # ShoujoKagekiAijoCore 使用说明
 
-本文面向使用 Core 的玩家和 Mod 作者，说明 Core 1.7.0 的能力、配置与 API V1 接入方式。SDK 随完整 Core 构建产物提供。
+本文面向使用 Core 的玩家和 Mod 作者，说明 Core 1.9.0 的能力、配置与 API V1 接入方式。SDK 随完整 Core 构建产物提供。
 
 引导、服务端、存档与发布方面的实现约定见 [Core 实现文档](docs/IMPLEMENTATION.md)。[GitHub 仓库](https://github.com/backinfile/STS2_ShoujoKagekiAijoCore)
 
@@ -243,4 +243,12 @@ PlayerChoices.ChooseIndex(context, player, optionCount, selectLocal) 统一自�
 
 旧 `ICardPlayRouting`、`ICardEffectRouting` 与公开程序集版本 `1.0.0.0` 保持兼容。
 
-临时移入 Play 后逐张执行的流程使用 `CardExecution.PlayStaged(cards, play, restore)`，声明 `card-staging@1` 并要求 Core 1.7.0。Core 登记每次尝试移动的实际牌，执行后将仍在 Play 的牌交给角色的 `restore` 回调；候选序列可按前一次移牌后的状态继续生成。
+临时移入 Play 后逐张执行的流程使用 `CardExecution.PlayStaged(cards, play, restore)`，声明 `card-staging@1` 并要求 Core 1.9.0。Core 登记每次尝试移动的实际牌，执行后将仍在 Play 的牌交给角色的 `restore` 回调；候选序列可按前一次移牌后的状态继续生成。
+
+## 1.9 生命周期接入
+
+- IPlayerStateEvents.Restored 在原生恢复或玩家同步及扩展字段恢复完成后通知，角色在此规范化自己的状态。
+- ICardCloneEvents.Cloned 在原生卡牌克隆及 Core 闪耀处理完成后通知同模型复制，角色集中复制实例字段；耗尽后的空壳替换不继承原牌扩展字段。
+- IModelMethodScopes.Register 通过已有模型执行器登记指定原生方法的调用作用域，异步延续保留来源，返回和异常恢复调用方。
+- 角色模型可实现 IShineRewardFallback 提供回退奖励池，Core 按发现顺序选择首个有效池。
+- 对应能力为 player-state-events@1、card-clone-events@1、model-method-scopes@1、shine-reward-pools@1，使用它们的角色要求 Core 1.9.0。

@@ -977,3 +977,11 @@ Junna 的 `ResearchRules` 显式定义三组研究主牌、成员、计数来源
 `ICardStaging` 统一两角色的临时 Play 牌区流程，登记尝试移动的实际对象、按原顺序执行并恢复尚未执行的牌。外部参数在公共入口校验，角色保留目标策略与恢复去向。内部 `Cleanup` 在操作和清理均失败时保留两者，模型作用域逆序逐项释放；Runtime 统一通知退出并释放模块一次。
 
 上传通道以端点复用 `TelemetryUploadQueue`，对局和报错分别保留各自容量、节奏和协议。切换回已有端点继续使用同一队列及 worker。
+
+## 1.9 共享生命周期与角色规则
+
+玩家恢复通知与克隆通知分别由 CorePlayerSave 和 CardCloneModule 发布。Junna 的投入、研究进度、箭矢形态和固定 X 费用通过 CardStateCopies 集中接入。方法来源作用域与已有模型执行器共用挂钩，获取来源名单继续由角色规则定义。
+
+Junna 的知识成员与预览读取统一成员解析；持续能力的特殊行为写在既有具体模型的 partial 实现中，共用基类负责施加快照、计数、原生事件和显示更新。生成器保留原模型类型、ID 与数值。未登记为运行模型的旧分派分支移除。
+
+正式版 v0.107.1 与测试版 v0.111.0 的 NGameOverScreen.MoveCreaturesToDifferentLayerAndDisableUi 均已按活动场景处理，不再读取 CurrentRoom，移除对应旧前缀。

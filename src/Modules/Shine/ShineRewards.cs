@@ -29,9 +29,10 @@ public sealed class ShineRewardService : IShineRewards, ICoreModule
         var cards = CoreDiscovery.IsShoujoCharacter(recipient.Character) ? FromPool(recipient.Character.CardPool) : [];
         if (cards.Length == 0)
         {
-            var fallback = RuntimeEntry.Context.Discovery.Models.FirstOrDefault(model =>
-                model.ModId == "ShoujoKagekiAijoKaren" && model.Kind == "character");
-            cards = FromPool(fallback == null ? null : ModelDb.GetById<CharacterModel>(ModelDb.GetId(fallback.ModelType)).CardPool);
+            cards = RuntimeEntry.Context.Discovery.Models.Where(model => model.Kind == "character")
+                .Select(model => ModelDb.GetById<CharacterModel>(ModelDb.GetId(model.ModelType)))
+                .OfType<IShineRewardFallback>().Select(policy => FromPool(policy.ShineRewardFallback))
+                .FirstOrDefault(pool => pool.Length > 0) ?? [];
         }
         return Reproduction.Id == except?.Id ? cards : [..cards, Reproduction];
     }

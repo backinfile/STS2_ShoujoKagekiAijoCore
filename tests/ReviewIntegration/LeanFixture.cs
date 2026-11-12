@@ -17,6 +17,7 @@ using MegaCrit.Sts2.Core.Models.Relics;
 using ShoujoKageki.Core.V1;
 using ShoujoKagekiJunna.Combat;
 using ShoujoKagekiJunna.Models;
+using ShoujoKagekiJunna.UI;
 using ShoujoKagekiAijoKaren.src.Core.Models.Potions;
 using ShoujoKagekiAijoKaren.src.Core.Models.Cards.ancient;
 using ShoujoKagekiAijoKaren.src.Models.Cards;
@@ -65,6 +66,22 @@ public sealed class LeanFixture : AbstractConsoleCmd
                 Check(expected + " keeps model and image identity", potion.Id.Entry == expected &&
                     (string)AccessTools.Property(typeof(PotionModel), "PackedImagePath").GetValue(potion)! == "res://images/potions/" + expected.ToLowerInvariant() + ".png");
             }
+            var beforeSource = player.Deck.Cards.ToHashSet();
+            var tome = (DustyTome)ModelDb.Relic<DustyTome>().ToMutable();
+            tome.AncientCard = CardCatalog.Model("JK314").Id;
+            await RelicCmd.Obtain(tome, player);
+            Check("registered native source grants its knowledge companions",
+                player.Deck.Cards.Count - beforeSource.Count == 4);
+            int afterSource = player.Deck.Cards.Count;
+            await CardPileCmd.Add(player.RunState.CreateCard(CardCatalog.Model("JK314"), player), PileType.Deck, skipVisuals: true);
+            Check("native method source is restored before unrelated acquisition", player.Deck.Cards.Count == afterSource + 1);
+            foreach (var gained in player.Deck.Cards.Where(card => !beforeSource.Contains(card)).ToArray())
+            {
+                player.Deck.RemoveInternal(gained);
+                gained.RemoveFromState();
+            }
+            player.RemoveRelicInternal(tome, silent: true);
+
             using var single = KnowledgeCombat.SingleCard();
             var fall = player.RunState.CreateCard(ModelDb.Card<KarenFall>(), player);
             await CardPileCmd.Add(fall, PileType.Deck, CardPilePosition.Top);
@@ -86,6 +103,42 @@ public sealed class LeanFixture : AbstractConsoleCmd
             Check("other native starter keeps priority over Karen fallback", ReferenceEquals(starter.Invoke(tooth, [player]), bash));
             player.Deck.RemoveInternal(bash);
             player.Deck.RemoveInternal(fall);
+
+            var events = CoreApi.Get<IPlayerStateEvents>();
+            int restoredNotifications = 0;
+            void OnRestored(Player _) => restoredNotifications++;
+            events.Restored += OnRestored;
+            Player restoredPlayer;
+            try { restoredPlayer = Player.FromSerializable(player.ToSerializable()); }
+            finally { events.Restored -= OnRestored; }
+            Check("player restore emits one completed notification", restoredNotifications == 1);
+            var relationField = (SavedSpireField<Player, string>)AccessTools.Field(typeof(DynamicKnowledge), "Relations").GetValue(null)!;
+            Check("knowledge normalizes after shared player restoration", !string.IsNullOrEmpty(relationField.Get(restoredPlayer)));
+
+            var group = CardCatalog.Groups.First(group => group.MainCardCount > 0);
+            var canonical = CardCatalog.Model(group.MainCardId);
+            var offered = CardOptions.Create(canonical, player);
+            Check("canonical and owned previews resolve the same ordered members",
+                KnowledgePreviewCards.Create(canonical).Select(card => card.Id)
+                    .SequenceEqual(KnowledgePreviewCards.Create(offered).Select(card => card.Id)));
+            var material = combat.CreateCard<Bash>(player);
+            HandArrow.Adapt(material);
+            DamageModifiers.Add(material, damageBonus: 3, extraHits: 1);
+            var materialCopy = CardCopies.Snapshot(material);
+            Check("shared clone notification retains arrow form and cost",
+                HandArrow.IsArrow(materialCopy) && materialCopy.EnergyCost.GetWithModifiers(CostModifiers.Local) == 0 &&
+                DamageModifiers.CaptureDamageModifierSnapshot(materialCopy) is { DamageBonus: 3, ExtraHits: 1 });
+            material.RemoveFromState();
+            var formerX = combat.CreateCard<Whirlwind>(player);
+            formerX.EnergyCost.CapturedXValue = 7;
+            CostChanges.SetFixed(formerX, 2);
+            var fixedCopy = CardCopies.ForCombat(formerX, player, CardCopyPurpose.TemporaryCopy);
+            await CardPileCmd.Add(fixedCopy, PileType.Hand);
+            Check("fixed X-cost copy retains numeric cost and captured X",
+                !fixedCopy.EnergyCost.CostsX && fixedCopy.EnergyCost.GetWithModifiers(CostModifiers.Local) == 2 &&
+                fixedCopy.ResolveEnergyXValue() == 7);
+            await CardPileCmd.RemoveFromCombat(fixedCopy);
+            formerX.RemoveFromState();
 
             var relations = (SavedSpireField<Player, string>)AccessTools.Field(typeof(DynamicKnowledge), "Relations").GetValue(null)!;
             string? saved = relations.Get(player);
@@ -128,8 +181,28 @@ public sealed class LeanFixture : AbstractConsoleCmd
             Check("power clone counters are independent", (int)turn.GetValue(original)! == 4 && (int)used.GetValue(original)! == 1 && (int)cycle.GetValue(original)! == 2);
             var sourceField = AccessTools.Field(original.GetType(), "Card");
             Check("power clone owns an independent source snapshot", !ReferenceEquals(sourceField.GetValue(original), sourceField.GetValue(cloned)));
+            var trigger = combat.CreateCard<Bash>(player);
+            trigger.EnergyCost.SetThisCombat(card.Value("EnergyThreshold"));
+            await CardPileCmd.Add(trigger, PileType.Hand);
+            int beforeEnergy = player.PlayerCombatState!.Energy;
+            bool triggered = await CardExecution.Play(context, trigger,
+                new CardExecutionRequest { Target = combat.HittableEnemies.First(), PreserveEnergyValue = true });
+            Check("concrete power rule handles actual card-play resource values",
+                triggered && player.PlayerCombatState.Energy == beforeEnergy + card.Value("Energy"));
             await PowerCmd.Remove(power);
             card.RemoveFromState();
+
+            var turnCard = (CatalogCard)combat.CreateCard(CardCatalog.Model("JH59"), player);
+            await CardPileCmd.Add(turnCard, PileType.Hand);
+            Check("power metadata routes an actual play into the registered model",
+                await CardExecution.Play(context, turnCard, new CardExecutionRequest { Target = player.Creature }) &&
+                player.Creature.Powers.OfType<CatalogPower>().Any(active => active.DesignId == "JH59"));
+            var turnPower = player.Creature.Powers.OfType<CatalogPower>().Single(active => active.DesignId == "JH59");
+            beforeEnergy = player.PlayerCombatState.Energy;
+            await turnPower.AfterPlayerTurnStart(context, player);
+            Check("concrete power rule handles native turn events",
+                player.PlayerCombatState.Energy == beforeEnergy + turnCard.Value("Energy"));
+            await PowerCmd.Remove(turnPower);
 
             var generated = CardCatalog.Create("JA81B", player);
             var presentationType = typeof(CardActions).Assembly.GetType("ShoujoKagekiJunna.Combat.GeneratedArrowPresentation", true)!;

@@ -159,7 +159,7 @@ public sealed class RuntimeFlowsFixture : AbstractConsoleCmd
                 postfix: new HarmonyMethod(typeof(RuntimeFlowsFixture), nameof(RestrictTarget)));
             Restricted = arrow; BlockAll = true;
             Check("invalid paid target preserves original deployment",
-                !await CardActions.PaidPlay(context, arrow, enemy) && ReferenceEquals(existing, ArrowCombat.Find(arrow)));
+                !await CardExecution.Play(context, arrow, new CardExecutionRequest { Target = enemy, Payment = CardPayment.Paid }) && ReferenceEquals(existing, ArrowCombat.Find(arrow)));
             await CardActions.FreePlay(context, arrow, enemy, keepTarget: true);
             Check("invalid retained target preserves original deployment", ReferenceEquals(existing, ArrowCombat.Find(arrow)));
             Restricted = combat.CreateCard<JunnaFullDraw>(player);
