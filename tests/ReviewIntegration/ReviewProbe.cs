@@ -23,7 +23,6 @@ using ShoujoKagekiAijoKaren.src.Core.Models.Cards.neutral;
 using ShoujoKagekiAijoKaren.src.Core.Models.Powers;
 using ShoujoKagekiAijoKaren.src.Core.PromisePileSystem;
 using ShoujoKagekiAijoKaren.src.Core.Commands;
-using ShoujoKagekiAijoKaren.src.Models.Relics;
 
 namespace CoreReviewIntegration;
 
@@ -106,8 +105,9 @@ public sealed class ReviewFixture : AbstractConsoleCmd
 
             var first = new RelicReward(ModelDb.Relic<Anchor>().ToMutable(), player);
             var second = new RelicReward(ModelDb.Relic<BagOfPreparation>().ToMutable(), player);
-            var flowerType = typeof(KarenFlowerRelic).Assembly.GetType(
-                "ShoujoKagekiAijoKaren.src.Models.Relics.KarenFlowerRewardSet", true)!;
+            var flowerType = AppDomain.CurrentDomain.GetAssemblies()
+                .Select(assembly => assembly.GetType("ShoujoKageki.Core.Runtime.Modules.Relics.KarenFlowerRewardSet"))
+                .First(type => type != null)!;
             var flower = Activator.CreateInstance(flowerType, [new List<Reward> { first, second }, player])!;
             Check("flower grants only the synchronized child",
                 await (Task<bool>)flowerType.GetMethod("OnSelect", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(flower, null)!

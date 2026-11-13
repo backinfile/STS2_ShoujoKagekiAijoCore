@@ -1,0 +1,63 @@
+{
+  "gameVersions": [
+    "0.107.1",
+    "0.113.0"
+  ],
+  "baseLib": "3.4.8",
+  "coreBuild": {
+    "stable": "passed, 0 warnings, 0 errors",
+    "beta": "passed, 0 warnings, 0 errors"
+  },
+  "karenBuild": {
+    "stable": "passed, 24 warnings, 0 errors",
+    "beta": "passed, 24 warnings, 0 errors"
+  },
+  "gameChecks": [
+    {
+      "variant": "stable",
+      "passed": true,
+      "hotkey_checks": 22,
+      "flower_checks": "shared pool, model, linked rewards, claim, native chest",
+      "focus_violations": 0,
+      "all_samples_minimized": true
+    },
+    {
+      "variant": "beta",
+      "passed": true,
+      "hotkey_checks": 22,
+      "flower_checks": "shared pool, model, linked rewards, claim, native chest",
+      "focus_violations": 0,
+      "all_samples_minimized": true
+    }
+  ],
+  "migrationChecks": [
+    "zhs localization original values and unaffected keys preserved",
+    "eng localization original values and unaffected keys preserved",
+    "jpn localization original values and unaffected keys preserved",
+    "images/relics/karen_flower_relic.png byte-identical migration",
+    "images/ui/flower/chain.png byte-identical migration",
+    "no Flower treasure patches in either release source"
+  ],
+  "packageManifestSha256": "12a3ebea3f4b350f3bd1c4ef518fec415f065e1ae8043d22c5681f024e4ebecd",
+  "packageFiles": {
+    "lib/1.9.3/api/ShoujoKagekiAijoCore.Api.V1.dll": "87445d7a2880d7e1bd59c8da979801bed1f719f8b85b570737e74fac106a5a66",
+    "lib/1.9.3/beta/ShoujoKagekiAijoCore.Runtime.Beta.dll": "87b62373b62bfd60e68b048d00969fe7fbe393bd0e832092a3732853a9603d17",
+    "lib/1.9.3/stable/ShoujoKagekiAijoCore.Runtime.Stable.dll": "eea34956eb7f3289bfedc45a24c1e2eb3deee2b390e418124b4c6e83f2885f7f",
+    "resources/1.9.3/Core.Resources.pck": "b49eb3df6bb7361df6401a2ac6c4650b00966b34b65068229711bf3e3496e5ac",
+    "sdk/BundleValidation.cs": "1a8614b8282064f68d061f7dc755858216092a72b1f835f3f7874d1f5753adc4",
+    "sdk/CharacterLoader.cs": "f10e98f4c0172cc5db9d2a8a43d2a89658c95dc882bbecfb1f61d43c8a98e5ff",
+    "sdk/pack-character.ps1": "3b66e7c4af869f96c26c153349f7fb109e7f51e0dc87688748e28eed9b5704b9",
+    "sdk/validate-package.ps1": "76cb398a3f980ec4a25b3f945e127580a79526b5ff4008ecdef397ec637abb4d",
+    "ShoujoKagekiAijoCore.dll": "3762911f6b64232780d3348b4bab2d6f5cf9327c331dc75d6e313c408bb6af20",
+    "ShoujoKagekiAijoCore.json": "2763fd50a133e73ad7eec3d158004a5f020ff10c00cdc582b672949e78b24bc1"
+  },
+  "strictPackageValidation": "passed",
+  "originalKarenFiles": "5 status and SHA-256 values unchanged",
+  "documentsAudited": {
+    "core": 71,
+    "karen": 2424,
+    "localAbsolutePathOrCredentialFindings": 0
+  },
+  "evidenceRoot": "out/tmp/music-hotkey-clear-20261113/cases",
+  "mergeState": "user approved merge and cleanup; final audit in out/tmp/music-hotkey-clear-20261113/integration.json"
+}

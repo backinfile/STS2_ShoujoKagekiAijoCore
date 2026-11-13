@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><AssemblyName>CoreFlowerIntegration</AssemblyName></PropertyGroup>
+  <Import Project="../../build/GameReferences.props" />
+  <ItemGroup>
+    <Reference Include="CoreRuntime"><HintPath>$(CoreRuntimePath)</HintPath><Private>false</Private></Reference>
+    <ProjectReference Include="../../src/Api.V1/ShoujoKagekiAijoCore.Api.V1.csproj" />
+  </ItemGroup>
+</Project>

@@ -28,7 +28,7 @@ public partial class NKarenMusicSetting : HBoxContainer
         Name = property.Name + "Control";
         SizeFlagsHorizontal = SizeFlags.ShrinkEnd;
         SizeFlagsVertical = SizeFlags.Fill;
-        CustomMinimumSize = new(_directory ? 610 : 420, 64);
+        CustomMinimumSize = new(_directory ? 610 : 540, 64);
         AddThemeConstantOverride("separation", 10);
         if (_directory)
         {
@@ -40,6 +40,13 @@ public partial class NKarenMusicSetting : HBoxContainer
         _button.Name = _directory ? "BrowseDirectory" : "CaptureKey";
         _button.CustomMinimumSize = new(_directory ? 180 : 300, 64);
         AddChild(_button);
+        if (!_directory)
+        {
+            var clear = button(KarenMusicPlayback.Text("clear"), () => { _editor?.EndEditing(); Save(""); });
+            clear.Name = "ClearKey";
+            clear.CustomMinimumSize = new(110, 64);
+            AddChild(clear);
+        }
         _reset = button(KarenMusicPlayback.Text(_directory ? "clear" : "reset"), Reset);
         _reset.Name = _directory ? "ClearDirectory" : "ResetKey";
         _reset.CustomMinimumSize = new(110, 64);
