@@ -784,7 +784,7 @@ Starlight、指定耗尽回血或遗物奖励由角色定义。Core 负责识别
 | src/Core/Patches/HistoryCourseShinePatch.cs | 原生 HistoryCourse 特殊复制路径的兼容处理 |
 | localization 中 KAREN_EMPTY_SHELL 条目及卡面资源解析 | 名称、提示、图像、卡框与资源依赖 |
 
-Core 使用自身中立卡牌基类和视觉牌池提供空壳，在本体模型初始化阶段统一注册。名称、本地化及所需资源由 Core 资源包持有。公开模型 ID 和保存映射在首版确定后保持稳定。
+Core 使用自身中立卡牌基类和视觉牌池提供空壳，在本体模型初始化阶段统一注册。名称、本地化及所需资源由 Core 资源包持有。公开模型 ID 和保存映射在首版确定后保持稳定。 空壳的实际牌池为 `TokenCardPool`，`ColorlessCardPool` 仅用于视觉，因此不进入工具箱等无色牌生成来源。模型 ID `SHOUJOKAGEKI-CORE_EMPTY_SHELL` 保持稳定，本地化键按该 ID 提供，旧 `CORE_EMPTY_SHELL` 键保留。
 
 #### 操作用途与替代规则
 

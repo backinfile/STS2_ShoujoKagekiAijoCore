@@ -7,7 +7,7 @@ using MegaCrit.Sts2.Core.Models.CardPools;
 
 namespace ShoujoKageki.Core.Runtime.Modules.Shine;
 
-[Pool(typeof(ColorlessCardPool))]
+[Pool(typeof(TokenCardPool))]
 public sealed class CoreEmptyShell() : CustomCardModel(0, CardType.Skill, CardRarity.Token, TargetType.Self, false)
 {
     public override CardPoolModel VisualCardPool => ModelDb.CardPool<ColorlessCardPool>();
