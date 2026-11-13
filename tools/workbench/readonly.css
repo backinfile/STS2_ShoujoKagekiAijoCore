@@ -1,0 +1,11 @@
+.readonly .global-actions> :not(.readonly-status):not(#install-app),
+.readonly #inspector-footer,.readonly #knowledge-edit,
+.readonly [data-remove-grant],.readonly [data-restore-card],
+.readonly [data-restore],.readonly [data-delete-archetype],.readonly [data-edit-archetype],
+.readonly [data-action]:not([data-action="upgrade"]):not([data-action="clear-filters"]):not([data-action="meta"]):not([data-action="copy-template"]):not([data-action="cards-by-term"]){display:none!important}
+.readonly #edit-title{cursor:default;pointer-events:none}
+.readonly-status{color:var(--muted,#a6b3c2);font-size:12px;white-space:nowrap}
+.readonly-value{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.65;min-height:1.6em;user-select:text;color:var(--text,#e5eaf0)}
+.readonly .readonly-value.code-field{font-size:11px}
+.readonly #editor-form .check-list{max-height:220px}
+.readonly #editor-form .check input{accent-color:#a0c7e1}

@@ -985,3 +985,11 @@ Junna 的 `ResearchRules` 显式定义三组研究主牌、成员、计数来源
 Junna 的知识成员与预览读取统一成员解析；持续能力的特殊行为写在既有具体模型的 partial 实现中，共用基类负责施加快照、计数、原生事件和显示更新。生成器保留原模型类型、ID 与数值。未登记为运行模型的旧分派分支移除。
 
 正式版 v0.107.1 与测试版 v0.111.0 的 NGameOverScreen.MoveCreaturesToDifferentLayerAndDisableUi 均已按活动场景处理，不再读取 CurrentRoom，移除对应旧前缀。
+
+## 少女歌剧工作台
+
+`tools/workbench/` 统一维护前端、MCP、SQLite 与部署构建。工作区登记在 `mods.cjs`；`workspace-registry.cjs` 为各 Mod 分别管理数据库。Junna 沿用原主台，Core 与 Karen 独立初始化；条目、版本、历史、请求回执及浏览器草稿按工作区隔离。图片继续使用共享内容哈希目录。
+
+公开根入口和旧 MCP 默认进入 Junna，其他工作区位于 `mods/<id>/`；MCP 可使用同一路径或显式 `modId`。页面切换前提交当前修改，保存失败、冲突和未保存初始配置会保留当前工作区。独立发布进程把四个工作区的快照写入同一发布目录后原子切换。入口、服务名及主台路径沿用原部署，运行源码以 Core 为准。详见 [工作台部署](../tools/workbench/deploy/README.md)。
+
+本体工作区 sts2 使用不可变的 native-game.json，由 native-store.cjs 提供查询并拒绝所有写操作。资料来自所标版本真实游戏模型的基础与升级格式化结果，中文规则与三个选项池对照同版本反编译源维护；本体页面 native-view.js 只提供筛选和关联跳转。

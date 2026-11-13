@@ -1,0 +1,16 @@
+{
+  "name": "shoujo-kageki-workbench",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Shared Shoujo Kageki Mod design workbench maintained by Core",
+  "scripts": {
+    "build": "node build.cjs",
+    "start": "node mcp-server.cjs",
+    "mcp": "node mcp-server.cjs",
+    "test:mcp": "node --test mcp-store.test.cjs mcp-server.test.cjs mcp-web-client.test.cjs mcp-entry-versions.test.cjs",
+    "test:workspaces": "node --test workspace-registry.test.cjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2"
+  }
+}

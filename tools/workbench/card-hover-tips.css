@@ -1,0 +1,5 @@
+.card-extra-hover-tips{position:fixed;z-index:1000;max-width:calc(100vw - 24px);max-height:calc(100vh - 24px);overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:15px 17px;box-shadow:3px 8px 22px #0007;color:var(--ink);font-size:13px;line-height:1.8}
+.card-extra-hover-tips[hidden]{display:none}
+.card-extra-hover-tips h3{font-size:13px;color:var(--gold);font-weight:600;margin:0 0 5px}
+.card-extra-hover-tips p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.card-extra-hover-tips section+section{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}

@@ -1,0 +1,19 @@
+{
+  "source": "output/imagegen/junna-ui-portraits-2026-11-04/head-with-neck/clean.png",
+  "cleanup": {
+    "tool": "GPT Image 2 Artifact Cleaner",
+    "strength": 0.25,
+    "report": "output/imagegen/junna-ui-portraits-2026-11-04/head-with-neck/manifest.json",
+    "mode": "reuse-cleaned-source"
+  },
+  "composition": {
+    "background": "#1b252d",
+    "content_max_size": 320,
+    "canvas": 512,
+    "resize": "Lanczos"
+  },
+  "files": [
+    "icon-192.png",
+    "icon-512.png"
+  ]
+}

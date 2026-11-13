@@ -81,7 +81,7 @@
 - 旧 Karen 存档的普通牌负哨兵恢复为无闪耀状态，旧规则与耗尽档案继续兼容。存档迁移需要覆盖字段缺失、旧字段及新字段并存的输入。
 - 从角色迁入代码与资源时沿用已有行为、名称和本地化正文。移动本地化键时同步引用，中、英、日文逐项核对原值。文案改写、卡名、牌效和数值调整需要用户明确要求。
 - 五轮书、招财异鱼等公共遗物补丁统一放入 `src/Patches/`，作用范围按遗物拥有者的角色识别。
-- Junna 工作台内容通过该项目的 `junna_workbench` MCP 读取与修改，沿用该项目 `docs/design/AGENTS.md`。共享机制迁移按已实现的牌效接入。
+- 少女歌剧工作台源码与部署由本仓库 `tools/workbench/` 维护，内容通过 `shoujo_workbench` MCP 读取与修改，使用 `modId` 选择 Core、Karen、Junna 或只读的游戏本体；旧 `junna_workbench` 连接默认进入 Junna。编辑流程见 `tools/workbench/AGENTS.md`，部署见 `tools/workbench/deploy/README.md`。共享机制迁移按已实现的牌效接入。
 
 ## 配置与数据服务
 

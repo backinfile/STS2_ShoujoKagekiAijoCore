@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": 1418,
+  "standard": [
+    {
+      "rarity": "普通",
+      "count": 20
+    },
+    {
+      "rarity": "罕见",
+      "count": 36
+    },
+    {
+      "rarity": "稀有",
+      "count": 26
+    },
+    {
+      "rarity": "基础",
+      "count": 4
+    },
+    {
+      "rarity": "远古",
+      "count": 2
+    }
+  ],
+  "routes": [
+    {
+      "id": "SYS_stage",
+      "uid": "archetype_SYS_stage",
+      "members": {}
+    },
+    {
+      "id": "SYS_partner",
+      "uid": "archetype_SYS_partner",
+      "members": {}
+    },
+    {
+      "id": "SYS_energy",
+      "uid": "archetype_SYS_energy",
+      "members": {}
+    },
+    {
+      "id": "SYS_growth",
+      "uid": "archetype_SYS_growth",
+      "members": {}
+    }
+  ]
+}

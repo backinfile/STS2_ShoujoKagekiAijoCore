@@ -1,0 +1,18 @@
+.body-layout.is-initial{grid-template-columns:minmax(0,1fr)}
+.is-initial>.sidebar,.is-initial>.inspector{display:none}
+.initial-config{max-width:780px;margin:0 auto;padding:8px 12px 40px}
+.initial-config section{padding:24px 0;border-bottom:1px solid var(--line)}
+.initial-config h2{margin:0 0 18px;font-size:16px;font-weight:500}
+.initial-config h2 span{margin-left:8px;font-size:13px;color:var(--muted)}
+.initial-numbers{display:grid;grid-template-columns:repeat(2,minmax(0,180px));gap:24px}
+.initial-numbers .field{margin:0}
+.initial-rows{display:grid;gap:10px;margin-bottom:16px}
+.initial-row{display:grid;grid-template-columns:minmax(0,1fr) 80px 40px;gap:12px;align-items:center}
+.initial-row select,.initial-row input{width:100%;min-width:0;min-height:40px}
+.initial-row .icon-btn{min-height:40px}
+.initial-relic-row{grid-template-columns:minmax(0,1fr) 40px}
+.initial-actions{display:flex;gap:12px;align-items:center;padding:24px 0}
+.initial-actions [role=status]{color:var(--muted);font-size:12px}
+.readonly .initial-row{grid-template-columns:minmax(0,1fr) auto;padding:10px 0;border-bottom:1px solid var(--line)}
+.readonly .initial-numbers strong{display:block;font-size:20px;font-weight:500}
+@media(max-width:560px){.initial-config{padding:0 0 24px}.initial-numbers{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.initial-row{grid-template-columns:minmax(0,1fr) 60px 36px;gap:8px}.initial-relic-row{grid-template-columns:minmax(0,1fr) 36px}}

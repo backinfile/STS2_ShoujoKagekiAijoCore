@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "workspaceId": "junna-mod-workbench-20261101-v1",
+  "revision": 0,
+  "data": {
+    "title": "纯那 Mod 设计工作台",
+    "meta": {
+      "systems": [
+        {
+          "id": "stage",
+          "name": "纯那"
+        }
+      ],
+      "powers": [],
+      "relics": [],
+      "startingDeck": [],
+      "startingRelics": []
+    },
+    "cards": [],
+    "terms": [],
+    "mechanisms": [],
+    "partnerGroups": [],
+    "archetypes": [],
+    "styles": [],
+    "fitPool": []
+  },
+  "assets": {},
+  "history": [],
+  "entityVersions": {},
+  "mcpRequests": {},
+  "ui": {
+    "tab": "cards"
+  },
+  "undoStack": [],
+  "redoStack": []
+}

@@ -1,0 +1,10 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path');
+const {modPage}=require('./mod-page.cjs');
+function buildNativePage({directory,editorPrefix}={}){
+  const read=name=>fs.readFileSync(path.join(__dirname,name),'utf8');
+  const html=modPage(`<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><title>少女歌剧工作台 · 游戏本体</title><style>${read('native-view.css')}\n${read('mod-switcher.css')}</style></head><body><header class="topbar"><span class="native-brand">少女歌剧工作台</span><!--MOD_SWITCHER--><span class="native-version" id="native-version">只读</span><nav class="native-tabs" aria-label="游戏本体"><button data-native-tab="cards">卡牌</button><button data-native-tab="relics">遗物</button><button data-native-tab="ancients">先古之民</button></nav></header><main><div class="native-tools"><h1 id="native-title">卡牌</h1><span id="native-count" role="status"></span><input id="native-search" type="search" aria-label="搜索" placeholder="搜索"><select id="native-owner" aria-label="角色"></select><select id="native-rarity" aria-label="稀有度"></select><button id="native-upgrade" aria-pressed="false">基础牌面</button></div><div class="native-layout"><section class="native-table-panel" aria-label="本体条目"><div class="native-table-wrap" id="native-content"></div><nav class="native-pagination" aria-label="分页"><button id="native-prev">上一页</button><span id="native-page"></span><button id="native-next">下一页</button></nav></section><aside class="native-detail" id="native-detail" aria-label="详情" hidden></aside></div></main><script id="native-data" type="application/json" data-src="/mods/sts2/snapshot.json">{}</script><script>${read('mod-switcher.js')}\n${read('native-view.js')}</script></body></html>`,{modId:'sts2',editorPrefix});
+  fs.mkdirSync(directory,{recursive:true});
+  return require('./deploy/static-runtime.cjs').externalize(html,directory);
+}
+module.exports={buildNativePage};

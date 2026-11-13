@@ -1,0 +1,448 @@
+{
+  "gameVersion": "v0.113.0",
+  "commonRules": [
+    "开局生成各幕的先古之民：各幕从本幕已解锁的候选与分配到的共享候选中随机选择。",
+    "共享先古之民从第二幕起按幕顺序随机分配；已分配者不会再分配到后续幕，也可能整局未分配。",
+    "联机使用本局所有玩家解锁内容的并集。遗物选项还会经过当前模式、联机人数及遗物自身条件过滤。",
+    "三池选项各随机选出一个；有池无可用选项时，从其余候选补足。候选不足时选项可能少于三个。"
+  ],
+  "ancients": {
+    "NEOW": {
+      "acts": [
+        1
+      ],
+      "unlock": "游玩一局并揭示“涅奥”历史节点后，在第一幕开局出现。",
+      "selectionRules": [
+        "普通模式提供两个正面遗物选项和一个诅咒遗物选项。",
+        "诅咒候选先按角色与当前模式过滤，再随机选择一个；部分诅咒会排除对应的正面遗物。",
+        "{LAVA_ROCK}／{SMALL_CAPSULE}、{NUTRITIOUS_OYSTER}／{STONE_HUMIDIFIER}、{NEOWS_TALISMAN}／{POMANDER}分别随机加入正面候选。{LARGE_CAPSULE}被选中时不加入{LAVA_ROCK}与{SMALL_CAPSULE}。",
+        "自定义修饰器与极速模式改用各自的开局选项。",
+        "前两个选项从同一正面候选池不重复抽取；第三个选项来自诅咒候选池。"
+      ],
+      "relicConditions": {
+        "MASSIVE_SCROLL": "仅联机出现。",
+        "WINGED_BOOTS": "仅单人出现。",
+        "KALEIDOSCOPE": "需要已解锁全部角色卡池。",
+        "SCROLL_BOXES": "当前角色可用卡池至少有4张普通牌、2张罕见牌。"
+      },
+      "optionPools": [
+        {
+          "name": "选项一",
+          "relicIds": [
+            "ARCANE_SCROLL",
+            "BOOMING_CONCH",
+            "FISHING_ROD",
+            "GOLDEN_PEARL",
+            "KALEIDOSCOPE",
+            "LEAD_PAPERWEIGHT",
+            "LOST_COFFER",
+            "MASSIVE_SCROLL",
+            "NEOWS_TORMENT",
+            "NEW_LEAF",
+            "PHIAL_HOLSTER",
+            "PRECISE_SCISSORS",
+            "SCROLL_BOXES",
+            "WINGED_BOOTS",
+            "LAVA_ROCK",
+            "NEOWS_TALISMAN",
+            "NUTRITIOUS_OYSTER",
+            "POMANDER",
+            "SMALL_CAPSULE",
+            "STONE_HUMIDIFIER"
+          ]
+        },
+        {
+          "name": "选项二",
+          "relicIds": [
+            "ARCANE_SCROLL",
+            "BOOMING_CONCH",
+            "FISHING_ROD",
+            "GOLDEN_PEARL",
+            "KALEIDOSCOPE",
+            "LEAD_PAPERWEIGHT",
+            "LOST_COFFER",
+            "MASSIVE_SCROLL",
+            "NEOWS_TORMENT",
+            "NEW_LEAF",
+            "PHIAL_HOLSTER",
+            "PRECISE_SCISSORS",
+            "SCROLL_BOXES",
+            "WINGED_BOOTS",
+            "LAVA_ROCK",
+            "NEOWS_TALISMAN",
+            "NUTRITIOUS_OYSTER",
+            "POMANDER",
+            "SMALL_CAPSULE",
+            "STONE_HUMIDIFIER"
+          ]
+        },
+        {
+          "name": "选项三",
+          "relicIds": [
+            "CURSED_PEARL",
+            "DOWSING_ROD",
+            "HEFTY_TABLET",
+            "LARGE_CAPSULE",
+            "LEAFY_POULTICE",
+            "NEOWS_BONES",
+            "NEOWS_SACRIFICE",
+            "PRECARIOUS_SHEARS",
+            "SILKEN_TRESS",
+            "SILVER_CRUCIBLE"
+          ]
+        }
+      ]
+    },
+    "DARV": {
+      "acts": [
+        2,
+        3
+      ],
+      "unlock": "遇见其他所有先古之民并揭示“达弗”历史节点后，加入共享候选。",
+      "selectionRules": [
+        "从符合条件的遗物组各选一个，再打乱顺序。",
+        "50%概率取两个常规选项并尝试加入{DUSTY_TOME}；否则取三个常规选项。",
+        "三个位置共用常规候选；同次出现不重复选取常规遗物。{DUSTY_TOME}只会占据第三个位置。"
+      ],
+      "relicConditions": {
+        "ECTOPLASM": "仅第二幕。",
+        "SOZU": "仅第二幕。",
+        "PHILOSOPHERS_STONE": "第二幕及之后。",
+        "VELVET_CHOKER": "第二幕及之后。",
+        "PANDORAS_BOX": "会清空玩家牌组的修饰器生效时不出现。"
+      },
+      "optionPools": [
+        {
+          "name": "选项一",
+          "relicIds": [
+            "ASTROLABE",
+            "BLACK_STAR",
+            "CALLING_BELL",
+            "EMPTY_CAGE",
+            "PANDORAS_BOX",
+            "RUNIC_PYRAMID",
+            "SNECKO_EYE",
+            "ECTOPLASM",
+            "SOZU",
+            "PHILOSOPHERS_STONE",
+            "VELVET_CHOKER"
+          ]
+        },
+        {
+          "name": "选项二",
+          "relicIds": [
+            "ASTROLABE",
+            "BLACK_STAR",
+            "CALLING_BELL",
+            "EMPTY_CAGE",
+            "PANDORAS_BOX",
+            "RUNIC_PYRAMID",
+            "SNECKO_EYE",
+            "ECTOPLASM",
+            "SOZU",
+            "PHILOSOPHERS_STONE",
+            "VELVET_CHOKER"
+          ]
+        },
+        {
+          "name": "选项三",
+          "relicIds": [
+            "DUSTY_TOME",
+            "ASTROLABE",
+            "BLACK_STAR",
+            "CALLING_BELL",
+            "EMPTY_CAGE",
+            "PANDORAS_BOX",
+            "RUNIC_PYRAMID",
+            "SNECKO_EYE",
+            "ECTOPLASM",
+            "SOZU",
+            "PHILOSOPHERS_STONE",
+            "VELVET_CHOKER"
+          ]
+        }
+      ]
+    },
+    "OROBAS": {
+      "acts": [
+        2
+      ],
+      "unlock": "以全部角色各完成一局并揭示“欧洛巴斯”历史节点后，加入第二幕候选。",
+      "selectionRules": [
+        "从三个候选池各随机提供一个遗物。",
+        "第一池额外加入{PRISMATIC_GEM}（约1/3）或{SEA_GLASS}（约2/3）。{SEA_GLASS}关联一个已解锁的其他角色；没有其他角色时使用自身。",
+        "{TOUCH_OF_OROBAS}只有能为当前角色完成配置时才加入第三池。"
+      ],
+      "optionPools": [
+        {
+          "name": "选项一",
+          "relicIds": [
+            "ELECTRIC_SHRYMP",
+            "GLASS_EYE",
+            "PRISMATIC_GEM",
+            "SEA_GLASS"
+          ]
+        },
+        {
+          "name": "选项二",
+          "relicIds": [
+            "ALCHEMICAL_COFFER",
+            "DRIFTWOOD",
+            "RADIANT_PEARL",
+            "SAND_CASTLE"
+          ]
+        },
+        {
+          "name": "选项三",
+          "relicIds": [
+            "TOUCH_OF_OROBAS",
+            "ARCHAIC_TOOTH"
+          ]
+        }
+      ]
+    },
+    "PAEL": {
+      "acts": [
+        2
+      ],
+      "unlock": "第二幕的基础先古之民候选。",
+      "selectionRules": [
+        "从三个候选池各随机提供一个遗物。",
+        "第二池中，{PAELS_CLAW}要求至少3张可附魔“黏液”的牌，{PAELS_TOOTH}要求至少5张可移除牌。",
+        "第二池原有候选（含符合条件的爪、牙）各重复一次，再加入{PAELS_GROWTH}作为一个候选。",
+        "没有事件宠物时，{PAELS_LEGION}才加入第三池。"
+      ],
+      "relicConditions": {
+        "PAELS_CLAW": "至少3张可接受 Goopy 附魔的牌。",
+        "PAELS_TOOTH": "至少5张可移除牌。",
+        "PAELS_LEGION": "当前没有事件宠物。"
+      },
+      "optionPools": [
+        {
+          "name": "选项一",
+          "relicIds": [
+            "PAELS_FLESH",
+            "PAELS_HORN",
+            "PAELS_TEARS"
+          ]
+        },
+        {
+          "name": "选项二",
+          "relicIds": [
+            "PAELS_WING",
+            "PAELS_CLAW",
+            "PAELS_TOOTH",
+            "PAELS_GROWTH"
+          ]
+        },
+        {
+          "name": "选项三",
+          "relicIds": [
+            "PAELS_EYE",
+            "PAELS_BLOOD",
+            "PAELS_LEGION"
+          ]
+        }
+      ]
+    },
+    "TEZCATARA": {
+      "acts": [
+        2
+      ],
+      "unlock": "第二幕的基础先古之民候选。",
+      "selectionRules": [
+        "从三个候选池各随机提供一个遗物。",
+        "牌组仍有基础稀有度且带“打击”标签的牌时，{NUTRITIOUS_SOUP}才加入第一池。"
+      ],
+      "relicConditions": {
+        "NUTRITIOUS_SOUP": "牌组包含基础“打击”牌。"
+      },
+      "optionPools": [
+        {
+          "name": "选项一",
+          "relicIds": [
+            "VERY_HOT_COCOA",
+            "YUMMY_COOKIE",
+            "NUTRITIOUS_SOUP"
+          ]
+        },
+        {
+          "name": "选项二",
+          "relicIds": [
+            "BIIIG_HUG",
+            "STORYBOOK",
+            "TOASTY_MITTENS"
+          ]
+        },
+        {
+          "name": "选项三",
+          "relicIds": [
+            "GOLDEN_COMPASS",
+            "PUMPKIN_CANDLE",
+            "TOY_BOX",
+            "SEAL_OF_GOLD"
+          ]
+        }
+      ]
+    },
+    "NONUPEIPE": {
+      "acts": [
+        3
+      ],
+      "unlock": "第三幕的基础先古之民候选。",
+      "selectionRules": [
+        "过滤可用遗物后打乱顺序，取三个选项。",
+        "至少4张牌可接受 Swift 附魔时，额外加入{BEAUTIFUL_BRACELET}。",
+        "三个选项共用候选池，同次出现从中不重复抽取三个。"
+      ],
+      "relicConditions": {
+        "BEAUTIFUL_BRACELET": "至少4张可接受 Swift 附魔的牌。"
+      },
+      "optionPools": [
+        {
+          "name": "选项一",
+          "relicIds": [
+            "BLESSED_ANTLER",
+            "BRILLIANT_SCARF",
+            "DELICATE_FROND",
+            "DIAMOND_DIADEM",
+            "FUR_COAT",
+            "GLITTER",
+            "JEWELRY_BOX",
+            "LOOMING_FRUIT",
+            "SIGNET_RING",
+            "BEAUTIFUL_BRACELET"
+          ]
+        },
+        {
+          "name": "选项二",
+          "relicIds": [
+            "BLESSED_ANTLER",
+            "BRILLIANT_SCARF",
+            "DELICATE_FROND",
+            "DIAMOND_DIADEM",
+            "FUR_COAT",
+            "GLITTER",
+            "JEWELRY_BOX",
+            "LOOMING_FRUIT",
+            "SIGNET_RING",
+            "BEAUTIFUL_BRACELET"
+          ]
+        },
+        {
+          "name": "选项三",
+          "relicIds": [
+            "BLESSED_ANTLER",
+            "BRILLIANT_SCARF",
+            "DELICATE_FROND",
+            "DIAMOND_DIADEM",
+            "FUR_COAT",
+            "GLITTER",
+            "JEWELRY_BOX",
+            "LOOMING_FRUIT",
+            "SIGNET_RING",
+            "BEAUTIFUL_BRACELET"
+          ]
+        }
+      ]
+    },
+    "TANX": {
+      "acts": [
+        3
+      ],
+      "unlock": "第三幕的基础先古之民候选。",
+      "selectionRules": [
+        "过滤可用遗物后打乱顺序，取三个选项。",
+        "至少3张牌可接受 Instinct 附魔时，额外加入{TRI_BOOMERANG}。",
+        "三个选项共用候选池，同次出现从中不重复抽取三个。"
+      ],
+      "relicConditions": {
+        "TRI_BOOMERANG": "至少3张可接受 Instinct 附魔的牌。"
+      },
+      "optionPools": [
+        {
+          "name": "选项一",
+          "relicIds": [
+            "CLAWS",
+            "CROSSBOW",
+            "IRON_CLUB",
+            "MEAT_CLEAVER",
+            "SAI",
+            "SPIKED_GAUNTLETS",
+            "TANXS_WHISTLE",
+            "THROWING_AXE",
+            "WAR_HAMMER",
+            "TRI_BOOMERANG"
+          ]
+        },
+        {
+          "name": "选项二",
+          "relicIds": [
+            "CLAWS",
+            "CROSSBOW",
+            "IRON_CLUB",
+            "MEAT_CLEAVER",
+            "SAI",
+            "SPIKED_GAUNTLETS",
+            "TANXS_WHISTLE",
+            "THROWING_AXE",
+            "WAR_HAMMER",
+            "TRI_BOOMERANG"
+          ]
+        },
+        {
+          "name": "选项三",
+          "relicIds": [
+            "CLAWS",
+            "CROSSBOW",
+            "IRON_CLUB",
+            "MEAT_CLEAVER",
+            "SAI",
+            "SPIKED_GAUNTLETS",
+            "TANXS_WHISTLE",
+            "THROWING_AXE",
+            "WAR_HAMMER",
+            "TRI_BOOMERANG"
+          ]
+        }
+      ]
+    },
+    "VAKUU": {
+      "acts": [
+        3
+      ],
+      "unlock": "第三幕的基础先古之民候选。",
+      "selectionRules": [
+        "从三个候选池各随机提供一个遗物。",
+        "选择{SERE_TALON}的选项还会减少9点最大生命值。"
+      ],
+      "optionPools": [
+        {
+          "name": "选项一",
+          "relicIds": [
+            "BLOOD_SOAKED_ROSE",
+            "WHISPERING_EARRING",
+            "FIDDLE"
+          ]
+        },
+        {
+          "name": "选项二",
+          "relicIds": [
+            "PRESERVED_FOG",
+            "SERE_TALON",
+            "DISTINGUISHED_CAPE"
+          ]
+        },
+        {
+          "name": "选项三",
+          "relicIds": [
+            "CHOICES_PARADOX",
+            "MUSIC_BOX",
+            "LORDS_PARASOL",
+            "JEWELED_MASK"
+          ]
+        }
+      ]
+    }
+  }
+}
