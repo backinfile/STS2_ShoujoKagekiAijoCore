@@ -32,7 +32,9 @@ DataDirectory 是 Core 独立用户数据目录，可在其下建立模块队列
 
 ShineCardAttribute(uses) 自动发现，旧角色适配由角色任务调用公开契约。Shine.GetState 返回只读快照。IShineDepletionHandler.OnShineDepleted 在合法批次收尾对永久来源发一次耗尽回调，临时复制使用自己的预算。
 
-箭矢调度由 Junna 负责。每次实际牌效调用 await Shine.ResolveAsync(card, () => ExecuteActualEffect(), CardResolutionKind.Arrow)。布置和等待阶段不调用。整批外层使用 await using (Shine.BeginResolutionBatch())，批次结束统一耗尽。原生出牌与重放由 Core 挂钩同一执行器。嵌套执行同一张牌时避免重复扣次。
+箭矢调度由 Junna 负责。每次实际牌效调用 await Shine.ResolveAsync(card, () => ExecuteActualEffect(), CardResolutionKind.Arrow)。布置和等待阶段不调用。整批外层使用 await using (Shine.BeginResolutionBatch())，批次结束统一耗尽。原生出牌由 Core 挂钩同一执行器；一次打出内的华彩等原生重放共享一次闪耀扣减，独立再次打出另计。嵌套执行同一张牌时避免重复扣次。
+
+ShineState.Temporary 为运行时临时身份，不序列化到卡牌存档；奖励候选和永久牌组成员不因尚未参与战斗而成为临时牌。
 
 Shine.DepleteAfterCurrentResolution 仅请求合法结算点耗尽。Shine.Copy(card,purpose) 区分 TemporaryCopy、Transfer、Reacquire。已耗尽牌普通复制与转交返回 Core 空壳，档案重获建立新的生命周期。
 

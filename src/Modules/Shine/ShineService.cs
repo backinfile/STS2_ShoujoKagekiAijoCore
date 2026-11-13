@@ -22,7 +22,7 @@ public sealed class ShineService : IShineService, ICoreModule
     public int Order => -500;
     private static readonly SavedSpireField<CardModel, int> Remaining = new(() => -1, "core_shine_current");
     private static readonly SavedSpireField<CardModel, int> Maximum = new(() => -1, "core_shine_max");
-    private static readonly SavedSpireField<CardModel, bool> Temporary = new(() => false, "core_shine_temporary");
+    private static readonly SpireField<CardModel, bool> Temporary = new(() => false);
     private static readonly SavedSpireField<CardModel, bool> Depleted = new(() => false, "core_shine_depleted");
     private static readonly SavedSpireField<CardModel, bool> Pending = new(() => false, "core_shine_pending");
     private static readonly SavedSpireField<CardModel, int> LegacyRemaining = new(() => -1, "karen_shine_current");
@@ -59,9 +59,12 @@ public sealed class ShineService : IShineService, ICoreModule
     {
         InitializeState(card);
         if (Maximum.Get(card) < 0) return null;
+        // Deck membership takes precedence when an explicit temporary copy is acquired permanently.
+        if (Temporary.Get(card) && card.IsMutable && card.Owner is { } deckOwner && deckOwner.Deck.Cards.Contains(card))
+            Temporary.Set(card, false);
         var temporary = Temporary.Get(card) || !Depleted.Get(card) && !PermanentOrigins.TryGetValue(card, out _)
             && card.IsMutable && card.Owner is { } owner
-            && card.DeckVersion == null && !owner.Deck.Cards.Contains(card);
+            && card.DeckVersion == null && !owner.Deck.Cards.Contains(card) && card.Pile?.IsCombatPile == true;
         return new ShineState(Remaining.Get(card), Maximum.Get(card), temporary, Pending.Get(card));
     }
     public void SetState(CardModel card, int remaining, int maximum, bool temporary = false)
@@ -103,7 +106,7 @@ public sealed class ShineService : IShineService, ICoreModule
     {
         public readonly Batch? Parent = parent;
         public readonly CardModel? NativeCard = nativeCard;
-        public readonly HashSet<CardModel> LegacyDebited = new(ReferenceEqualityComparer.Instance);
+        public readonly HashSet<CardModel> NativeDebited = new(ReferenceEqualityComparer.Instance);
         public readonly HashSet<CardModel> NativePermits = new(ReferenceEqualityComparer.Instance);
         public PlayerChoiceContext? Choice = choice;
         public readonly HashSet<CardModel> Executed = new(ReferenceEqualityComparer.Instance);
@@ -156,9 +159,8 @@ public sealed class ShineService : IShineService, ICoreModule
         var counted = running == 0 && (!ancestorRunning || independentNativePlay) && kind != CardResolutionKind.Effect
             && (kind != CardResolutionKind.NativePlay || !IsDeferredResolution(card));
         batch.Running[card] = running + 1;
-        if (counted && kind == CardResolutionKind.NativePlay && card.Owner is { } legacyOwner
-            && ShineArchive.GetRules(legacyOwner).RulesetId == ShineArchive.LegacyRulesetId)
-            counted = batch.LegacyDebited.Add(card);
+        if (counted && kind == CardResolutionKind.NativePlay)
+            counted = batch.NativeDebited.Add(card);
         if (counted)
         {
             batch.Executed.Add(card);
@@ -362,6 +364,12 @@ public sealed class ShineService : IShineService, ICoreModule
             Depleted.Set(copy, Depleted.Get(source));
             Pending.Set(copy, Pending.Get(source));
         }
+    }
+    [HarmonyPatch(typeof(SerializableCard), nameof(SerializableCard.Props), MethodType.Setter)]
+    private static class LegacyTemporaryStatePatch
+    {
+        private static void Prefix(SavedProperties? __0)
+            => __0?.bools?.RemoveAll(static field => field.name == "CardModel_core_shine_temporary");
     }
     [HarmonyPatch(typeof(CardModel), nameof(CardModel.FromSerializable))]
     private static class LegacyCardStatePatch

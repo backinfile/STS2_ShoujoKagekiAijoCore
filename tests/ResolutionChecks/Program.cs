@@ -3,6 +3,7 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 using ShoujoKageki.Core.Runtime;
@@ -199,6 +200,15 @@ if (args.Contains("--copies-only"))
     var patcher = new Harmony("Core.CopyChecks");
     patcher.CreateClassProcessor(typeof(ShoujoKageki.Core.Runtime.Modules.Execution.CardCloneModule).GetNestedType("NativeClone", BindingFlags.NonPublic)!).Patch();
     patcher.CreateClassProcessor(typeof(ShineService).GetNestedType("ClonePatch", BindingFlags.NonPublic)!).Patch();
+    if (typeof(ShineService).GetNestedType("LegacyTemporaryStatePatch", BindingFlags.NonPublic) is { } migration)
+        patcher.CreateClassProcessor(migration).Patch();
+    var oldCard = System.Text.Json.JsonSerializer.Deserialize<MegaCrit.Sts2.Core.Saves.Runs.SerializableCard>(
+        """{"props":{"bools":[{"name":"CardModel_core_shine_temporary","value":true},{"name":"OtherMarker","value":true}],"ints":[{"name":"CardModel_core_shine_current","value":4}]}}""",
+        new System.Text.Json.JsonSerializerOptions { IncludeFields = true })!;
+    if (oldCard.Props!.bools!.Any(value => value.name == "CardModel_core_shine_temporary"))
+        throw new InvalidOperationException("Old card/history snapshots must discard the obsolete temporary marker on JSON read.");
+    if (oldCard.Props.bools!.Single().name != "OtherMarker" || oldCard.Props.ints!.Single().value != 4)
+        throw new InvalidOperationException("Temporary-marker migration must preserve other saved properties and the spent budget.");
     ModelDb.Inject(typeof(ResolutionCard));
     ModelDb.Inject(typeof(CoreEmptyShell));
     var source = (ResolutionCard)ModelDb.Card<ResolutionCard>().MutableClone();
@@ -225,6 +235,30 @@ if (args.Contains("--copies-only"))
         throw new InvalidOperationException("An actual exhausted-card copy still creates an empty shell.");
     _ = CardCopies.Snapshot(source);
     if (source.MutableClone() is not CoreEmptyShell) throw new InvalidOperationException("Snapshot permissions must not escape their invocation.");
+    var owner = (Player)RuntimeHelpers.GetUninitializedObject(typeof(Player));
+    AccessTools.Field(typeof(Player), "<Deck>k__BackingField").SetValue(owner, new CardPile(PileType.Deck));
+    var reward = (ResolutionCard)ModelDb.Card<ResolutionCard>().MutableClone();
+    reward.Owner = owner;
+    if (service.GetState(reward) is not { Temporary: false })
+        throw new InvalidOperationException("An owned reward outside combat piles is not a temporary combat card.");
+    var permanent = (ResolutionCard)ModelDb.Card<ResolutionCard>().MutableClone();
+    permanent.Owner = owner;
+    owner.Deck.AddInternal(permanent);
+    // Reward-option clones can persist a temporary marker before joining the deck.
+    service.SetState(permanent, 6, 6, temporary: true);
+    var actual = (ResolutionCard)permanent.MutableClone();
+    actual.DeckVersion = permanent;
+    if (service.GetState(permanent) is not { Temporary: false } || service.GetState(actual) is not { Temporary: false })
+        throw new InvalidOperationException("A permanent deck card must shed a stale temporary marker before combat cloning.");
+    for (var play = 0; play < 2; play++)
+        await service.ResolveAsync(actual, () => Task.CompletedTask, CardResolutionKind.Arrow);
+    if (service.GetState(actual)?.Remaining != 4 || service.GetState(permanent)?.Remaining != 4)
+        throw new InvalidOperationException("Both resolutions must retain their spent budget on the permanent deck card.");
+    var independent = copies.Preview(actual, CardCopyPurpose.TemporaryCopy);
+    await service.ResolveAsync(independent, () => Task.CompletedTask, CardResolutionKind.Arrow);
+    if (service.GetState(independent) is not { Remaining: 3, Temporary: true } || service.GetState(permanent)?.Remaining != 4)
+        throw new InvalidOperationException("A detached temporary copy must keep its independent budget.");
+    Console.WriteLine("Permanent budget checks passed: stale reward marker, two resolutions, permanent writeback and independent temporary copy.");
     Console.WriteLine("Copy lifecycle checks passed: runtime data, local cost, independence, Shine budgets, depleted snapshots and empty shells.");
     return;
 }
@@ -364,7 +398,9 @@ service.SetState(card, 5, 5);
 card.Effects = 0;
 card.Plays = 3;
 await StartInlined(wrapper, card);
-Check("Every native replay consumes one use", service.GetState(card)?.Remaining == 2 && card.Effects == 3);
+Check("Native replays share one play budget", service.GetState(card)?.Remaining == 4 && card.Effects == 3);
+await StartInlined(wrapper, card);
+Check("A second native play spends one more use", service.GetState(card)?.Remaining == 3 && card.Effects == 6);
 card.Plays = 1;
 card.YieldBefore = false;
 card.YieldEffect = false;
@@ -384,7 +420,7 @@ service.SetState(card, 5, 5);
 card.Effects = 0;
 card.Nested = card;
 await StartInlined(wrapper, card);
-Check("A nested native replay of the same card counts", service.GetState(card)?.Remaining == 3 && card.Effects == 2);
+Check("A separate nested native play of the same card counts", service.GetState(card)?.Remaining == 3 && card.Effects == 2);
 service.SetState(card, 3, 3);
 await service.ResolveAsync(card, card.Effect, CardResolutionKind.Effect);
 Check("An extra Effect preserves the budget", service.GetState(card)?.Remaining == 3);

@@ -36,6 +36,9 @@ public static class CoreUnlockAll
             stats.MaxAscension = Math.Max(stats.MaxAscension, AscensionManager.maxAscensionAllowed);
         }
         progress.MaxMultiplayerAscension = Math.Max(progress.MaxMultiplayerAscension, AscensionManager.maxAscensionAllowed);
+#if STS2_BETA
+        progress.MaxBlitzAscension = Math.Max(progress.MaxBlitzAscension, AscensionManager.maxAscensionAllowedBlitz);
+#endif
         save.SaveProgressFile();
         return Path.GetFileName(backupPath);
     }

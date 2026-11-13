@@ -29,7 +29,7 @@ python services/telemetry/app.py
 
 对局身份继续使用原平台、种子、开始时间和玩家席位，Core 元数据不会更换已有对局 ID。重复与冲突原始请求均按 SHA256 保留。原始归档使用受限目录、原子写入、校验读取和每日 tar.gz，容量不足时拒绝确认新数据。
 
-派生事实格式为 3。启动发现旧格式后先备份 SQLite，再在事务内重建 facts，保留原 id、digest、payload 和 received。错误聚合复用已有 environment JSON 列保存 Core 上下文，保留旧列及报错身份。数据库缺少旧增量字段时以幂等 ALTER TABLE 补齐。
+派生事实格式为 4。新版 `is_custom_game=true` 与旧版 `game_mode="custom"` 均归为自定义局，不推断标准初始牌；Dread、Blitz 可独立筛选。启动发现旧格式后先备份 SQLite，再在事务内重建 facts 和模式索引，保留原 id、digest、payload 和 received。错误聚合复用已有 environment JSON 列保存 Core 上下文，保留旧列及报错身份。数据库缺少旧增量字段时以幂等 ALTER TABLE 补齐。
 
 ```powershell
 python services/telemetry/app.py --backup <database-backup>

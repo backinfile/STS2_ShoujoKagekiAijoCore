@@ -214,6 +214,65 @@ class CollectorTests(unittest.TestCase):
         self.store.backup(backup)
         self.assertEqual(Store(backup).runs({})["total"], 1)
 
+    def test_native_custom_flag_separates_filters_and_starter_inference(self):
+        data = copy.deepcopy(self.data)
+        data.update(is_custom_game=True, modifiers=[])
+        data["seed"] += "-native-custom"
+        data["players"][0]["deck"] = [{"id": "CARD.KAREN_NEW_DAY"}]
+        status, result = self.store.upload(data)
+        self.assertEqual(status, 201)
+        self.assertEqual(json.loads(self.store.detail(result["run_id"])["facts"])["mode"], "custom")
+        self.store.upload(self.data)
+        self.assertEqual(self.store.runs({"mode": ["custom"]})["total"], 1)
+        self.assertEqual(self.store.runs({"mode": ["standard"]})["total"], 1)
+        custom = self.store.stats({"mode": ["custom"]})
+        self.assertEqual(custom["seats"], 1)
+        self.assertNotIn("KAREN_DEFEND", {card["id"] for card in custom["cards"]})
+        self.assertIn("KAREN_DEFEND", {card["id"] for card in self.store.stats({"mode": ["standard"]})["cards"]})
+        normal = copy.deepcopy(self.data)
+        normal["is_custom_game"] = False
+        self.assertEqual(derive(normal)["mode"], "standard")
+
+    def test_legacy_custom_and_native_modes_remain_filterable(self):
+        for mode in ("custom", "dread", "blitz"):
+            with self.subTest(mode=mode):
+                data = copy.deepcopy(self.data)
+                data.update(game_mode=mode, is_custom_game=False, modifiers=[])
+                data["seed"] += "-" + mode
+                data["players"][0]["deck"] = [{"id": "CARD.KAREN_NEW_DAY"}]
+                facts = derive(data)
+                self.assertEqual(facts["mode"], mode)
+                self.assertNotIn("KAREN_DEFEND", facts["seats"][0]["held"])
+                self.store.upload(data)
+                self.assertEqual(self.store.runs({"mode": [mode]})["total"], 1)
+                self.assertEqual(self.store.stats({"mode": [mode]})["seats"], 1)
+
+    def test_rebuild_reclassifies_native_custom_without_changing_raw_history(self):
+        data = copy.deepcopy(self.data)
+        data.update(is_custom_game=True, modifiers=[])
+        data["players"][0]["deck"] = [{"id": "CARD.KAREN_NEW_DAY"}]
+        _, result = self.store.upload(data)
+        rid = result["run_id"]
+        before = dict(self.store.detail(rid))
+        legacy = json.loads(before["facts"])
+        legacy.update(facts_version=3, mode="standard")
+        legacy["seats"][0]["held"].append("KAREN_DEFEND")
+        with self.store.connect() as db:
+            db.execute("UPDATE runs SET facts=?,mode='standard' WHERE id=?", (json.dumps(legacy), rid))
+        self.assertTrue(self.store.needs_rebuild())
+        backup = Path(self.tmp.name) / "before-custom-mode-rebuild.sqlite3"
+        self.assertEqual(self.store.rebuild(backup), 1)
+        after = self.store.detail(rid)
+        facts = json.loads(after["facts"])
+        self.assertEqual(after["mode"], "custom")
+        self.assertEqual(facts["mode"], "custom")
+        self.assertNotIn("KAREN_DEFEND", facts["seats"][0]["held"])
+        self.assertEqual(self.store.runs({"mode": ["custom"]})["total"], 1)
+        self.assertEqual(self.store.runs({"mode": ["standard"]})["total"], 0)
+        for key in ("id", "digest", "payload", "received", "duplicates"):
+            self.assertEqual(after[key], before[key])
+        self.assertFalse(self.store.needs_rebuild())
+
     def test_modified_and_nonstandard_decks_do_not_invent_starters(self):
         for mode, modifiers in [("custom", []), ("daily", []), ("standard", ["MODIFIER.DRAFT"])]:
             data = copy.deepcopy(self.data)

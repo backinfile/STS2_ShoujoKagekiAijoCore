@@ -33,7 +33,7 @@ STARTERS = {"KAREN_STRIKE", "KAREN_DEFEND", "KAREN_SHINE_STRIKE", "KAREN_FALL"}
 MODEL = re.compile(r"[A-Za-z0-9_.:\-]{1,180}\Z")
 CATALOG = json.loads((WEB / "catalog.json").read_text(encoding="utf-8"))
 LOG = logging.getLogger("karen-telemetry")
-FACTS_VERSION = 3
+FACTS_VERSION = 4
 
 
 class Invalid(ValueError):
@@ -204,6 +204,8 @@ def derive(data, strict_display=True):
     if not isinstance(build, str) or not 1 <= len(build) <= 120:
         raise Invalid("invalid_build_id")
     mode = enum_name(data.get("game_mode", "standard"), ["none", "standard", "daily", "custom"])
+    if data.get("is_custom_game") is True:
+        mode = "custom"
     modifiers = collection(data, "modifiers", 100)
     default_start = mode == "standard" and not modifiers
     platform = str(data.get("platform_type", "unknown"))[:80]
@@ -605,7 +607,7 @@ class Store:
                     facts["legacy_display_warning"] = True
                 if facts["id"] != row["id"]:
                     raise Invalid("rebuild_identity_mismatch")
-                db.execute("UPDATE runs SET facts=? WHERE id=?", (dumps(facts), row["id"]))
+                db.execute("UPDATE runs SET facts=?,mode=? WHERE id=?", (dumps(facts), facts["mode"], row["id"]))
                 if not db.execute("SELECT 1 FROM submissions WHERE run_id=? AND status=201", (row["id"],)).fetchone():
                     self.preserve_submission(db, body, row["id"], 201, row["received"], "legacy_saved_history")
                 count += 1
