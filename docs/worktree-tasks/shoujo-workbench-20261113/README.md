@@ -36,6 +36,20 @@
 - 已从 Core 发布包部署到原公开站点 https://junna.17181718.xyz/ 和原私有编辑入口，服务名及连接凭据沿用。最终部署包 SHA256 为 a44033809621e02ca1132a3412d4adbc13400ba137ab073a6124698ec292019c。
 - 切换前备份最新 SQLite。原 Junna 保持 r5297、2491条条目、5303条历史、2724条回执、592条资源映射，metadata、entries、history、receipts、assets 五表的行数与内容摘要逐项一致。四个 HTTPS 页面及快照均为200，生产网关验收通过。
 - 原生导出使用独立用户目录、随机 MCP 端口，最终读取 silent_test=true、muted=false、minimized_startup_guard=true、silent_test_error为空；仅关闭本任务进程。临时服务已停止，正式服务保持active。
-- 维护说明同步迁移到 Core；Junna 文档仅记录维护入口变更，原有视频删除保持原状。两个原检出尚未合并本任务；提交、同步后按 $worktree-task 请求合并与清理确认。
+- 维护说明同步迁移到 Core；Junna 文档仅记录维护入口变更，原有视频删除保持原状。用户已明确确认合并与清理，按下方确认记录执行。
 
 证据与私有部署包位于忽略目录 out/tmp/shoujo-workbench-20261113/。原生导出 native/native-runtime.json、来源摘要 tools/workbench/native-provenance.json、定向验证脚本 tools/workbench/deploy/verify-runtime.cjs 可用于复查；服务器备份使用 <workbench-backup-directory>。
+
+### 合并与清理确认
+
+```json
+[
+  {
+    "questionItemId": "[\"request_user_input_async\",\"call_03c20cdd452c4477b3aa84048b84a288\",0]",
+    "question": "是否将 Core `c41fb85`、Junna `7b45e30` 合并到各自的 `main`？清理范围为本次两个工作树、任务分支和本地临时验证文件；部署包、原生导出、验证记录及线上回滚备份会保留。工作台已原址上线，21项定向回归及线上验收通过。",
+    "answer": "合并并清理，保留交付物"
+  }
+]
+```
+
+用户已授权将本任务合并到两个仓库各自的 `main`，并清理本次两个工作树、任务分支与本地临时验证文件。部署包、原生导出、验证记录和线上回滚备份保留。最终合并、保留文件哈希和清理状态记录在 Core 原检出的 `artifacts/task-deliverables/shoujo-workbench-20261113/integration.json`。
