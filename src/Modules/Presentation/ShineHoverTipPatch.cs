@@ -13,8 +13,14 @@ internal static class ShineHoverTipPatch
     {
         if (V1.Shine.GetState(__instance) == null) return;
         var tips = __result.ToList();
-        if (tips.OfType<HoverTip>().Any(x => x.Id == KeywordId)) return;
-        tips.Add(new HoverTip(new LocString("card_keywords", KeywordId + ".title"), new LocString("card_keywords", KeywordId + ".description")) { Id = KeywordId });
+        var tip = new HoverTip(new LocString("card_keywords", KeywordId + ".title"), new LocString("card_keywords", KeywordId + ".description"))
+        {
+#if !STS2_BETA
+            Id = KeywordId
+#endif
+        };
+        if (tips.OfType<HoverTip>().Any(x => x.Id == tip.Id)) return;
+        tips.Add(tip);
         __result = tips;
     }
 }

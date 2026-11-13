@@ -61,7 +61,7 @@ public static class Bootstrap
             // Android may report a canonical assembly path instead of the mod directory alias.
             ?? (entries.Length == 1 ? entries[0] : throw new InvalidOperationException("Cannot identify the active Core mod entry."));
         var baseLib = ModManager.Mods.FirstOrDefault(x => x.manifest?.id == "BaseLib" && x.state == ModLoadState.Loaded)
-            ?? throw new InvalidOperationException("缺少已加载的 BaseLib，请按 BaseLib → Core → 角色 Mod 排列，并安装 BaseLib 3.4.7。");
+            ?? throw new InvalidOperationException("缺少已加载的 BaseLib，请按 BaseLib → Core → 角色 Mod 排列，并安装包含 BaseLibCompatibilityHelper 的 BaseLib 3.4.8 完整包。");
         if (AccessTools.Field(typeof(ReflectionHelper), "_modTypes").GetValue(null) != null)
             throw new InvalidOperationException("Core 在模型反射缓存初始化后加载，请按 BaseLib → Core → 角色 Mod 排列。");
         var requirements = new List<CoreRequirements>();

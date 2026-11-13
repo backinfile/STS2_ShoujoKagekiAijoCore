@@ -1,6 +1,7 @@
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.CardSelection;
+using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Multiplayer;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
@@ -43,6 +44,9 @@ public sealed class CardSelectionModule : ICoreModule, ICardSelection, ICardOpti
             ? await CardSelectCmd.FromHand(choice, player, preferences, cards.Contains, request.Source!)
             : await CardSelectCmd.FromSimpleGrid(choice, cards, player, preferences);
         var result = selected.ToArray();
+        // Native combat selection returns empty when the final hit ends combat.
+        if (result.Length == 0 && player.PlayerCombatState != null &&
+            (CombatManager.Instance.IsOverOrEnding || player.Creature.IsDead)) return [];
         if (result.Length > maximum || result.Length < Math.Min(request.Minimum, maximum) || result.Distinct().Count() != result.Length || result.Any(card => !piles.ContainsKey(card)))
             throw new InvalidOperationException("The selected cards do not match the offered selection.");
         return result.Where(card => !card.HasBeenRemovedFromState && ReferenceEquals(card.Pile, piles[card])).ToArray();

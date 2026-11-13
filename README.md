@@ -1,6 +1,6 @@
 # ShoujoKagekiAijoCore 使用说明
 
-本文面向使用 Core 的玩家和 Mod 作者，说明 Core 1.9.0 的能力、配置与 API V1 接入方式。SDK 随完整 Core 构建产物提供。
+本文面向使用 Core 的玩家和 Mod 作者，说明 Core 1.9.1 的能力、配置与 API V1 接入方式。SDK 随完整 Core 构建产物提供。
 
 引导、服务端、存档与发布方面的实现约定见 [Core 实现文档](docs/IMPLEMENTATION.md)。[GitHub 仓库](https://github.com/backinfile/STS2_ShoujoKagekiAijoCore)
 
@@ -22,7 +22,7 @@ Core 是少女歌剧系列 Mod 共用的基础 Mod，作为独立创意工坊 Mo
 | 存档与历史 | 自动保存共享状态、规则版本和耗尽档案 |
 | 作者工具 | 按发行能力提供卡牌导出、重放、移牌与音频辅助 |
 
-Core 支持《杀戮尖塔 2》正式版与测试版。首版适配参考正式版 0.107.1、测试版 0.111.0 和 BaseLib 3.4.7，实际支持范围以对应发行说明为准。
+Core 支持《杀戮尖塔 2》正式版与测试版。当前适配正式版 0.107.1、测试版 0.113.0 和 BaseLib 3.4.8。BaseLib 3.4.8 需同时安装官方发行包中的 BaseLibCompatibilityHelper DLL 与清单。
 
 ## 2. 安装、加载顺序与更新
 
@@ -30,17 +30,18 @@ Core 支持《杀戮尖塔 2》正式版与测试版。首版适配参考正式�
 
 ### 2.1 加载顺序
 
-**BaseLib → ShoujoKagekiAijoCore → 角色 Mod。**
+**BaseLibCompatibilityHelper → BaseLib → ShoujoKagekiAijoCore → 角色 Mod。**
 
 | 先后 | Mod |
 | --- | --- |
-| 1 | BaseLib |
-| 2 | ShoujoKagekiAijoCore |
-| 3 | ShoujoKagekiAijoKaren、ShoujoKagekiJunna 或其他依赖 Core 的角色 |
+| 1 | BaseLibCompatibilityHelper |
+| 2 | BaseLib |
+| 3 | ShoujoKagekiAijoCore |
+| 4 | ShoujoKagekiAijoKaren、ShoujoKagekiJunna 或其他依赖 Core 的角色 |
 
 依赖 Core 的角色在清单中声明 Core 依赖，Core 在自己的清单中声明 BaseLib 依赖。本体按清单关系排列加载顺序，手动调整列表时也遵循上表。角色额外依赖其他库时，将这些库放在该角色之前。
 
-启动提示会指出依赖问题及处理方式。例如“缺少 BaseLib，请安装 3.4.7 或更新的兼容版本”“Core 版本过低，该角色要求 1.2.0”或“加载顺序需要调整，请按 BaseLib → Core → 角色 Mod 排列”。
+启动提示会指出依赖问题及处理方式。例如“缺少 BaseLib，请安装 3.4.8 或更新的兼容版本”“Core 版本过低，该角色要求 1.2.0”或“加载顺序需要调整，请按 BaseLib → Core → 角色 Mod 排列”。
 
 ### 2.2 多角色与更新
 
@@ -117,7 +118,7 @@ Core 使用 Karen 现行发行配置中的接收地址，Web 页面入口由对�
   "has_pck": true,
   "affects_gameplay": true,
   "dependencies": [
-    { "id": "BaseLib", "min_version": "3.4.7" },
+    { "id": "BaseLib", "min_version": "3.4.8" },
     { "id": "ShoujoKagekiAijoCore", "min_version": "1.0.0" }
   ]
 }

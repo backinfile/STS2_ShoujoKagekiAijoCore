@@ -3,14 +3,14 @@
   "name": "ShoujoKagekiAijoCore",
   "author": "ShoujoKageki Mod Team",
   "description": "少女歌剧系列 Mod 共用的基础 Mod",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "has_dll": true,
   "has_pck": false,
   "affects_gameplay": true,
   "dependencies": [
     {
       "id": "BaseLib",
-      "min_version": "3.4.7"
+      "min_version": "3.4.8"
     }
   ]
 }

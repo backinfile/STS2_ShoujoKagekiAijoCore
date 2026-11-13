@@ -20,6 +20,7 @@ internal sealed class ScopedChoiceContext : PlayerChoiceContext, IAsyncDisposabl
 
 #if STS2_BETA
     public override ulong? OwnerId => _original.OwnerId;
+    public override GameActionType? GameActionType => _original.GameActionType;
 #endif
 #if STS2_BETA
     public override async Task SignalPlayerChoiceBegun(Player chooser, PlayerChoiceOptions options)

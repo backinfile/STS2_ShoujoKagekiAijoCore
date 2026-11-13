@@ -15,8 +15,10 @@ void Reject(Action action, string name)
     catch (Exception error) when (error is InvalidDataException or InvalidOperationException or FormatException) { checks++; return; }
     throw new InvalidOperationException(name);
 }
-BundleCandidate Select(params BundleCandidate[] candidates) => BundleSelection.Select(candidates, requirements, "0.107.1", "3.4.7", "1.0.0");
+BundleCandidate Select(params BundleCandidate[] candidates) => BundleSelection.Select(candidates, requirements, "0.107.1", "3.4.8", "1.0.0");
 Check(ReferenceEquals(Select(candidate), candidate), "single complete bundle");
+Check(ReferenceEquals(BundleSelection.Select([candidate], requirements, "0.113.0", "3.4.8", "1.0.0"), candidate), "v0.113.0 selects the current beta runtime");
+Reject(() => BundleSelection.Select([candidate], requirements, "0.111.0", "3.4.8", "1.0.0"), "previous beta cannot load the v0.113.0 runtime");
 var identical = candidate with { Root = "workshop-copy", Source = "Workshop:copy" };
 Check(Select(identical, candidate).Source == candidate.Source, "identical copies converge by stable source identity");
 var release = Version.Parse(candidate.Bundle.ReleaseVersion.Split('-')[0].TrimStart('v'));
@@ -29,10 +31,10 @@ var betaOnly = newer with { Bundle = newer.Bundle with { Targets = new() { ["bet
 Check(ReferenceEquals(Select(candidate, betaOnly), candidate), "newer target mismatch falls back");
 Reject(() => Select(candidate, candidate with { Fingerprint = "conflicting" }), "same release content conflict");
 Reject(() => Select(candidate, missingFeature with { Bundle = missingFeature.Bundle with { ReleaseVersion = candidate.Bundle.ReleaseVersion } }), "conflict checked before requirement filtering");
-Reject(() => BundleSelection.Select([candidate], requirements, "0.112.0", "3.4.7", "1.0.0"), "unknown game rejected");
+Reject(() => BundleSelection.Select([candidate], requirements, "0.112.0", "3.4.8", "1.0.0"), "unknown game rejected");
 Reject(() => BundleSelection.Select([candidate], requirements, "0.107.1", "3.0.0", "1.0.0"), "BaseLib minimum enforced");
-Reject(() => BundleSelection.Select([candidate], requirements, "0.107.1", "3.4.7", $"{release.Major + 1}.0.0"), "role release minimum enforced");
-Reject(() => BundleSelection.Select([candidate], [new CoreRequirements { ModId = "V2", ApiMajor = 2 }], "0.107.1", "3.4.7", "1.0.0"), "API major mismatch");
+Reject(() => BundleSelection.Select([candidate], requirements, "0.107.1", "3.4.8", $"{release.Major + 1}.0.0"), "role release minimum enforced");
+Reject(() => BundleSelection.Select([candidate], [new CoreRequirements { ModId = "V2", ApiMajor = 2 }], "0.107.1", "3.4.8", "1.0.0"), "API major mismatch");
 Reject(() => BundleSelection.ResolvePath(args[0], "../escape.dll"), "path traversal rejected");
 Check(SemVersion.Parse("1.0.0").CompareTo(SemVersion.Parse("1.0.0-beta.10")) > 0, "stable after prerelease");
 Check(SemVersion.Parse("1.0.0-beta.10").CompareTo(SemVersion.Parse("1.0.0-beta.2")) > 0, "numeric prerelease ordering");
