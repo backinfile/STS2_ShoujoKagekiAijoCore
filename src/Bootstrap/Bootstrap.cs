@@ -84,8 +84,10 @@ public static class Bootstrap
         }
         var gameVersion = ReleaseInfoManager.Instance!.SemVer!.ToString();
         var selected = BundleSelection.Select(candidates, requirements, gameVersion, baseLib.manifest!.version ?? "0.0.0", minimumRelease);
-        var target = selected.Bundle.Targets.Single(x => SemVersion.Parse(gameVersion).CompareTo(SemVersion.Parse(x.Value.MinimumGameVersion)) >= 0
-            && SemVersion.Parse(gameVersion).CompareTo(SemVersion.Parse(x.Value.MaximumGameVersion)) <= 0);
+        var target = BundleSelection.SelectTarget(selected.Bundle, gameVersion)
+            ?? throw new InvalidOperationException("Selected Core has no applicable runtime baseline.");
+        if (SemVersion.Parse(gameVersion).CompareTo(SemVersion.Parse(target.Target.MaximumGameVersion)) > 0)
+            Log.Warn($"[Core bootstrap] Game {gameVersion} is newer than the reference range; trying {target.Name} runtime built for {target.Target.MinimumGameVersion}.");
         _logicalMod.manifest!.version = selected.Bundle.ReleaseVersion;
         _logicalMod.version = SemanticVersion.TryFromString(selected.Bundle.ReleaseVersion, out var version) ? version : throw new InvalidDataException("Invalid release version.");
         foreach (var duplicate in ModManager.Mods.Where(x => x != _logicalMod && x.manifest?.id == ModId && Eligible(x)))
@@ -96,7 +98,7 @@ public static class Bootstrap
         AccessTools.Field(typeof(ModManager), "_mods").SetValue(null, reordered);
         var context = AssemblyLoadContext.GetLoadContext(typeof(Bootstrap).Assembly) ?? AssemblyLoadContext.Default;
         var api = LoadExact(context, BundleSelection.ResolvePath(selected.Root, selected.Bundle.ApiAssembly));
-        RuntimeAssembly = LoadExact(context, BundleSelection.ResolvePath(selected.Root, target.Value.Assembly));
+        RuntimeAssembly = LoadExact(context, BundleSelection.ResolvePath(selected.Root, target.Target.Assembly));
         var associate = typeof(ModManager).GetMethod("AssociateAssemblyWithMod", [typeof(string), typeof(Assembly)]);
         associate?.Invoke(null, [ModId, api]);
         associate?.Invoke(null, [ModId, RuntimeAssembly]);
@@ -106,7 +108,7 @@ public static class Bootstrap
         var entry = RuntimeAssembly.GetType("ShoujoKageki.Core.Runtime.RuntimeEntry", true)!;
         entry.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static)!.Invoke(null,
             [selected.Bundle.ReleaseVersion, gameVersion, selected.Fingerprint]);
-        Log.Info($"[Core bootstrap] Selected {selected.Bundle.ReleaseVersion}/{target.Key}, {candidates.Count} complete candidates, fingerprint {selected.Fingerprint}.");
+        Log.Info($"[Core bootstrap] Selected {selected.Bundle.ReleaseVersion}/{target.Name}, {candidates.Count} complete candidates, fingerprint {selected.Fingerprint}.");
     }
 
     private static Assembly LoadExact(AssemblyLoadContext context, string path)

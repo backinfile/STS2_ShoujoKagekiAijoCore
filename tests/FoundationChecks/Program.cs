@@ -18,7 +18,8 @@ void Reject(Action action, string name)
 BundleCandidate Select(params BundleCandidate[] candidates) => BundleSelection.Select(candidates, requirements, "0.107.1", "3.4.8", "1.0.0");
 Check(ReferenceEquals(Select(candidate), candidate), "single complete bundle");
 Check(ReferenceEquals(BundleSelection.Select([candidate], requirements, "0.113.0", "3.4.8", "1.0.0"), candidate), "v0.113.0 selects the current beta runtime");
-Reject(() => BundleSelection.Select([candidate], requirements, "0.111.0", "3.4.8", "1.0.0"), "previous beta cannot load the v0.113.0 runtime");
+Check(ReferenceEquals(BundleSelection.Select([candidate], requirements, "0.113.1", "3.4.8", "1.0.0"), candidate), "new beta patch attempts the installed runtime");
+Check(BundleSelection.SelectTarget(candidate.Bundle, "0.111.0")?.Name == "stable", "older game does not load a newer beta baseline");
 var identical = candidate with { Root = "workshop-copy", Source = "Workshop:copy" };
 Check(Select(identical, candidate).Source == candidate.Source, "identical copies converge by stable source identity");
 var release = Version.Parse(candidate.Bundle.ReleaseVersion.Split('-')[0].TrimStart('v'));
@@ -31,7 +32,15 @@ var betaOnly = newer with { Bundle = newer.Bundle with { Targets = new() { ["bet
 Check(ReferenceEquals(Select(candidate, betaOnly), candidate), "newer target mismatch falls back");
 Reject(() => Select(candidate, candidate with { Fingerprint = "conflicting" }), "same release content conflict");
 Reject(() => Select(candidate, missingFeature with { Bundle = missingFeature.Bundle with { ReleaseVersion = candidate.Bundle.ReleaseVersion } }), "conflict checked before requirement filtering");
-Reject(() => BundleSelection.Select([candidate], requirements, "0.112.0", "3.4.8", "1.0.0"), "unknown game rejected");
+Check(ReferenceEquals(BundleSelection.Select([candidate], requirements, "0.112.0", "3.4.8", "1.0.0"), candidate), "unknown intermediate version attempts the lower baseline");
+Reject(() => BundleSelection.Select([candidate], requirements, "0.107.0", "3.4.8", "1.0.0"), "game older than every baseline rejected");
+foreach (var version in new[] { "0.113.1", "0.114.0", "1.0.0" })
+    Check(BundleSelection.SelectTarget(candidate.Bundle, version)?.Name == "beta", "newer game selects beta baseline: " + version);
+Check(BundleSelection.SelectTarget(candidate.Bundle, "0.107.2")?.Name == "stable", "new stable patch keeps stable baseline");
+var futureBaseline = newer with { Bundle = newer.Bundle with { Targets = new(candidate.Bundle.Targets) {
+    ["beta"] = candidate.Bundle.Targets["beta"] with { MinimumGameVersion = "0.114.0", MaximumGameVersion = "0.114.0" }
+} } };
+Check(ReferenceEquals(BundleSelection.Select([futureBaseline, candidate], requirements, "0.113.1", "3.4.8", "1.0.0"), candidate), "closest applicable baseline takes priority over newer Core release");
 Reject(() => BundleSelection.Select([candidate], requirements, "0.107.1", "3.0.0", "1.0.0"), "BaseLib minimum enforced");
 Reject(() => BundleSelection.Select([candidate], requirements, "0.107.1", "3.4.8", $"{release.Major + 1}.0.0"), "role release minimum enforced");
 Reject(() => BundleSelection.Select([candidate], [new CoreRequirements { ModId = "V2", ApiMajor = 2 }], "0.107.1", "3.4.8", "1.0.0"), "API major mismatch");

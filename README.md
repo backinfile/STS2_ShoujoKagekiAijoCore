@@ -1,6 +1,6 @@
 # ShoujoKagekiAijoCore 使用说明
 
-本文面向使用 Core 的玩家和 Mod 作者，说明 Core 1.9.2 的能力、配置与 API V1 接入方式。SDK 随完整 Core 构建产物提供。
+本文面向使用 Core 的玩家和 Mod 作者，说明 Core 1.9.4 的能力、配置与 API V1 接入方式。SDK 随完整 Core 构建产物提供。
 
 引导、服务端、存档与发布方面的实现约定见 [Core 实现文档](docs/IMPLEMENTATION.md)。[GitHub 仓库](https://github.com/backinfile/STS2_ShoujoKagekiAijoCore)
 
@@ -25,6 +25,8 @@ Core 是少女歌剧系列 Mod 共用的基础 Mod，作为独立创意工坊 Mo
 | 作者工具 | 按发行能力提供卡牌导出、重放、移牌与音频辅助 |
 
 Core 支持《杀戮尖塔 2》正式版与测试版。当前适配正式版 0.107.1、测试版 0.113.0 和 BaseLib 3.4.8。BaseLib 3.4.8 需同时安装官方发行包中的 BaseLibCompatibilityHelper DLL 与清单。
+
+游戏更新后，Core 默认尝试加载不高于当前游戏版本的最新 Runtime 基线；同一基线选择满足全部角色要求的最新 Core。`maximumGameVersion` 保留构建参考范围，后续版本不会仅因超过它而被拦截。依赖、API、能力和包完整性仍会核对。
 
 ## 2. 安装、加载顺序与更新
 

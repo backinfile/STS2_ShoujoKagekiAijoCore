@@ -43,6 +43,7 @@ public sealed record CoreRequirements
     public string[] OptionalFeatures { get; init; } = [];
 }
 public sealed record BundleCandidate(string Root, string Source, CoreBundle Bundle, string Fingerprint);
+public sealed record BundleTargetMatch(string Name, BundleTarget Target);
 
 public static class BundleSelection
 {
@@ -135,6 +136,15 @@ public static class BundleSelection
         }
     }
 
+    public static BundleTargetMatch? SelectTarget(CoreBundle bundle, string gameVersion)
+    {
+        var game = SemVersion.Parse(gameVersion);
+        return bundle.Targets.Where(x => game.CompareTo(SemVersion.Parse(x.Value.MinimumGameVersion)) >= 0)
+            .OrderByDescending(x => SemVersion.Parse(x.Value.MinimumGameVersion))
+            .ThenBy(x => x.Key, StringComparer.Ordinal)
+            .Select(x => new BundleTargetMatch(x.Key, x.Value)).FirstOrDefault();
+    }
+
     public static BundleCandidate Select(IEnumerable<BundleCandidate> candidates, IReadOnlyList<CoreRequirements> requirements,
         string gameVersion, string baseLibVersion, string minimumRelease)
     {
@@ -142,16 +152,18 @@ public static class BundleSelection
         foreach (var release in complete.GroupBy(x => x.Bundle.ReleaseVersion))
             if (release.Select(x => x.Fingerprint).Distinct().Count() > 1)
                 throw new InvalidDataException($"Core {release.Key} 存在同版本内容冲突，请重新安装官方发行包。");
-        var game = SemVersion.Parse(gameVersion);
         var baselib = SemVersion.Parse(baseLibVersion);
-        var selected = complete.Where(x => x.Bundle.ApiMajor == 1
-            && SemVersion.Parse(x.Bundle.ReleaseVersion).CompareTo(SemVersion.Parse(minimumRelease)) >= 0
-            && baselib.CompareTo(SemVersion.Parse(x.Bundle.BaseLibMinimumVersion)) >= 0
-            && x.Bundle.Targets.Values.Any(t => game.CompareTo(SemVersion.Parse(t.MinimumGameVersion)) >= 0 && game.CompareTo(SemVersion.Parse(t.MaximumGameVersion)) <= 0)
-            && requirements.All(r => r.Format == 1 && r.ApiMajor == x.Bundle.ApiMajor
-                && SemVersion.Parse(x.Bundle.ApiVersion).CompareTo(SemVersion.Parse(r.MinimumApiVersion)) >= 0
-                && r.RequiredFeatures.All(f => x.Bundle.Features.Contains(f, StringComparer.Ordinal))))
-            .OrderByDescending(x => SemVersion.Parse(x.Bundle.ReleaseVersion)).ThenBy(x => x.Source, StringComparer.Ordinal).ThenBy(x => x.Root, StringComparer.Ordinal).FirstOrDefault();
+        var selected = complete.Select(candidate => new { Candidate = candidate, Target = SelectTarget(candidate.Bundle, gameVersion) })
+            .Where(x => x.Target != null && x.Candidate.Bundle.ApiMajor == 1
+                && SemVersion.Parse(x.Candidate.Bundle.ReleaseVersion).CompareTo(SemVersion.Parse(minimumRelease)) >= 0
+                && baselib.CompareTo(SemVersion.Parse(x.Candidate.Bundle.BaseLibMinimumVersion)) >= 0
+                && requirements.All(r => r.Format == 1 && r.ApiMajor == x.Candidate.Bundle.ApiMajor
+                    && SemVersion.Parse(x.Candidate.Bundle.ApiVersion).CompareTo(SemVersion.Parse(r.MinimumApiVersion)) >= 0
+                    && r.RequiredFeatures.All(f => x.Candidate.Bundle.Features.Contains(f, StringComparer.Ordinal))))
+            .OrderByDescending(x => SemVersion.Parse(x.Target!.Target.MinimumGameVersion))
+            .ThenByDescending(x => SemVersion.Parse(x.Candidate.Bundle.ReleaseVersion))
+            .ThenBy(x => x.Candidate.Source, StringComparer.Ordinal).ThenBy(x => x.Candidate.Root, StringComparer.Ordinal)
+            .Select(x => x.Candidate).FirstOrDefault();
         if (selected == null) throw new InvalidOperationException("没有共同兼容的 Core。请更新 Core 工坊订阅或 Karen 包，检查游戏版本、BaseLib、API 与必需功能。" +
             string.Join(" ", requirements.Select(r => $"{r.ModId}: API {r.ApiMajor}/{r.MinimumApiVersion}, {string.Join(',', r.RequiredFeatures)}")));
         return selected;

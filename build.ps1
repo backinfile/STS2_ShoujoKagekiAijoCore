@@ -4,7 +4,7 @@ param(
     [string]$Godot = $env:GODOT_BIN,
     [string]$TelemetryEndpointPath = $env:SHOUJO_TELEMETRY_ENDPOINT_PATH,
     [string]$OutputDirectory = '',
-    [string]$Version = '1.9.3'
+    [string]$Version = '1.9.4'
 )
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
