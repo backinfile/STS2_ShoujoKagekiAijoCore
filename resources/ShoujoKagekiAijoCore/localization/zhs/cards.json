@@ -7,5 +7,7 @@
   "KAREN_SHINE_REPRODUCE.description": "从耗尽的[gold]闪耀[/gold]牌中选择{Cards:diff()}张重新加入牌组。",
   "KAREN_SHINE_REPRODUCE.tip.title": "提示",
   "KAREN_SHINE_REPRODUCE.tip": "这张牌会在[gold]闪耀牌奖励[/gold]中出现。",
-  "KAREN_SHINE_REPRODUCE.select_title": "选择一张闪耀耗尽的牌"
+  "KAREN_SHINE_REPRODUCE.select_title": "选择一张闪耀耗尽的牌",
+  "KAREN_STAGE_REASON.title": "存在于舞台的理由",
+  "KAREN_STAGE_REASON.description": ""
 }

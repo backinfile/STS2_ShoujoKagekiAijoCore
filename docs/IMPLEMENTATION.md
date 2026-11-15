@@ -997,3 +997,7 @@ Junna 的知识成员与预览读取统一成员解析；持续能力的特殊�
 ## 花朵遗物
 
 Core 提供共享稀有遗物花朵，沿用模型名与存档 ID `KAREN_FLOWER_RELIC`。每份战后普通、罕见或稀有遗物奖励增加一个同稀有度候选，形成独立二选一；已有链式组、特殊遗物、非战斗奖励和宝箱房间保持原生行为。模型与奖励同步由 `src/Modules/Relics/`、`src/Patches/Flower*` 维护，图标、花朵链条及三语原文由 Core 资源包提供。
+
+## 共享诅咒“存在于舞台的理由”
+
+`src/Modules/Shine/CoreStageReason.cs` 使用 BaseLib 的 `Pool(CurseCardPool)` 注册到全局诅咒池，`CustomID("KAREN_STAGE_REASON")` 保留旧对局、历史与耗尽档案的模型身份。规则沿用 1 费、诅咒、消耗、闪耀 3、不可升级及无额外牌效；图片和中英日本地化原值迁入 Core。它不属于角色池、无色池或 Token 池，因此不进入这些池的随机奖励与闪耀奖励候选。Karen 同步移除旧模型、图片、本地化与池注入，并将最低 Core 依赖提高至 1.9.5。
