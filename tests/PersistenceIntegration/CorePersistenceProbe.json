@@ -1,0 +1,5 @@
+{
+  "id": "CorePersistenceProbe", "name": "Core persistence regression probe", "author": "Core tests", "version": "0.0.1",
+  "has_dll": true, "has_pck": false, "affects_gameplay": true,
+  "dependencies": [{"id":"BaseLib"},{"id":"ShoujoKagekiAijoCore","min_version":"1.9.4"},{"id":"KarenSTS2MCP"}]
+}
