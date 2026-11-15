@@ -116,7 +116,7 @@ function createJunnaRouteStatisticsView(deps) {
   }
   function fields(card) {
     const route=editorRoute(card),routes=data().archetypes.filter(entry=>(card.archetypeIds||[]).includes(entry.id)),tags=logic.positionTags(card,route?[route]:[],defaults);
-    const fixedTrigger=route?.id==='SYS_stage'&&(card.type==='箭矢'||JunnaEffectStatistics.handArrowPlay(card));
+    const fixedTrigger=route?.id==='SYS_stage'&&(card.type==='流星'||JunnaEffectStatistics.handArrowPlay(card));
     const routeButtons=routes.length>1?'<div class="flow-editor-routes" role="group" aria-label="定位所属流派">'+routes.map(entry=>'<button type="button" class="filter-option" data-card-position-route="'+entry.uid+'" aria-pressed="'+(entry.uid===route.uid)+'">'+escape(entry.name)+'</button>').join('')+'</div>':'';
     return '<fieldset class="flow-classification"><legend>流派定位</legend>'+routeButtons+'<div class="position-options">'+Object.entries(logic.positions).map(([tag,name])=>'<label class="position-tag"><input type="checkbox" data-flow-tag="'+tag+'"'+(tags.includes(tag)?' checked':'')+((tag==='cross'||tag==='trigger'&&fixedTrigger||!route&&tag!=='breakthrough')?' disabled':'')+'><span>'+name+'</span></label>').join('')+'</div></fieldset>';
   }

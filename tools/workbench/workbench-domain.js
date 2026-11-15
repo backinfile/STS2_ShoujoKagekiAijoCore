@@ -10,7 +10,7 @@
   }
   function rootEntity(data,key){if(key!=='meta')return data[key];const meta={...data.meta};for(const collection of META_COLLECTIONS)delete meta[collection];return meta;}
   function assignRoot(data,key,value){const next=JSON.parse(JSON.stringify(value));if(key==='meta')for(const collection of META_COLLECTIONS)if(!Object.hasOwn(next,collection)&&Object.hasOwn(data.meta||{},collection))next[collection]=data.meta[collection];data[key]=next;}
-  const TYPES=['攻击','技能','能力','箭矢','状态','诅咒','任务'],RARITIES=['基础','普通','罕见','稀有','远古','事件','衍生','状态','诅咒','任务'];
+  const TYPES=['攻击','技能','能力','流星','状态','诅咒','任务'],RARITIES=['基础','普通','罕见','稀有','远古','事件','衍生','状态','诅咒','任务'];
   const CARD_POOLS=['角色','无色','事件','衍生','状态','诅咒','任务'];
   function groupCardCount(group,cardId){return Math.max(1,Math.floor(Number(cardId===group.mainCardId?group.mainCardCount:group.grantedCardCounts?.[cardId])||1));}
   function setGroupMain(data,groupUid,cardUid){
@@ -101,11 +101,12 @@
         if(!c.arrowFocus||!['x','y'].every(axis=>typeof c.arrowFocus[axis]==='number'&&Number.isFinite(c.arrowFocus[axis])&&c.arrowFocus[axis]>=0&&c.arrowFocus[axis]<=1))throw Error('箭头聚焦坐标须为0到1：'+c.id);
         c.arrowFocus={x:c.arrowFocus.x,y:c.arrowFocus.y};
       }
-      if(c.type==='\u661f\u77e2')c.type='箭矢';
-      if(c.type==='言葉')c.type='箭矢';
+      if(c.type==='\u7bad\u77e2')c.type='流星';
+      if(c.type==='\u661f\u77e2')c.type='流星';
+      if(c.type==='言葉')c.type='流星';
       if(c.cardPool!==undefined&&!CARD_POOLS.includes(c.cardPool))throw Error('卡池无效：'+c.id);
-      c.name=String(c.name||'未命名');c.text=String(c.text??'');c.upgradedText=String(c.upgradedText??c.text);c.type=TYPES.includes(c.type)?c.type:'技能';c.cost=String(c.cost).toUpperCase()==='X'?'X':Math.max(0,Math.floor(Number(c.cost)||0));c.upgradedCost=String(c.upgradedCost??c.cost).toUpperCase()==='X'?'X':Math.max(0,Math.floor(Number(c.upgradedCost??c.cost)||0));c.turns=c.type==='箭矢'?(String(c.turns).trim().toUpperCase()==='X'?'X':Math.max(0,Math.floor(Number(c.turns)||0))):null;c.upgradedTurns=c.type==='箭矢'?(String(c.upgradedTurns??c.turns).trim().toUpperCase()==='X'?'X':Math.max(0,Math.floor(Number(c.upgradedTurns??c.turns)||0))):null;
-      if(c.type==='箭矢'){const subtype=c.arrowSubtype??seed.data.cards.find(entry=>entry.id===c.id)?.arrowSubtype??'技能';if(!['攻击','技能','能力'].includes(subtype))throw Error('箭矢子类型无效：'+c.id);c.arrowSubtype=subtype;}
+      c.name=String(c.name||'未命名');c.text=String(c.text??'');c.upgradedText=String(c.upgradedText??c.text);c.type=TYPES.includes(c.type)?c.type:'技能';c.cost=String(c.cost).toUpperCase()==='X'?'X':Math.max(0,Math.floor(Number(c.cost)||0));c.upgradedCost=String(c.upgradedCost??c.cost).toUpperCase()==='X'?'X':Math.max(0,Math.floor(Number(c.upgradedCost??c.cost)||0));c.turns=c.type==='流星'?(String(c.turns).trim().toUpperCase()==='X'?'X':Math.max(0,Math.floor(Number(c.turns)||0))):null;c.upgradedTurns=c.type==='流星'?(String(c.upgradedTurns??c.turns).trim().toUpperCase()==='X'?'X':Math.max(0,Math.floor(Number(c.upgradedTurns??c.turns)||0))):null;
+      if(c.type==='流星'){const subtype=c.arrowSubtype??seed.data.cards.find(entry=>entry.id===c.id)?.arrowSubtype??'技能';if(!['攻击','技能','能力'].includes(subtype))throw Error('流星子类型无效：'+c.id);c.arrowSubtype=subtype;}
       c.pool=typeof c.pool==='boolean'?c.pool:true;c.rarity=RARITIES.includes(c.rarity)?c.rarity:'普通';c.system=c.system||'stage';c.keywords=[...new Set(Array.isArray(c.keywords)?c.keywords:[])];c.termIds=[...new Set(c.termIds||[])].filter(id=>termIds.has(id));c.archetypeIds=[...new Set(c.archetypeIds||[])].filter(id=>archetypeIds.has(id));c.breakthroughIds=c.termIds.filter(id=>d.terms.some(t=>t.id===id&&t.kind==='突破'));c.naming=c.naming&&typeof c.naming==='object'?c.naming:{};c.art=c.art||'defaultPortrait';
       c.partnerCardIds=[];
       c.keywords=c.keywords.filter(k=>!['言葉','知识牌'].includes(k));c.termIds=c.termIds.filter(id=>!oldWordIds.has(id));

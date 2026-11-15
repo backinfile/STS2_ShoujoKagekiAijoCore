@@ -80,7 +80,7 @@ let html = require('./mod-page.cjs').modPage(read('shell.html'),{modId:selectedM
   .replace('<!--ASSETS-->', () => inlineData('workbench-assets', assets))
   .replace('<!--DATA-->', () => '<script id="workbench-data" type="application/json" data-src="'+snapshotPath+'">'+safe({ui:state.ui})+'</script>')
   .replace('<!--ROUTE_DATA-->', () => inlineData('workbench-route-data', json(path.join(here,'route-statistics-defaults.json'))))
-  .replace('<!--APP-->', () => inlineData('workbench-battle-sim',optionalData('纯那箭矢等待补偿战斗模拟_20261103.json')) + inlineData('workbench-card-audit',optionalData('纯那全卡牌数值校验_20261103.json')) + '<script>' + script + '</script>')
+  .replace('<!--APP-->', () => inlineData('workbench-battle-sim',optionalData('纯那流星等待补偿战斗模拟_20261103.json')) + inlineData('workbench-card-audit',optionalData('纯那全卡牌数值校验_20261103.json')) + '<script>' + script + '</script>')
   .replace('<head>', '<head><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; manifest-src \'self\'; script-src \'self\'; style-src \'self\' \'unsafe-inline\'; img-src \'self\' data: blob:; font-src \'self\' data:; connect-src \'self\'; base-uri \'none\'; form-action \'none\'; object-src \'none\'"><meta name="robots" content="noindex,nofollow">')
   .replace('<body>', '<body class="readonly">')
   .replace('<div class="global-actions">', '<div class="global-actions"><span class="readonly-status">只读 · ' + new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Shanghai',dateStyle:'short'}).format(new Date(stamp)) + '</span>')

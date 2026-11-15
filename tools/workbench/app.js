@@ -17,7 +17,7 @@
   let connection=null;if(!previewMode)try{const c=JSON.parse($('workbench-connection')?.textContent||'{}');if(c.workspaceId===workspaceId&&/^http:\/\/127\.0\.0\.1:\d+$/.test(c.baseURL)&&/^[a-f0-9]{64}$/.test(c.token))connection=c;}catch(_){}
   const serviceDisabledKey=mirrorKey+':local-service-disabled',serviceFingerprintKey=mirrorKey+':local-service-fingerprint';
   const {ENTITY_COLLECTIONS:COLLECTIONS,entityList,rootEntity,assignRoot}=JunnaWorkbenchDomain;
-  const TYPES=['攻击','技能','能力','箭矢','状态','诅咒','任务'],RARITIES=['基础','普通','罕见','稀有','远古','事件','衍生','状态','诅咒','任务'],CARD_POOLS=['角色','无色','事件','衍生','状态','诅咒','任务'];
+  const TYPES=['攻击','技能','能力','流星','状态','诅咒','任务'],RARITIES=['基础','普通','罕见','稀有','远古','事件','衍生','状态','诅咒','任务'],CARD_POOLS=['角色','无色','事件','衍生','状态','诅咒','任务'];
   const KINDS=['关键词','扳机','效果','状态','数值','条件','对象','规则','突破'];
   const STYLE_CATEGORIES=['卡牌设计','牌面表述','契合与命名','卡图与提示','工作台与复核','未分类'];
   const LABELS={cards:'卡牌',terms:'词条',mechanisms:'机制',archetypes:'流派',partnerGroups:'知识组',styles:'风格约定',fitPool:'契合',relics:'遗物',powers:'Power',root:'制作台'};
@@ -44,7 +44,7 @@
   try{Object.assign(ui,JSON.parse(localStorage.getItem(uiKey)||'{}'));}catch(_){}
   if(!ui.tabFilters||typeof ui.tabFilters!=='object'||Array.isArray(ui.tabFilters))ui.tabFilters={};
   if(ui.selected?.collection==='cards'&&ui.selected.cardSlot)knowledgeFaces.set(ui.selected.cardOrigin||ui.selected.uid,ui.selected.cardSlot);
-  if(ui.type==='言葉'||ui.type==='\u661f\u77e2')ui.type='箭矢';
+  if(ui.type==='言葉'||ui.type==='\u661f\u77e2'||ui.type==='\u7bad\u77e2')ui.type='流星';
   function toast(message){clearTimeout(toastTimer);$('toast').textContent=message;$('toast').hidden=false;toastTimer=setTimeout(()=>$('toast').hidden=true,3200);}
   function assetURL(id){const source=state.assets?.[id]||builtAssets[id]||builtAssets.defaultPortrait;if(source.startsWith('/assets/')||source.startsWith('https://'))return source;if(blobURLs.has(source))return blobURLs.get(source);const comma=source.indexOf(','),type=source.slice(5,source.indexOf(';')),binary=atob(source.slice(comma+1)),bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);const url=URL.createObjectURL(new Blob([bytes],{type}));blobURLs.set(source,url);return url;}
   function field(label,key,value,extra=''){return '<label class="field"><span class="field-label">'+escape(label)+'</span><input data-field="'+escape(key)+'" value="'+escape(value)+'" '+extra+'></label>';}
@@ -147,7 +147,7 @@
     }else renderWorkspace();if(['styles','flows','fits','events','potions','relics','powers'].includes(ui.tab))renderSidebar();}catch(error){state.data=edit.before;renderAll();toast(error.message);}}
   function updateChrome(){$('workspace-title').textContent='少女歌剧工作台';document.title='少女歌剧工作台 · '+state.data.title;$('history-count').textContent=Math.max(state.historyTotal||0,state.history.length);$('undo').disabled=!state.undoStack.length||!!mcpStatus.resolving;$('redo').disabled=!state.redoStack.length||!!mcpStatus.resolving;$('editor-form').inert=!!mcpStatus.resolving;updateDiskState();}
   function rememberTabFilters(){ui.tabFilters??={};ui.tabFilters[ui.tab]=Object.fromEntries(Object.keys(TAB_FILTER_DEFAULTS).map(key=>[key,clone(ui[key]??TAB_FILTER_DEFAULTS[key])]));}
-  function selectTab(tab){if(tab===ui.tab)return;rememberTabFilters();Object.assign(ui,clone(TAB_FILTER_DEFAULTS),{pool:tab==='cards'?'pool':'all'},clone(ui.tabFilters[tab]||{}),{tab});if(ui.type==='言葉'||ui.type==='\u661f\u77e2')ui.type='箭矢';}
+  function selectTab(tab){if(tab===ui.tab)return;rememberTabFilters();Object.assign(ui,clone(TAB_FILTER_DEFAULTS),{pool:tab==='cards'?'pool':'all'},clone(ui.tabFilters[tab]||{}),{tab});if(ui.type==='言葉'||ui.type==='\u661f\u77e2'||ui.type==='\u7bad\u77e2')ui.type='流星';}
   function saveUI(push=false){rememberTabFilters();try{localStorage.setItem(uiKey,JSON.stringify(ui));}catch(_){}const params=new URLSearchParams();if(previewMode)params.set('preview','1');for(const key of ['tab','search','kind','type','rarity','cardPool','pool','cost','archetype','term','sort','fitTheme','fitStatus','powerSystem','powerOrigin','mechanismFilter'])if(ui[key]&&(ui[key]!=='all'||key==='pool'&&ui.tab==='cards')&&(key!=='sort'||ui.sort!=='natural'))params.set(key,JunnaFilters.encode(key==='tab'&&['reserve','trash'].includes(ui.tab)?'cards':ui[key]));if(['reserve','trash'].includes(ui.tab))params.set('cardCategory',ui.tab);if(ui.routePositions?.length)params.set('positions',ui.routePositions.join(','));if(ui.routeExcludedPositions?.length)params.set('excludePositions',ui.routeExcludedPositions.join(','));if(ui.tab==='overview'){if(ui.overviewScope!=='cards')params.set('overviewScope',ui.overviewScope);params.set('overviewBy',overviewDimensions().map(d=>d.key).join(',')||'none');if(ui.overviewAll)params.set('overviewAll','1');}if(ui.tab==='flows'){if(ui.flowScope!=='cards')params.set('flowScope',ui.flowScope);if(ui.flowRoute!=='all')params.set('flowRoute',JunnaFilters.encode(ui.flowRoute));if(ui.flowOnlyRewards)params.set('flowRewards','1');}if(ui.upgraded)params.set('upgraded','1');if(ui.descending)params.set('descending','1');const hash=params.toString();if(location.hash.slice(1)!==hash&&!new URLSearchParams(location.hash.slice(1)).has('handoff'))history[push?'pushState':'replaceState'](null,'','#'+hash);}
   const cardTab=card=>card.trashedAt?'trash':card.reservedAt?'reserve':'cards';
   // 总览沿用现有编辑台：左栏选择范围与分组要素，中栏交叉分组，右栏统计当前范围。
@@ -166,11 +166,11 @@
     const rowHTML=row=>'<tr><th scope="row">'+escape(row.name)+'</th><td>'+row.current+(row.unit||'张')+'</td><td>'+JunnaPoolReference.range(row)+'</td><td>'+JunnaPoolReference.difference(row)+'</td></tr>';
     const table=(title,dimension,rows,unknown=0)=>overviewTable(title,[dimension,'当前','建议','差额'],rows.map(rowHTML).concat(unknown?['<tr><th scope="row">未分类</th><td>'+unknown+'张</td><td>—</td><td>—</td></tr>']:[]));
     const routeRows=reference.routes.map(route=>'<tr><th scope="row">'+escape(route.name)+'</th><td>'+route.current+'张</td><td>'+JunnaPoolReference.range(route)+(route.primary?'（主体系可更多）':'')+'</td><td>'+route.breakthroughs+'张</td><td>'+JunnaPoolReference.range({min:route.breakthroughMin,max:route.breakthroughMax})+'</td></tr>');
-    return '<details class="overview-reference" open><summary>'+(includeAll?'全部牌面统计':'完整卡池参考')+' · '+reference.total+'张</summary><div class="overview-grid">'+table('费用','费用',reference.costs,reference.unknownCosts)+table('稀有度','稀有度',reference.rarities)+table('卡牌类型 · 含箭矢','类型',reference.types,reference.unknownTypes)+table('卡池结构','项目',reference.structure)+'<div class="overview-comparison">'+overviewTable(includeAll?'各体系统计':'各体系参考',includeAll?['体系','当前牌面','建议牌面','当前突破牌','建议突破牌']:['体系','当前奖励牌','建议奖励牌','当前突破牌','建议突破牌'],routeRows)+'</div></div></details>';
+    return '<details class="overview-reference" open><summary>'+(includeAll?'全部牌面统计':'完整卡池参考')+' · '+reference.total+'张</summary><div class="overview-grid">'+table('费用','费用',reference.costs,reference.unknownCosts)+table('稀有度','稀有度',reference.rarities)+table('卡牌类型 · 含流星','类型',reference.types,reference.unknownTypes)+table('卡池结构','项目',reference.structure)+'<div class="overview-comparison">'+overviewTable(includeAll?'各体系统计':'各体系参考',includeAll?['体系','当前牌面','建议牌面','当前突破牌','建议突破牌']:['体系','当前奖励牌','建议奖励牌','当前突破牌','建议突破牌'],routeRows)+'</div></div></details>';
   }
   function overviewComparison(stats){
     const dimensions=overviewDimensions(),names=state.data.meta.systemNames||{},breakthroughIds=new Set(state.data.terms.filter(t=>t.kind==='突破').map(t=>t.id)),groups=new Map(),collator=new Intl.Collator('zh-CN',{numeric:true});
-    const value=(card,key)=>key==='breakthrough'?(card.termIds.some(id=>breakthroughIds.has(id))?'突破限制牌':'常规牌'):key==='pool'?(card.pool?'入池':'不入池'):key==='cardPool'?(card.cardPool||'角色'):String((key==='type'&&card.type==='箭矢'?card.arrowSubtype:card[key])??'')||'未分类';
+    const value=(card,key)=>key==='breakthrough'?(card.termIds.some(id=>breakthroughIds.has(id))?'突破限制牌':'常规牌'):key==='pool'?(card.pool?'入池':'不入池'):key==='cardPool'?(card.cardPool||'角色'):String((key==='type'&&card.type==='流星'?card.arrowSubtype:card[key])??'')||'未分类';
     for(const card of stats.cards){const values=dimensions.map(d=>value(card,d.key)),key=JSON.stringify(values);if(!groups.has(key))groups.set(key,{values,count:0});groups.get(key).count++;}
     const sorted=[...groups.values()].sort((a,b)=>{for(let i=0;i<dimensions.length;i++){const d=dimensions[i],order=d.order||(d.key==='system'?Object.keys(names):null),rank=v=>{const index=order?.indexOf(v);return index>=0?index:order?.length||0;},result=(order?rank(a.values[i])-rank(b.values[i]):0)||collator.compare(a.values[i],b.values[i]);if(result)return result;}return 0;});
     const share=count=>{const percent=stats.cards.length?count/stats.cards.length*100:0;return '<span class="overview-share"><i aria-hidden="true" style="width:'+percent.toFixed(2)+'%"></i><span>'+percent.toFixed(1)+'%</span></span>';};
@@ -201,7 +201,7 @@
   function renderOverviewInspector(){
     const stats=overviewStats(),count=match=>stats.cards.filter(match).length,average=(list,key)=>{const values=list.map(c=>c[key]).filter(v=>v!=='X'&&Number.isFinite(Number(v)));return values.length?(values.reduce((n,v)=>n+Number(v),0)/values.length).toFixed(2):'—';};
     const groupedIds=new Set(stats.groups.flatMap(g=>g.members.map(c=>c.id))),copies=stats.groups.reduce((n,{group,members})=>n+members.reduce((v,c)=>v+JunnaWorkbenchDomain.groupCardCount(group,c.id),0),0);
-    const facts=[['伤害牌',count(c=>/造成\d+点伤害/.test(c.text))],['格挡牌',count(c=>/获得\d+点格挡/.test(c.text))],['群体伤害',count(c=>/对所有敌人造成/.test(c.text))],['抽牌',count(c=>/抽\d+张|抽取[^。]*牌/.test(c.text))],['获得能量',count(c=>/获得\d+点能量/.test(c.text))],['箭矢',count(c=>c.type==='箭矢')],['3费及以上',count(c=>c.cost!=='X'&&Number(c.cost)>=3)],['升级减费',count(c=>c.cost!=='X'&&c.upgradedCost!=='X'&&Number(c.upgradedCost)<Number(c.cost))]];
+    const facts=[['伤害牌',count(c=>/造成\d+点伤害/.test(c.text))],['格挡牌',count(c=>/获得\d+点格挡/.test(c.text))],['群体伤害',count(c=>/对所有敌人造成/.test(c.text))],['抽牌',count(c=>/抽\d+张|抽取[^。]*牌/.test(c.text))],['获得能量',count(c=>/获得\d+点能量/.test(c.text))],['流星',count(c=>c.type==='流星')],['3费及以上',count(c=>c.cost!=='X'&&Number(c.cost)>=3)],['升级减费',count(c=>c.cost!=='X'&&c.upgradedCost!=='X'&&Number(c.upgradedCost)<Number(c.cost))]];
     $('inspector').hidden=false;$('inspector-title').textContent='统计';$('close-inspector').hidden=true;$('preview').innerHTML='';$('preview').removeAttribute('tabindex');$('preview').removeAttribute('aria-label');$('inspector-footer').hidden=true;
     $('editor-form').innerHTML='<section class="overview-section"><h2>平均耗能</h2><table class="overview-table" aria-label="平均耗能"><thead><tr><th scope="col">牌面</th><th scope="col">'+(ui.overviewAll?'全部牌面':'入池牌')+'</th></tr></thead><tbody><tr><th scope="row">基础</th><td>'+average(stats.cards,'cost')+'</td></tr><tr><th scope="row">升级</th><td>'+average(stats.cards,'upgradedCost')+'</td></tr></tbody></table></section><section class="overview-section"><h2>效果构成 · 基础</h2><dl class="overview-facts">'+facts.map(([name,n])=>'<div><dt>'+escape(name)+'</dt><dd>'+n+'</dd></div>').join('')+'</dl></section><section class="overview-section"><h2>知识牌组</h2><dl class="overview-facts"><div><dt>牌组</dt><dd>'+stats.groups.length+'</dd></div><div><dt>牌面</dt><dd>'+groupedIds.size+'</dd></div><div><dt>发放张数</dt><dd>'+copies+'</dd></div></dl></section>';
   }
@@ -240,13 +240,13 @@
     const references=JunnaCardReferences.referencesFor(card,state.data.cards),protectedText=JunnaCardReferences.protect(text,references),base=baseText?JunnaCardReferences.protect(baseText,references).text:null;
     let value=escape(protectedText.text);if(upgraded&&base){const original=[...base.matchAll(/\d+/g)].map(m=>m[0]);let i=0;value=value.replace(/\d+/g,n=>n===original[i++]?n:'<span class="text-green">'+n+'</span>');}
     const energy=JunnaEnergyIcons.protect(value,assetURL('energy-junna'),card?.descriptionEnergyDisplay);value=energy.text;
-    for(const word of ['立即加速到完成','伤害加成','箭矢','额外触发','知识','重放','消耗','保留','虚弱','易伤','格挡'])value=value.split(word).join('<span class="text-gold">'+word+'</span>');
+    for(const word of ['立即加速到完成','伤害加成','流星','额外触发','知识','重放','消耗','保留','虚弱','易伤','格挡'])value=value.split(word).join('<span class="text-gold">'+word+'</span>');
     value=value.replace(/(?:<span class="text-green">)?\d+(?:<\/span>)?(?:回合|张牌|张|次|点|费)/g,unit=>'<span class="text-unit">'+unit+'</span>').replace(/。(?=\S)/g,'。\n');
     value=JunnaEnergyIcons.restore(value,energy.values);
     for(const item of protectedText.values){const targetText=item.upgraded?item.card.upgradedText:item.card.text;value=value.split(item.token).join('<span class="text-gold card-reference" data-card-reference="'+escape(item.card.uid)+'" title="'+escape(item.text+'\n'+targetText)+'">'+escape(item.text)+'</span>');}
     return value;
   }
-  function cardHTML(card,upgraded=ui.upgraded,lazy=false){const type=card.type==='攻击'?'attack':card.type==='能力'?'power':'skill',arrow=card.type==='箭矢',kind=arrow?'stage':type,rarity=card.rarity==='远古'?'ancient':card.rarity==='稀有'?'rare':card.rarity==='罕见'?'uncommon':'common',ancient=rarity==='ancient',cost=upgraded?card.upgradedCost:card.cost,text=upgraded?card.upgradedText:card.text;
+  function cardHTML(card,upgraded=ui.upgraded,lazy=false){const type=card.type==='攻击'?'attack':card.type==='能力'?'power':'skill',arrow=card.type==='流星',kind=arrow?'stage':type,rarity=card.rarity==='远古'?'ancient':card.rarity==='稀有'?'rare':card.rarity==='罕见'?'uncommon':'common',ancient=rarity==='ancient',cost=upgraded?card.upgradedCost:card.cost,text=upgraded?card.upgradedText:card.text;
     const layer=(name,id)=>'<img class="native-layer '+name+'" src="'+assetURL(id)+'" alt="" draggable="false" decoding="async"'+(lazy?' loading="lazy"':'')+'>';let layers='';
     if(ancient){layers+=layer('native-ancient-portrait',card.art)+layer('native-ancient-border','ancient-card-border')+layer('native-ancient-text','ancient-text-'+type)+layer('native-ancient-highlight','card-highlight-ancient')+(arrow?layer('native-arrow-badge','portrait-stage-junna'):'')+layer('native-banner','banner-ancient')+layer('native-ancient-flame','ancient-flame-0');}
     else{layers+=layer('native-shadow','frame-'+type)+(arrow?'<svg class="native-layer native-arrow-portrait" viewBox="0 0 1456 1080" preserveAspectRatio="none" aria-hidden="true"><image '+(lazy?'data-image-src':'href')+'="'+assetURL(card.art)+'" width="1456" height="1080" preserveAspectRatio="xMidYMid slice" clip-path="url(#junna-arrow-window)"/></svg>':layer('native-portrait',card.art))+layer('native-frame','frame-'+type)+layer('native-class-frame','frame-'+type)+(arrow?layer('native-arrow-portrait-border','portrait-stage-junna'):layer('native-portrait-border','portrait-'+type+'-'+rarity))+layer('native-banner','banner-'+rarity);}
@@ -457,7 +457,7 @@
     else if(selected.collection==='cards'){
       $('preview').innerHTML=cardHTML(e)+knowledgeButton(e,selected.cardSlot,selected.cardOrigin||e.uid);
       if(groupsFor(find('cards',ui.selected.cardOrigin)||e).length){$('preview').tabIndex=0;$('preview').setAttribute('aria-label','知识牌预览');}
-      html=field('牌名','name',e.name,'class="name-input" data-on="change"')+'<div class="two-fields">'+selectField('类型','type',TYPES,e.type)+selectField('稀有度','rarity',RARITIES,e.rarity)+'</div><div class="two-fields">'+field('费用','cost',e.cost,'inputmode="text"')+field('升级费用','upgradedCost',e.upgradedCost,'inputmode="text"')+'</div>'+(e.type==='箭矢'?'<div class="two-fields">'+field('回合数','turns',e.turns,'inputmode="text"')+field('升级回合数','upgradedTurns',e.upgradedTurns,'inputmode="text"')+'</div>':'')+field('目标','target',e.target||'自己')+area('基础牌面','text',e.text,4)+area('升级牌面','upgradedText',e.upgradedText,4)+editorSection('classification','分类与定位',selectField('卡池','cardPool',CARD_POOLS,e.cardPool||'角色')+selectField('入池','pool',[{value:'true',label:'入池牌'},{value:'false',label:'不入池'}],String(e.pool))+cardTagPicker('流派','archetypeIds',state.data.archetypes,e.archetypeIds)+cardTagPicker('关键词','termIds',state.data.terms.filter(term=>term.kind==='关键词'),e.termIds)+flowView.fields(e))+editorSection('related','关联牌',relatedHTML(e),1+(groupsFor(e)[0]?.grantedCardIds.length||0))+'<details class="form-details" data-editor-section="art"><summary>插画与出处</summary><div class="inline-actions"><button type="button" class="button" data-action="upload-art">选择图片</button><button type="button" class="button" data-action="reset-art">默认图片</button></div>'+arrowFocusEditor(e)+field('原词','naming.original',e.naming.original||'')+field('来源','naming.work',e.naming.work||'')+field('来源链接','naming.url',e.naming.url||'','type="url"')+field('采用方式','naming.adaptation',e.naming.adaptation||'')+'</details>'+(e.keywords.includes('知识')?editorSection('knowledge-background','知识背景',area('内容','knowledgeBackground',JunnaCardHoverTips.background(e),3)):'')+editorSection('notes','备注',area('备注','notes',e.notes||'',2));
+      html=field('牌名','name',e.name,'class="name-input" data-on="change"')+'<div class="two-fields">'+selectField('类型','type',TYPES,e.type)+selectField('稀有度','rarity',RARITIES,e.rarity)+'</div><div class="two-fields">'+field('费用','cost',e.cost,'inputmode="text"')+field('升级费用','upgradedCost',e.upgradedCost,'inputmode="text"')+'</div>'+(e.type==='流星'?'<div class="two-fields">'+field('回合数','turns',e.turns,'inputmode="text"')+field('升级回合数','upgradedTurns',e.upgradedTurns,'inputmode="text"')+'</div>':'')+field('目标','target',e.target||'自己')+area('基础牌面','text',e.text,4)+area('升级牌面','upgradedText',e.upgradedText,4)+editorSection('classification','分类与定位',selectField('卡池','cardPool',CARD_POOLS,e.cardPool||'角色')+selectField('入池','pool',[{value:'true',label:'入池牌'},{value:'false',label:'不入池'}],String(e.pool))+cardTagPicker('流派','archetypeIds',state.data.archetypes,e.archetypeIds)+cardTagPicker('关键词','termIds',state.data.terms.filter(term=>term.kind==='关键词'),e.termIds)+flowView.fields(e))+editorSection('related','关联牌',relatedHTML(e),1+(groupsFor(e)[0]?.grantedCardIds.length||0))+'<details class="form-details" data-editor-section="art"><summary>插画与出处</summary><div class="inline-actions"><button type="button" class="button" data-action="upload-art">选择图片</button><button type="button" class="button" data-action="reset-art">默认图片</button></div>'+arrowFocusEditor(e)+field('原词','naming.original',e.naming.original||'')+field('来源','naming.work',e.naming.work||'')+field('来源链接','naming.url',e.naming.url||'','type="url"')+field('采用方式','naming.adaptation',e.naming.adaptation||'')+'</details>'+(e.keywords.includes('知识')?editorSection('knowledge-background','知识背景',area('内容','knowledgeBackground',JunnaCardHoverTips.background(e),3)):'')+editorSection('notes','备注',area('备注','notes',e.notes||'',2));
     }else if(selected.collection==='terms'){
       const kinds=[...new Set([...KINDS,...state.data.terms.map(t=>t.kind)])];
       html=field('名称','name',e.name,'class="name-input" data-on="change"')+'<div class="two-fields">'+field('编号','id',e.id,'data-on="change"')+selectField('类别','kind',kinds,e.kind)+'</div>'+area('卡面约定','template',e.template,4)+area('规则定义','definition',e.definition,6)+field('单位','unit',e.unit||'')+field('适用体系','systems',(e.systems||[]).join('，'))+area('备注','notes',e.notes||'',3)+'<div class="inline-actions"><button type="button" class="button" data-action="copy-template">复制约定文本</button><button type="button" class="button" data-action="cards-by-term">关联卡牌</button></div>';
@@ -505,7 +505,7 @@
     }else e[key]=value;
     if(ui.selected.collection==='fitPool'&&JunnaEvents.isEvent(e))JunnaEvents.sync(e);
     if(ui.selected.collection==='relics')relicView.syncFit(e,key);
-    if(key==='type'){e.turns=value==='箭矢'?(e.turns??1):null;e.upgradedTurns=value==='箭矢'?(e.upgradedTurns??e.turns):null;}
+    if(key==='type'){e.turns=value==='流星'?(e.turns??1):null;e.upgradedTurns=value==='流星'?(e.upgradedTurns??e.turns):null;}
     clearTimeout(editTimer);editTimer=setTimeout(flushEdit,650);$('save-state').textContent='编辑中';updateDiskState();
     if(ui.selected.collection==='cards'){$('preview').innerHTML=cardHTML(e);fitCards();}else if(ui.selected.collection==='fitPool')$('preview').innerHTML=e.art?'<img class="fit-inspector-image" src="'+assetURL(e.art)+'" alt="'+escape(e.name)+'">':'';
     refreshArrowFocus();updateChrome();if(['type','pool','cardPool'].includes(key)){flushEdit();renderInspector();renderSidebar();}
@@ -580,20 +580,20 @@
   function redo(){if(!previewMode&&(!mcpStatus.ready||mcpStatus.conflict||mcpStatus.resolving))return;flushEdit();const id=state.redoStack.pop(),r=state.history.find(x=>x.id===id);if(!r)return;const before=clone(state.data);try{checkHistoryEndpoint(r,'before');applyPatches(r.patches,'after',true);state.undoStack.push(id);if(!record(before,'重做 · '+r.label,'重做',false,id))persist();renderAll();if($('history-dialog').open)renderHistory();}catch(error){state.data=before;state.redoStack.push(id);toast(error.message);}}
   function restoreRecord(id,side){const r=state.history.find(r=>r.id===id);if(!r)return;transact('恢复'+(side==='before'?'修改前':'修改后')+' · '+r.label,()=>applyPatches(r.patches,side),'恢复');renderHistory();toast('已恢复');}
   function modernize(text){return String(text??'')
-    .replace(/额外触发一个以(?:该敌人|目标敌人)为目标的箭矢的效果/g,'额外触发目标的一个箭矢的效果')
-    .replace(/(?:将)?以(?:该敌人|目标敌人)为目标的(一个|所有)?箭矢的回合数减少(\d+|X|N)/g,(_,a,n)=>'目标敌人的'+(a==='一个'?'一个':'')+'箭矢加速'+n+'回合')
-    .replace(/(?:将)?以自己为目标的(一个|所有)?箭矢的回合数减少(\d+|X|N)/g,(_,a,n)=>'以自己为目标的'+(a==='一个'?'一个':'')+'箭矢加速'+n+'回合')
-    .replace(/(?:将)?所有箭矢的回合数减少(\d+|X|N)/g,'箭矢加速$1回合')
-    .replace(/(?:将)?(一个|其他)箭矢的回合数减少(\d+|X|N)/g,'$1箭矢加速$2回合')
-    .replace(/将以该敌人为目标的所有箭矢的回合数变为0/g,'目标敌人的箭矢立即加速到完成')
-    .replace(/将所有箭矢的回合数变为0/g,'箭矢立即加速到完成')
-    .replace(/将一个箭矢的回合数变为0/g,'使一个箭矢立即加速到完成')
-    .replace(/本回合，你打出的箭矢牌的(?:初始)?回合数变为0/g,'本回合，你打出的箭矢牌立即加速到完成')
-    .replace(/使所有箭矢立即触发效果/g,'箭矢立即加速到完成')
-    .replace(/使一个箭矢立即触发效果/g,'使一个箭矢立即加速到完成')
-    .replace(/复制一个以该敌人为目标且回合数大于0的箭矢(?:，保留其目标和回合数)?/g,'复制目标的一个箭矢')
-    .replace(/复制目标的一个回合数大于0的箭矢/g,'复制目标的一个箭矢')
-    .replace(/你的箭矢牌获得重放/g,'箭矢牌获得重放')
+    .replace(/额外触发一个以(?:该敌人|目标敌人)为目标的流星的效果/g,'额外触发目标的一个流星的效果')
+    .replace(/(?:将)?以(?:该敌人|目标敌人)为目标的(一个|所有)?流星的回合数减少(\d+|X|N)/g,(_,a,n)=>'目标敌人的'+(a==='一个'?'一个':'')+'流星加速'+n+'回合')
+    .replace(/(?:将)?以自己为目标的(一个|所有)?流星的回合数减少(\d+|X|N)/g,(_,a,n)=>'以自己为目标的'+(a==='一个'?'一个':'')+'流星加速'+n+'回合')
+    .replace(/(?:将)?所有流星的回合数减少(\d+|X|N)/g,'流星加速$1回合')
+    .replace(/(?:将)?(一个|其他)流星的回合数减少(\d+|X|N)/g,'$1流星加速$2回合')
+    .replace(/将以该敌人为目标的所有流星的回合数变为0/g,'目标敌人的流星立即加速到完成')
+    .replace(/将所有流星的回合数变为0/g,'流星立即加速到完成')
+    .replace(/将一个流星的回合数变为0/g,'使一个流星立即加速到完成')
+    .replace(/本回合，你打出的流星牌的(?:初始)?回合数变为0/g,'本回合，你打出的流星牌立即加速到完成')
+    .replace(/使所有流星立即触发效果/g,'流星立即加速到完成')
+    .replace(/使一个流星立即触发效果/g,'使一个流星立即加速到完成')
+    .replace(/复制一个以该敌人为目标且回合数大于0的流星(?:，保留其目标和回合数)?/g,'复制目标的一个流星')
+    .replace(/复制目标的一个回合数大于0的流星/g,'复制目标的一个流星')
+    .replace(/你的流星牌获得重放/g,'流星牌获得重放')
     .replace(/攻击成长|伤害成长/g,'伤害加成');}
   function applyWording(data,rules){const format=text=>rules.reduce((value,[pattern,replacement])=>value.replace(new RegExp(pattern,'g'),replacement),String(text??''));for(const c of data.cards){c.text=format(c.text);c.upgradedText=format(c.upgradedText);}for(const t of data.terms){for(const key of ['template','upgradedTemplate',...(t.cardId?['definition']:[])])if(t[key]!==undefined)t[key]=format(t[key]);}for(const m of data.mechanisms)m.templates=m.templates.map(format);if(data.meta?.stageDeviceWording?.extraTrigger)data.meta.stageDeviceWording.extraTrigger=format(data.meta.stageDeviceWording.extraTrigger);}
   function applySeedUpdate(data,update){

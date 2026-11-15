@@ -5,7 +5,7 @@
 const JunnaEffectStatistics = (() => {
   'use strict';
   const knowledge=card=>(card.keywords||[]).includes('知识')||/^知识[。．]/.test(card.text||'');
-  const arrow=card=>card.type==='箭矢';
+  const arrow=card=>card.type==='流星';
   const high=card=>typeof card.cost==='number'&&card.cost>=2;
   const x=card=>card.cost==='X';
   const clauses=card=>String(card.text||'').split(/[。；;\n]/).map(value=>value.replace(/\s/g,'')).filter(Boolean);
@@ -14,7 +14,7 @@ const JunnaEffectStatistics = (() => {
     return event&&/每当|每次|每回合|打出|完成|进入手牌|在手牌中|抽到|受到|回合开始|回合结束/.test(event[1])?event[2]:text;
   }
   const any=(card,test)=>clauses(card).some(clause=>test(clause,action(clause)));
-  const handArrowPlay=card=>any(card,(s,a)=>/将[^。]*手牌[^。]*作为5回合的箭矢打出/.test(a));
+  const handArrowPlay=card=>any(card,(s,a)=>/将[^。]*手牌[^。]*作为5回合的流星打出/.test(a));
   const gainEnergy=text=>/获得[^，,。]*(?:点)?能量(?=$|[，,。]|并|且|可)/.test(text);
   const bonusGain=text=>/获得[^，,。]*伤害加成/.test(text);
   const discount=text=>/(?:耗能|费用)(?:减少|降低|减|[-−])|(?:耗能|费用)变为0|(?:耗能|费用)为0/.test(text);
@@ -25,7 +25,7 @@ const JunnaEffectStatistics = (() => {
     const aliases=card=>[card.name,card.id?.length>=3?card.id:null].filter(Boolean);
     const referenced=(text,predicate)=>data.cards.some(card=>predicate(card)&&aliases(card).some(name=>text.includes(name)));
     const target=(text,kind,source)=>{
-      const predicate=kind==='箭矢'?arrow:knowledge;
+      const predicate=kind==='流星'?arrow:knowledge;
       if(text.includes(kind)||referenced(text,predicate))return true;
       if(referenced(text,card=>card.id!==source.id))return false;
       return predicate(source)&&/此牌|自身|其|它|获得|耗能|费用|保留|重放/.test(text);
@@ -41,41 +41,41 @@ const JunnaEffectStatistics = (() => {
     'role.both':(c,ctx)=>ctx.role(c)==='both',
     'arrow.play':arrow,
     'arrow.hand-as-five-turn-play':handArrowPlay,
-    'arrow.enemy-accelerate':c=>any(c,(s,a)=>/所有目标为敌人的箭矢(?:获得[^。]*然后)?加速(?:\d+|[xXN])回合/.test(a)),
-    'arrow.self-accelerate':c=>any(c,(s,a)=>/所有目标为自己的箭矢加速(?:\d+|[xXN])回合/.test(a)),
-    'arrow.x-play':(c,ctx)=>x(c)&&any(c,(s,a)=>/^打出X张/.test(s)&&ctx.target(a,'箭矢',c)),
-    'arrow.play-energy':c=>any(c,(s,a)=>/打出[^。]*箭矢牌(?:时|后)/.test(s)&&gainEnergy(a)),
-    'arrow.play-draw':c=>any(c,(s,a)=>/打出[^。]*箭矢牌(?:时|后)/.test(s)&&/抽(?:取)?[^。]*牌/.test(a)),
-    'arrow.play-block':c=>any(c,(s,a)=>/打出[^。]*箭矢牌(?:时|后)/.test(s)&&/获得[^。]*格挡/.test(a)),
-    'arrow.play-accelerate':c=>any(c,(s,a)=>/打出[^。]*箭矢牌(?:时|后)/.test(s)&&/加速/.test(a)),
-    'arrow.complete-return':c=>any(c,(s,a)=>/箭矢[^。]*完成(?:时|后)/.test(s)&&/(?:放回|放入|加入)[^。]*手牌/.test(a)),
-    'arrow.complete-block':c=>any(c,(s,a)=>/箭矢[^。]*完成(?:时|后)/.test(s)&&/获得[^。]*格挡/.test(a)),
-    'arrow.complete-buff':c=>any(c,(s,a)=>/箭矢[^。]*完成(?:时|后)/.test(s)&&/伤害加成|重放|升级/.test(a)),
-    'arrow.extra-bonus':c=>any(c,(s,a)=>/箭矢[^。]*额外触发(?:时|后)/.test(s)&&bonusGain(a)),
-    'arrow.count-damage':c=>any(c,s=>/每有[^。]*箭矢|箭矢(?:的)?数量/.test(s)&&/伤害/.test(s)),
-    'arrow.count-energy':c=>any(c,s=>/每有[^。]*箭矢|箭矢(?:的)?数量/.test(s)&&gainEnergy(s)),
+    'arrow.enemy-accelerate':c=>any(c,(s,a)=>/所有目标为敌人的流星(?:获得[^。]*然后)?加速(?:\d+|[xXN])回合/.test(a)),
+    'arrow.self-accelerate':c=>any(c,(s,a)=>/所有目标为自己的流星加速(?:\d+|[xXN])回合/.test(a)),
+    'arrow.x-play':(c,ctx)=>x(c)&&any(c,(s,a)=>/^打出X张/.test(s)&&ctx.target(a,'流星',c)),
+    'arrow.play-energy':c=>any(c,(s,a)=>/打出[^。]*流星牌(?:时|后)/.test(s)&&gainEnergy(a)),
+    'arrow.play-draw':c=>any(c,(s,a)=>/打出[^。]*流星牌(?:时|后)/.test(s)&&/抽(?:取)?[^。]*牌/.test(a)),
+    'arrow.play-block':c=>any(c,(s,a)=>/打出[^。]*流星牌(?:时|后)/.test(s)&&/获得[^。]*格挡/.test(a)),
+    'arrow.play-accelerate':c=>any(c,(s,a)=>/打出[^。]*流星牌(?:时|后)/.test(s)&&/加速/.test(a)),
+    'arrow.complete-return':c=>any(c,(s,a)=>/流星[^。]*完成(?:时|后)/.test(s)&&/(?:放回|放入|加入)[^。]*手牌/.test(a)),
+    'arrow.complete-block':c=>any(c,(s,a)=>/流星[^。]*完成(?:时|后)/.test(s)&&/获得[^。]*格挡/.test(a)),
+    'arrow.complete-buff':c=>any(c,(s,a)=>/流星[^。]*完成(?:时|后)/.test(s)&&/伤害加成|重放|升级/.test(a)),
+    'arrow.extra-bonus':c=>any(c,(s,a)=>/流星[^。]*额外触发(?:时|后)/.test(s)&&bonusGain(a)),
+    'arrow.count-damage':c=>any(c,s=>/每有[^。]*流星|流星(?:的)?数量/.test(s)&&/伤害/.test(s)),
+    'arrow.count-energy':c=>any(c,s=>/每有[^。]*流星|流星(?:的)?数量/.test(s)&&gainEnergy(s)),
     'arrow.present-event':c=>/(?:在场|布置)期间/.test(c.text||'')&&/每|打出|受到/.test(c.text||''),
-    'arrow.present-block':c=>any(c,s=>/有箭矢在场时|有布置中?的箭矢时/.test(s)&&/获得[^。]*格挡/.test(s)),
-    'arrow.present-reduction':c=>/有布置的箭矢时/.test(c.text||'')&&/受到的伤害降低/.test(c.text||''),
-    'arrow.damage-block':c=>/箭矢造成伤害(?:时|后)/.test(c.text||'')&&/获得[^。]*格挡/.test(c.text||''),
-    'arrow.attack-damage-play':(c,ctx)=>any(c,(s,a)=>/造成攻击伤害(?:时|后)/.test(s)&&/打出/.test(a)&&ctx.target(a,'箭矢',c)),
-    'arrow.consume-prevent':c=>/消耗一个布置的箭矢/.test(c.text||'')&&/阻止这次伤害/.test(c.text||''),
-    'arrow.accelerate':(c,ctx)=>any(c,(s,a)=>ctx.target(s,'箭矢',c)&&/加速(?:\d+|X|N|到完成)|立即加速到完成/.test(a)),
-    'arrow.extra':(c,ctx)=>any(c,(s,a)=>ctx.target(s,'箭矢',c)&&/额外触发(?:目标的)?(?:一个|所有|全部|目标|该|此)?(?:布置的)?箭矢|箭矢[^。]*额外触发(?:\d+|X|N)次/.test(a)),
-    'arrow.copy':(c,ctx)=>any(c,(s,a)=>ctx.target(s,'箭矢',c)&&/复制|复制品/.test(a)),
-    'arrow.convert-in':c=>/变(?:化)?为[^。]*箭矢牌/.test(c.text||'')&&!/变(?:化)?为[^。]*非箭矢牌/.test(c.text||''),
-    'arrow.convert-out':c=>/变(?:化)?为[^。]*非箭矢牌/.test(c.text||''),
-    'arrow.generate':(c,ctx)=>any(c,(s,a)=>ctx.target(s,'箭矢',c)&&/(?:加入[^。]*(?:手牌|抽牌堆|弃牌堆)|(?:^|[，,])生成(?:\d+|一|两|X)张)/.test(a)&&!/复制|复制品|(?:手牌|抽牌堆|弃牌堆|消耗牌堆)中|无论何处|不论何处/.test(a)),
-    'arrow.draw':(c,ctx)=>any(c,(s,a)=>ctx.target(s,'箭矢',c)&&/抽取|抽牌堆[^。]*(?:加入|放入)[^。]*手牌/.test(a)),
-    'arrow.deck-play':(c,ctx)=>any(c,(s,a)=>ctx.target(s,'箭矢',c)&&/抽牌堆/.test(a)&&/打出/.test(a)),
-    'arrow.anywhere-play':(c,ctx)=>any(c,(s,a)=>ctx.target(s,'箭矢',c)&&/无论何处|不论何处/.test(a)&&/打出/.test(a)),
+    'arrow.present-block':c=>any(c,s=>/有流星在场时|有布置中?的流星时/.test(s)&&/获得[^。]*格挡/.test(s)),
+    'arrow.present-reduction':c=>/有布置的流星时/.test(c.text||'')&&/受到的伤害降低/.test(c.text||''),
+    'arrow.damage-block':c=>/流星造成伤害(?:时|后)/.test(c.text||'')&&/获得[^。]*格挡/.test(c.text||''),
+    'arrow.attack-damage-play':(c,ctx)=>any(c,(s,a)=>/造成攻击伤害(?:时|后)/.test(s)&&/打出/.test(a)&&ctx.target(a,'流星',c)),
+    'arrow.consume-prevent':c=>/消耗一个布置的流星/.test(c.text||'')&&/阻止这次伤害/.test(c.text||''),
+    'arrow.accelerate':(c,ctx)=>any(c,(s,a)=>ctx.target(s,'流星',c)&&/加速(?:\d+|X|N|到完成)|立即加速到完成/.test(a)),
+    'arrow.extra':(c,ctx)=>any(c,(s,a)=>ctx.target(s,'流星',c)&&/额外触发(?:目标的)?(?:一个|所有|全部|目标|该|此)?(?:布置的)?流星|流星[^。]*额外触发(?:\d+|X|N)次/.test(a)),
+    'arrow.copy':(c,ctx)=>any(c,(s,a)=>ctx.target(s,'流星',c)&&/复制|复制品/.test(a)),
+    'arrow.convert-in':c=>/变(?:化)?为[^。]*流星牌/.test(c.text||'')&&!/变(?:化)?为[^。]*非流星牌/.test(c.text||''),
+    'arrow.convert-out':c=>/变(?:化)?为[^。]*非流星牌/.test(c.text||''),
+    'arrow.generate':(c,ctx)=>any(c,(s,a)=>ctx.target(s,'流星',c)&&/(?:加入[^。]*(?:手牌|抽牌堆|弃牌堆)|(?:^|[，,])生成(?:\d+|一|两|X)张)/.test(a)&&!/复制|复制品|(?:手牌|抽牌堆|弃牌堆|消耗牌堆)中|无论何处|不论何处/.test(a)),
+    'arrow.draw':(c,ctx)=>any(c,(s,a)=>ctx.target(s,'流星',c)&&/抽取|抽牌堆[^。]*(?:加入|放入)[^。]*手牌/.test(a)),
+    'arrow.deck-play':(c,ctx)=>any(c,(s,a)=>ctx.target(s,'流星',c)&&/抽牌堆/.test(a)&&/打出/.test(a)),
+    'arrow.anywhere-play':(c,ctx)=>any(c,(s,a)=>ctx.target(s,'流星',c)&&/无论何处|不论何处/.test(a)&&/打出/.test(a)),
     'arrow.self-play':c=>arrow(c)&&/(?:重新)?打出(?:自己|此牌)/.test(c.text||''),
-    'arrow.return':(c,ctx)=>any(c,(s,a)=>ctx.target(s,'箭矢',c)&&/弃牌堆|消耗牌堆|无论何处|不论何处/.test(a)&&/(?:放回|放入|加入)[^。]*手牌/.test(a)),
+    'arrow.return':(c,ctx)=>any(c,(s,a)=>ctx.target(s,'流星',c)&&/弃牌堆|消耗牌堆|无论何处|不论何处/.test(a)&&/(?:放回|放入|加入)[^。]*手牌/.test(a)),
     'arrow.discard-return':c=>any(c,(s,a)=>/弃牌堆/.test(a)&&/(?:放回|放入|加入)[^。]*手牌/.test(a)),
-    'arrow.cost':(c,ctx)=>any(c,(s,a)=>ctx.target(s,'箭矢',c)&&/(?:耗能|费用)[^。]*(?:变为|减少|增加|不消耗)|不消耗能量|不支付费用/.test(a)),
-    'arrow.retain':(c,ctx)=>any(c,(s,a)=>ctx.target(s,'箭矢',c)&&/获得保留/.test(a)),
-    'arrow.replay':(c,ctx)=>any(c,(s,a)=>ctx.target(s,'箭矢',c)&&/获得重放/.test(a)),
-    'arrow.bonus':(c,ctx)=>any(c,(s,a)=>ctx.target(s,'箭矢',c)&&bonusGain(a)),
+    'arrow.cost':(c,ctx)=>any(c,(s,a)=>ctx.target(s,'流星',c)&&/(?:耗能|费用)[^。]*(?:变为|减少|增加|不消耗)|不消耗能量|不支付费用/.test(a)),
+    'arrow.retain':(c,ctx)=>any(c,(s,a)=>ctx.target(s,'流星',c)&&/获得保留/.test(a)),
+    'arrow.replay':(c,ctx)=>any(c,(s,a)=>ctx.target(s,'流星',c)&&/获得重放/.test(a)),
+    'arrow.bonus':(c,ctx)=>any(c,(s,a)=>ctx.target(s,'流星',c)&&bonusGain(a)),
     'knowledge.play':knowledge,
     'knowledge.generate':(c,ctx)=>any(c,(s,a)=>ctx.target(s,'知识',c)&&/(?:加入|生成)[^。]*(?:手牌|抽牌堆|弃牌堆|牌组|知识牌)/.test(a)&&!/复制|复制品/.test(a)),
     'knowledge.copy':(c,ctx)=>any(c,(s,a)=>ctx.target(s,'知识',c)&&/复制|复制品/.test(a)),
