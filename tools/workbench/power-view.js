@@ -1,6 +1,6 @@
 (function(root){
   'use strict';
-  const systems={stage:'流星',partner:'知识',growth:'伤害加成',energy:'能量',utility:'通用'};
+  const systems={stage:'飞矢',partner:'知识',growth:'伤害加成',energy:'能量',utility:'通用'};
   function create({data,ui,dom,escape,assetURL,energyText,field,area,flush,render}){
     const entries=()=>data().meta.powers||[];
     const selected=()=>ui().selected?.collection==='powers'?entries().find(e=>e.uid===ui().selected.uid):null;

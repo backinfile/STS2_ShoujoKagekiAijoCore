@@ -24,7 +24,7 @@ const JunnaPoolReference = (() => {
   const types = [{name:'攻击',min:27,max:37},{name:'技能',min:30,max:42},{name:'能力',min:18,max:20}];
   const active = card => !card.trashedAt&&!card.reservedAt;
   const isReward = card => card.pool&&['普通','罕见','稀有'].includes(card.rarity);
-  const baseType = card => card.type==='流星'?card.arrowSubtype:card.type;
+  const baseType = card => card.type==='飞矢'?card.arrowSubtype:card.type;
   function poolFaces(data,scope='cards') {
     const cards=data.cards.filter(card=>(card.trashedAt?'trash':card.reservedAt?'reserve':'cards')===scope);
     const roots=cards.filter(card=>card.pool),poolIds=new Set(roots.map(card=>card.id)),ids=new Set(poolIds);
