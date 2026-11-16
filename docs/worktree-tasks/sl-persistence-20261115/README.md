@@ -179,6 +179,12 @@
 
 sl后耗尽牌堆消失了，你需要创建对持久化内容的sl测试
 
+### 3. 合并与清理确认（2026-11-16）
+
+<send_user_message_question_reply>
+[{"answer":"合并并清理工作树与任务分支（先归档证据）","question":"是否将测试提交 773d0e9 合并到 main？","questionItemId":"[\"request_user_input_async\",\"call_d9d65c8052d94db4b1e0e28501c3f85f\",0]"}]
+</send_user_message_question_reply>
+
 ## 简要计划
 
 1. 建立能够检测耗尽档案丢失的真实 SL 回归入口。
@@ -197,18 +203,18 @@ sl后耗尽牌堆消失了，你需要创建对持久化内容的sl测试
 
 - `Probe.cs`：建立普通牌、升级牌、部分消耗预算、带成长字段的永久耗尽档案、空壳及独立遗物规则快照，逐项比较完整保存内容。覆盖 JSON 往返、缓存对象重复恢复、玩家同步、重新获得及真实可见牌堆。
 - `run.py`：隔离游戏与用户目录、随机端口、最小化静默启动，通过 KarenSTS2MCP 驱动保存、返回菜单、停止、重启与续玩。支持当前、旧 Core、旧 Karen、新旧字段并存格式和档案清空负向对照。
-- 存档、截图、日志、窗口保护与 DLL/PCK 哈希集中放在忽略的 `out/tmp/sl-persistence/`。实际包以当前工作树源码编译双版本 Runtime，复用现有 1.9.4 资源包，并更新校验清单。
+- 存档、截图、日志、窗口保护与 DLL/PCK 哈希集中放在忽略的 `out/tmp/sl-persistence-20261115/`。实际包以当前工作树源码编译双版本 Runtime，复用现有 1.9.4 资源包，并更新校验清单。
 
 ### 验证结果
 
 | 游戏与输入 | 保存重启轮数 | 结果 | 证据目录 |
 | --- | --- | --- | --- |
-| 正式版 v0.107.1，当前格式 | 2 | 通过；完整快照、按钮和可见卡牌一致 | `out/tmp/sl-persistence/final-stable/` |
-| 正式版 v0.107.1，旧 Core 玩家字段（1.9.4 候选包） | 1 | 通过 | `out/tmp/sl-persistence/red-legacy/` |
-| 测试版 v0.113.0，旧 Karen 玩家字段 | 1 | 通过 | `out/tmp/sl-persistence/final-beta-legacy-karen/` |
-| 正式版 v0.107.1，新旧字段并存 | 1 | 通过；新字段优先 | `out/tmp/sl-persistence/final-stable-mixed/` |
-| 测试版 v0.113.0，当前格式、最终探针 | 1 | 通过；含重复恢复、玩家同步、卡牌成长及可见牌堆 | `out/tmp/sl-persistence/final-beta-current/` |
-| 正式版 v0.107.1，人为清空耗尽档案 | 1 | 按预期失败，退出码 1，明确报告 `SL changed archive`，实际档案为 `[]` | `out/tmp/sl-persistence/negative-control/` |
+| 正式版 v0.107.1，当前格式 | 2 | 通过；完整快照、按钮和可见卡牌一致 | `out/tmp/sl-persistence-20261115/final-stable/` |
+| 正式版 v0.107.1，旧 Core 玩家字段（1.9.4 候选包） | 1 | 通过 | `out/tmp/sl-persistence-20261115/red-legacy/` |
+| 测试版 v0.113.0，旧 Karen 玩家字段 | 1 | 通过 | `out/tmp/sl-persistence-20261115/final-beta-legacy-karen/` |
+| 正式版 v0.107.1，新旧字段并存 | 1 | 通过；新字段优先 | `out/tmp/sl-persistence-20261115/final-stable-mixed/` |
+| 测试版 v0.113.0，当前格式、最终探针 | 1 | 通过；含重复恢复、玩家同步、卡牌成长及可见牌堆 | `out/tmp/sl-persistence-20261115/final-beta-current/` |
+| 正式版 v0.107.1，人为清空耗尽档案 | 1 | 按预期失败，退出码 1，明确报告 `SL changed archive`，实际档案为 `[]` | `out/tmp/sl-persistence-20261115/negative-control/` |
 
 - 最终测试探针分别使用正式版和测试版真实引用编译，均为 0 警告、0 错误。双版本 Runtime 构建通过，测试包严格校验通过。
 - 最终记录窗口保护的正常测试均为 0 次抢焦点、窗口样本全部最小化。全部本任务游戏已关闭，原有游戏实例保留。
@@ -226,4 +232,4 @@ sl后耗尽牌堆消失了，你需要创建对持久化内容的sl测试
 
 ### 交付状态
 
-任务分支 `codex/sl-persistence-20261115` 保存此次变更；原 `main` 检出干净且起始提交未变。合并与清理按 `$worktree-task` 等待用户确认。若批准清理，先将必要证据归档到原仓库的忽略目录，再移除工作树与任务分支。
+用户于 2026-11-16 确认合并并清理工作树与任务分支，要求先归档证据。测试提交 `773d0e99d89b0e208d2e37cca58ea15d146e7a0c` 已快进合并到 `main`。证据保存在原仓库忽略目录 `out/tmp/sl-persistence-20261115/`，共 344 个文件、39,137,924 字节，逐文件 SHA256 核对通过；完整清单见 `archive-manifest.json`。清理范围为本任务工作树、任务分支及其中已归档或可重建的临时产物，其他工作树保留。
