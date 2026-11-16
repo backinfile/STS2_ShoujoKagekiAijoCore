@@ -14,7 +14,7 @@ namespace ShoujoKageki.Core.Runtime.Modules.Shine;
 #endif
 internal static class ShineResultMovement
 {
-    private static void Prefix(ref IEnumerable<CardModel> cards, CardPile newPile, out List<CardPileAddResult> __state)
+    private static void Prefix(ref IEnumerable<CardModel> cards, CardPile newPile, out List<CardPileAddResult>? __state)
     {
         __state = [];
         if (!newPile.IsCombatPile || newPile.Type == PileType.Play) return;
@@ -24,9 +24,9 @@ internal static class ShineResultMovement
         __state = deferred.Select(c => new CardPileAddResult { cardAdded = c, oldPile = c.Pile, success = false, modifyingModels = [] }).ToList();
         cards = materialized.Where(c => !deferred.Contains(c)).ToArray();
     }
-    private static void Postfix(ref Task<IReadOnlyList<CardPileAddResult>> __result, List<CardPileAddResult> __state)
+    private static void Postfix(ref Task<IReadOnlyList<CardPileAddResult>> __result, List<CardPileAddResult>? __state)
     {
-        if (__state.Count > 0) __result = Merge(__result, __state);
+        if (__state is { Count: > 0 }) __result = Merge(__result, __state);
     }
     private static async Task<IReadOnlyList<CardPileAddResult>> Merge(Task<IReadOnlyList<CardPileAddResult>> original, List<CardPileAddResult> deferred)
         => (await original).Concat(deferred).ToArray();
@@ -34,10 +34,19 @@ internal static class ShineResultMovement
 [HarmonyPatch(typeof(CardCmd), nameof(CardCmd.Exhaust), [typeof(PlayerChoiceContext), typeof(CardModel), typeof(bool), typeof(bool)])]
 internal static class ShineResultExhaust
 {
-    private static bool Prefix(CardModel card, ref Task __result)
+    private static bool Prefix(CardModel card,
+#if STS2_BETA
+        ref Task<CardPileAddResult?> __result)
+#else
+        ref Task __result)
+#endif
     {
         if (!ShineService.ShouldDeferResultMove(card)) return true;
+#if STS2_BETA
+        __result = Task.FromResult<CardPileAddResult?>(null);
+#else
         __result = Task.CompletedTask;
+#endif
         return false;
     }
 }

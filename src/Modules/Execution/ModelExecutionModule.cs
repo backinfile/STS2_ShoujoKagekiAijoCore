@@ -43,12 +43,13 @@ public sealed class ModelExecutionModule : ICoreModule, IModelExecutionScopes, I
     }
     private void Patch(MethodInfo method, bool card)
     {
-        if (!_patched.Add(method)) return;
+        if (_patched.Contains(method)) return;
         _patcher.Patch(method,
             prefix: new(typeof(ModelExecutionModule), card ? nameof(CardPrefix) : nameof(ModelPrefix)),
             postfix: typeof(Task).IsAssignableFrom(method.ReturnType)
                 ? new(typeof(ModelExecutionModule), card ? nameof(CardPostfix) : nameof(ModelPostfix)) : null,
             finalizer: new(typeof(ModelExecutionModule), nameof(Finalizer)));
+        _patched.Add(method);
     }
 
     internal static void RegisterNative(Func<CardModel, PlayerChoiceContext, CardPlay, Func<Task, Task>?> enter)
@@ -74,6 +75,16 @@ public sealed class ModelExecutionModule : ICoreModule, IModelExecutionScopes, I
                     candidate.GetParameters().Select(parameter => parameter.ParameterType).ToArray());
                 if (method.IsAbstract || method.ContainsGenericParameters || !typeof(Task).IsAssignableFrom(method.ReturnType)
                     || method.GetMethodBody() == null) continue;
+                if (_patched.Contains(method)) continue;
+                try { _ = PatchProcessor.GetOriginalInstructions(method); }
+                catch (MissingMemberException error) when (method.Module.Assembly != typeof(RuntimeEntry).Assembly
+                    && method.Module.Assembly != typeof(CardModel).Assembly)
+                {
+                    RuntimeEntry.Context.Diagnostics.Report(DiagnosticSeverity.Error, Id, "model.invalid-method-body",
+                        $"Cannot install model scope for {method.DeclaringType?.FullName}.{method.Name} " +
+                        $"from {method.Module.Assembly.FullName}.", error);
+                    continue;
+                }
                 Patch(method, card);
             }
         }

@@ -82,6 +82,18 @@ public sealed class CardPlayRoutingModule : ICoreModule, ICardPlayRouting, ICard
             throw;
         }
     }
+    private static bool IsRitsuDispatch(MethodInfo method)
+    {
+        if (method.DeclaringType?.FullName == "STS2RitsuLib.Cards.CardOnPlayHook" && method.Name == "RunCardOnPlayHooks") return true;
+        // BWPxing 1.0.7 retains the dispatcher in a delegate, beyond a direct IL call.
+        // Verify the captured target; RitsuBoundary still adapts its original effect.
+        return method.DeclaringType?.FullName == "BWPxing.Compatibility.CardPlayContext"
+            && method.Name == "PlayWithRitsuHooks" && method.IsStatic && method.ReturnType == typeof(Task)
+            && method.GetParameters().Select(p => p.ParameterType).SequenceEqual(new[] { typeof(CardModel), typeof(PlayerChoiceContext), typeof(CardPlay) })
+            && AccessTools.Field(method.DeclaringType, "_ritsuHooks")?.GetValue(null) is Delegate captured
+            && captured.Method.DeclaringType?.FullName == "STS2RitsuLib.Cards.CardOnPlayHook"
+            && captured.Method.Name == "RunCardOnPlayHooks";
+    }
     private sealed class Payload(Route[] routes, int index,
         Func<CardModel, PlayerChoiceContext, CardPlay, Task> original) : ICardEffectPayload
     {
@@ -119,7 +131,7 @@ public sealed class CardPlayRoutingModule : ICoreModule, ICardPlayRouting, ICard
             int effects = 0, results = 0;
             foreach (var instruction in instructions)
             {
-                if (instruction.operand is MethodInfo hook && hook.DeclaringType?.FullName == "STS2RitsuLib.Cards.CardOnPlayHook" && hook.Name == "RunCardOnPlayHooks") effects++;
+                if (instruction.operand is MethodInfo hook && IsRitsuDispatch(hook)) effects++;
                 if (instruction.operand is MethodInfo { DeclaringType: var type, Name: var name } && type == typeof(CardModel))
                 {
                     string? replacement = name switch
@@ -138,6 +150,12 @@ public sealed class CardPlayRoutingModule : ICoreModule, ICardPlayRouting, ICard
                         instruction.opcode = OpCodes.Call; instruction.operand = AccessTools.Method(typeof(CardPlayRoutingModule), replacement);
                     }
                 }
+                else if (instruction.operand is MethodInfo forwarded && !IsRitsuDispatch(forwarded) &&
+                    (ForwardedCardCall.Adapt(forwarded,
+                        call => call.DeclaringType == typeof(CardModel) && call.Name == "OnPlay",
+                        AccessTools.Method(typeof(CardPlayRoutingModule), nameof(Dispatch))) ||
+                     ForwardedCardCall.Adapt(forwarded,
+                        call => call.DeclaringType?.FullName == "STS2RitsuLib.Cards.CardOnPlayHook" && call.Name == "RunCardOnPlayHooks", null))) effects++;
                 yield return instruction;
             }
             if (effects != 1 || results != 1) throw new InvalidOperationException($"Core card boundaries: effects={effects}, results={results}");
@@ -157,6 +175,9 @@ public sealed class CardPlayRoutingModule : ICoreModule, ICardPlayRouting, ICard
                 {
                     instruction.opcode = OpCodes.Call; instruction.operand = AccessTools.Method(typeof(CardPlayRoutingModule), nameof(DispatchFromHook)); effects++;
                 }
+                else if (instruction.operand is MethodInfo forwarded && ForwardedCardCall.Adapt(forwarded,
+                    call => call.Name == "Invoke" && call.DeclaringType?.FullName == "STS2RitsuLib.Cards.CardOnPlayHook+CardOnPlayDelegate",
+                    AccessTools.Method(typeof(CardPlayRoutingModule), nameof(DispatchFromHook)))) effects++;
                 yield return instruction;
             }
             if (effects != 1) throw new InvalidOperationException($"Core RitsuLib card boundary: effects={effects}");

@@ -1,0 +1,5 @@
+<Project Sdk="Godot.NET.Sdk/4.5.1">
+ <PropertyGroup><EnableDefaultCompileItems>false</EnableDefaultCompileItems><EnableDynamicLoading>true</EnableDynamicLoading><AssemblyName>CoreErrorWatchIntegration</AssemblyName></PropertyGroup>
+ <ItemGroup><Compile Include="Probe.cs" /></ItemGroup><Import Project="../../build/GameReferences.props" />
+ <ItemGroup><Reference Include="CoreApi" HintPath="$(CoreApiPath)" Private="false" /></ItemGroup>
+</Project>

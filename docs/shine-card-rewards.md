@@ -11,3 +11,5 @@
 `ShineRewards.GetCandidates`、`Roll` 和 `Add` 共用上述规则。角色可以实现 `IShineRewardEligibility` 增加具体牌的掉落条件。`Add` 在战斗中预约战后奖励并添加数量标记，战斗外立即展示；沿用原生单牌领取、存档、联机同步及现有多奖励分组展示。
 
 公共再生产保持原 ModelId `CARD.KAREN_SHINE_REPRODUCE`、基础 1 费／升级 0 费、闪耀 1 和原三语正文。它从接收者自己的耗尽档案中选择一张牌，使用公共 Reacquire 流程恢复永久属性并建立满次数的新生命周期，同时加入永久牌组和手牌；候选排除再生产自身。该牌及奖励显示、标记和资源由 Core 提供。
+
+`ShineRewards.Create(card, recipient)` 接受已生成的可变卡牌，包括重新获得预览；未登记时将同一实例加入接收者的 `RunState`，已登记时直接复用。创建奖励和领取沿用同一实例，保存恢复仍走原生单牌奖励登记流程。

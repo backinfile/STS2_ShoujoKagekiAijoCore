@@ -48,7 +48,17 @@ public sealed class ShineRewardService : IShineRewards, ICoreModule
         return bucket.Length == 0 ? candidates[rng.NextInt(candidates.Count)] : bucket[rng.NextInt(bucket.Length)];
     }
 
-    public MegaCrit.Sts2.Core.Rewards.Reward Create(CardModel card, Player recipient) => new CoreShineCardReward(card, recipient);
+    public MegaCrit.Sts2.Core.Rewards.Reward Create(CardModel card, Player recipient)
+    {
+        card.AssertMutable();
+        if (!recipient.RunState.ContainsCard(card))
+        {
+            // Detached previews already have an owner; native AddCard binds it itself.
+            card.Owner = null!;
+            recipient.RunState.AddCard(card, recipient);
+        }
+        return new CoreShineCardReward(card, recipient);
+    }
 
     public async Task Add(Player recipient, CardModel? except = null)
     {

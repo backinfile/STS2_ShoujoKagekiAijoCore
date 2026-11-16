@@ -171,6 +171,9 @@ public sealed class CardExecutionModule : ICoreModule, ICardExecution, ICardStag
                         replacement = nameof(EnterNativePlay);
                         entries++;
                     }
+                    if (replacement == null && ForwardedCardCall.Adapt(method,
+                        call => call.DeclaringType == typeof(CardModel) && call.Name == nameof(CardModel.OnPlayWrapper),
+                        AccessTools.Method(typeof(CardExecutionModule), nameof(EnterNativePlay)))) entries++;
                     if (replacement != null)
                     {
                         instruction.opcode = OpCodes.Call;

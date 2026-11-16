@@ -1,0 +1,12 @@
+{
+  "version": "1.0.0",
+  "has_dll": true,
+  "dependencies": [
+    "BaseLib"
+  ],
+  "id": "CoreErrorWatchIntegration",
+  "has_pck": false,
+  "author": "Test",
+  "affects_gameplay": false,
+  "name": "Error watch directed fixture"
+}

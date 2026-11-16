@@ -970,6 +970,8 @@ PlayerChoices.ChooseIndex(context, player, optionCount, selectLocal) 统一自�
 
 `CardPlayRoutingModule` 将旧两种中间件适配到 `ICardEffectPayload`，使用不可变的剩余路由快照和可绑定卡牌的终端调用。复制箭矢在实际结算时使用副本、当前选择上下文和独立闪耀预算，保留目标、等待、重放次数及投入数据。API V1 旧接口与异常身份保持兼容。
 
+自动出牌与牌效路由在外部普通／异步转发包装中定位唯一的真实调用，保留包装代码及第三方前后钩子。未找到唯一边界时继续报告安装失败。全模型安装先读取方法 IL；第三方失效成员引用按具体方法及程序集记录原异常，其余有效模型继续安装，成功后才登记已安装状态。
+
 Junna 的 `ResearchRules` 显式定义三组研究主牌、成员、计数来源、上限和描述展示。JK148 使用永久额外次数且无上限，JK184 使用同一字段并封顶 6；两者保留获得批次关联、永久成员去重和战斗副本投影。JK314 沿用同步后 main 的公共耗尽档案规则，统计跨批次的 JK122B，超过 3 张继续增加，独立于永久及外部强化次数；旧 JunnaDepletedPartners 字段继续注册供历史存档读取。
 
 `CardExportSession` 拥有一次导出的脱离牌堆快照、临时节点、视口与绘制等待。节点创建后立即登记，尚未挂到场景树的构建异常也能释放。主卡与关联卡在原生节点 ready 后统一刷新，避免关联卡保留场景占位文字。成功、构建失败与写文件失败均释放临时资源；布局、文件名、索引 JSON 和公开导出入口沿用原格式。`CardPngExportUtil.Index` 集中元数据与索引逻辑，主文件负责批量调度和文件输出。
@@ -1003,3 +1005,5 @@ Core 提供共享稀有遗物花朵，沿用模型名与存档 ID `KAREN_FLOWER_
 ## 共享诅咒“存在于舞台的理由”
 
 `src/Modules/Shine/CoreStageReason.cs` 使用 BaseLib 的 `Pool(CurseCardPool)` 注册到全局诅咒池，`CustomID("KAREN_STAGE_REASON")` 保留旧对局、历史与耗尽档案的模型身份。规则沿用 1 费、诅咒、消耗、闪耀 3、不可升级及无额外牌效；图片和中英日本地化原值迁入 Core。它不属于角色池、无色池或 Token 池，因此不进入这些池的随机奖励与闪耀奖励候选。Karen 同步移除旧模型、图片、本地化与池注入，并将最低 Core 依赖提高至 1.9.5。
+
+百闻牌 1.0.7 的 `CardPlayContext.PlayWithRitsuHooks` 缓存原 RitsuLib 分发器委托。Core 在目标与签名匹配时保留该包装器，由 RitsuBoundary 处理内部原牌效，避免丢失百闻牌上下文及重复执行中间件。
