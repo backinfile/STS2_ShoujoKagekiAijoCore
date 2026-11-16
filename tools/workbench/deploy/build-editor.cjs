@@ -35,7 +35,7 @@ let html=require(path.join(source,'mod-page.cjs')).modPage(read('shell.html'),{m
   .replace('<!--ASSETS-->',()=>inline('workbench-assets',assets))
   .replace('<!--DATA-->',()=>'<script id="workbench-data" type="application/json" data-src="'+modPath+'/snapshot.json">'+safe({ui:state.ui})+'</script>')
   .replace('<!--ROUTE_DATA-->',()=>inline('workbench-route-data',json(path.join(source,'route-statistics-defaults.json'))))
-  .replace('<!--APP-->',()=>inline('workbench-battle-sim',optional('纯那流星等待补偿战斗模拟_20261103.json'))+inline('workbench-card-audit',optional('纯那全卡牌数值校验_20261103.json'))+'<script>'+script+'</script>');
+  .replace('<!--APP-->',()=>inline('workbench-battle-sim',optional('纯那飞矢等待补偿战斗模拟_20261103.json'))+inline('workbench-card-audit',optional('纯那全卡牌数值校验_20261103.json'))+'<script>'+script+'</script>');
 fs.mkdirSync(here,{recursive:true});
 html=require('./static-runtime.cjs').externalize(html,publicDirectory);
 fs.writeFileSync(path.join(here,'editor.html'),html);

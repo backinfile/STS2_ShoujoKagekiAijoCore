@@ -7,7 +7,7 @@ const path=require('node:path');
 const {randomUUID}=require('node:crypto');
 const {WorkbenchStore}=require('./mcp-store.cjs');
 const {workspaceId}=require('./mcp-config.cjs');
-function fixture(t){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'junna-mcp-')),file=path.join(dir,'workbench.json'),seed={schemaVersion:1,workspaceId,revision:1,history:[],assets:{},data:{title:'测试',meta:{},cards:[{uid:'card-a',id:'A',name:'甲',text:'测试',cost:1,type:'流星',turns:'X',upgradedTurns:'X',extraHoverTips:[{id:'background',description:'背景'}]},{uid:'card-b',id:'B',name:'乙',text:'另一张',cost:1,type:'技能'}],terms:[],mechanisms:[],archetypes:[],partnerGroups:[],styles:[{uid:'style-a',id:'S',name:'风格',content:'约定'}],fitPool:[{uid:'fit-a',id:'F',name:'契合',theme:'星',text:'原文',cardIds:['A']}]}};fs.writeFileSync(file,JSON.stringify(seed));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));return {store:new WorkbenchStore({file,seed,workspaceId}),file,seed};}
+function fixture(t){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'junna-mcp-')),file=path.join(dir,'workbench.json'),seed={schemaVersion:1,workspaceId,revision:1,history:[],assets:{},data:{title:'测试',meta:{},cards:[{uid:'card-a',id:'A',name:'甲',text:'测试',cost:1,type:'飞矢',turns:'X',upgradedTurns:'X',extraHoverTips:[{id:'background',description:'背景'}]},{uid:'card-b',id:'B',name:'乙',text:'另一张',cost:1,type:'技能'}],terms:[],mechanisms:[],archetypes:[],partnerGroups:[],styles:[{uid:'style-a',id:'S',name:'风格',content:'约定'}],fitPool:[{uid:'fit-a',id:'F',name:'契合',theme:'星',text:'原文',cardIds:['A']}]}};fs.writeFileSync(file,JSON.stringify(seed));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));return {store:new WorkbenchStore({file,seed,workspaceId}),file,seed};}
 function input(changes,extra={}){return {requestId:randomUUID(),clientId:'test-client',label:'测试编辑',changes,...extra};}
 const patch=(e,updates)=>({collection:'cards',uid:e.uid,expectedVersion:e.version,updates});
 
@@ -108,10 +108,10 @@ test('temporary star-arrow snapshot restores arrow type without losing countdown
     const {store,file,seed}=fixture(t),old=JSON.parse(fs.readFileSync(file,'utf8'));
     Object.assign(old.data.cards[0],{type:'\u661f\u77e2',turns,upgradedTurns:turns==='X'?'X':1,arrowSubtype:'攻击'});
     fs.writeFileSync(file,JSON.stringify(old));
-    const before=store.get({collection:'cards',id:'A'});assert.equal(before.entity.type,'流星');
+    const before=store.get({collection:'cards',id:'A'});assert.equal(before.entity.type,'飞矢');
     await store.commit(input([patch(before,{notes:'回切后正常编辑'})]));
     const card=new WorkbenchStore({file,seed,workspaceId}).get({collection:'cards',id:'A'}).entity;
-    assert.equal(card.uid,'card-a');assert.equal(card.id,'A');assert.equal(card.type,'流星');
+    assert.equal(card.uid,'card-a');assert.equal(card.id,'A');assert.equal(card.type,'飞矢');
     assert.equal(card.turns,turns);assert.equal(card.upgradedTurns,turns==='X'?'X':1);assert.equal(card.arrowSubtype,'攻击');
     assert.deepEqual(card.extraHoverTips,before.entity.extraHoverTips);
   }

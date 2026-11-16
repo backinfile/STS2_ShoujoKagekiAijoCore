@@ -6,7 +6,7 @@
 (function(root){
   'use strict';
   const filters=typeof module==='object'&&module.exports?require('./filter-state.js'):root.JunnaFilters;
-  const order=['物理流星','言叶','星星','引文与剧目','舞台技法','日常锻炼','日常生活','学习与记录','舞台与伙伴'];
+  const order=['物理飞矢','言叶','星星','引文与剧目','舞台技法','日常锻炼','日常生活','学习与记录','舞台与伙伴'];
   const sourceURL=value=>/^https?:\/\//i.test(String(value||'').trim())?String(value).trim():'';
   const isEventEntry=entry=>Boolean(entry?.eventDesign&&typeof entry.eventDesign==='object'&&!Array.isArray(entry.eventDesign));
   const isPotionEntry=entry=>Boolean(entry?.potionDesign&&typeof entry.potionDesign==='object'&&!Array.isArray(entry.potionDesign));

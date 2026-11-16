@@ -15,9 +15,9 @@ const JunnaRouteStatistics = (() => {
     const text=String(card.text||'').replace(/^知识[。．]?/,''),knowledge=(card.keywords||[]).includes('知识')||/^知识[。．]/.test(card.text||'');
     let trigger=false,payoff=false;
     if(route.id==='SYS_stage') {
-      // 流星牌与将手牌作为流星打出的效果提供触发。
-      trigger=card.type==='流星'||effectStatistics.handArrowPlay(card);
-      payoff=/流星[^。]*(?:完成时|完成后|额外触发时|额外触发后)|打出[^。]*流星牌(?:时|后)|(?:每当|每次)[^。]*流星[^。]*加速[^。]*(?:时|后)|流星数量|每有[^。]*流星|(?:在场|布置)期间|有布置中?的流星时/.test(text);
+      // 飞矢牌与将手牌作为飞矢打出的效果提供触发。
+      trigger=card.type==='飞矢'||effectStatistics.handArrowPlay(card);
+      payoff=/飞矢[^。]*(?:完成时|完成后|额外触发时|额外触发后)|打出[^。]*飞矢牌(?:时|后)|(?:每当|每次)[^。]*飞矢[^。]*加速[^。]*(?:时|后)|飞矢数量|每有[^。]*飞矢|(?:在场|布置)期间|有布置中?的飞矢时/.test(text);
     } else if(route.id==='SYS_partner') {
       trigger=knowledge||/(?:抽取|复制|加入|放入|取回)[^。]*知识牌/.test(text);
       payoff=/(?:打出|抽到)[^。]*知识牌[^。]*(?:后|时)|每[^。]*知识牌|知识牌[^。]*(?:进入手牌|时|后)|本场战斗打出过|若[^。]*关联/.test(text);
@@ -43,7 +43,7 @@ const JunnaRouteStatistics = (() => {
     if(value.role==='tool')value.role='payoff';
     if(route.id==='SYS_stage') {
       const payoff=value.role==='payoff'||value.role==='both';
-      if(card.type==='流星'||effectStatistics.handArrowPlay(card))value.role=payoff?'both':'trigger';
+      if(card.type==='飞矢'||effectStatistics.handArrowPlay(card))value.role=payoff?'both':'trigger';
     }
     return {role:Object.hasOwn(roles,value.role)?value.role:'unclassified',cross:(card.archetypeIds||[]).length>1,ports:[...new Set((Array.isArray(value.ports)?value.ports:[]).filter(port=>Object.hasOwn(ports,port)))]};
   }
