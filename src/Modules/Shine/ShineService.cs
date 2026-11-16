@@ -353,6 +353,17 @@ public sealed class ShineService : IShineService, ICoreModule
         }
     }
 
+    [HarmonyPatch(typeof(MegaCrit.Sts2.Core.Models.Powers.SwipePower), nameof(MegaCrit.Sts2.Core.Models.Powers.SwipePower.Steal))]
+    private static class StolenCardStatePatch
+    {
+        private static void Prefix(CardModel card)
+        {
+            // Native theft returns DeckVersion; retain the budget of the card actually stolen.
+            if (card.DeckVersion is { } permanent && Instance.GetState(card) is { Temporary: false } state)
+                Instance.SetState(permanent, state.Remaining, state.Maximum);
+        }
+    }
+
     [HarmonyPatch(typeof(AbstractModel), nameof(AbstractModel.MutableClone))]
     private static class ClonePatch
     {

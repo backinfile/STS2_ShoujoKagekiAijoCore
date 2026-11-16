@@ -1,0 +1,8 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><AssemblyName>CoreTheftProbe</AssemblyName></PropertyGroup>
+  <Import Project="../../build/GameReferences.props" />
+  <ItemGroup>
+    <ProjectReference Include="../../src/Api.V1/ShoujoKagekiAijoCore.Api.V1.csproj" />
+    <Reference Include="BaseLib" HintPath="$(BaseLibPath)" Private="false" />
+  </ItemGroup>
+</Project>
