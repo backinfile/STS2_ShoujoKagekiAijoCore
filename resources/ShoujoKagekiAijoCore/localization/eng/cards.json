@@ -7,5 +7,7 @@
   "KAREN_SHINE_REPRODUCE.description": "Choose {Cards:diff()} depleted [gold]Shine[/gold] {Cards:plural:card|cards} and add them back to your deck.",
   "KAREN_SHINE_REPRODUCE.tip.title": "Tip",
   "KAREN_SHINE_REPRODUCE.tip": "This card can appear in a [gold]Shine Card Reward[/gold].",
-  "KAREN_SHINE_REPRODUCE.select_title": "Choose a depleted Shine card"
+  "KAREN_SHINE_REPRODUCE.select_title": "Choose a depleted Shine card",
+  "KAREN_STAGE_REASON.title": "A Reason to Take the Stage",
+  "KAREN_STAGE_REASON.description": ""
 }

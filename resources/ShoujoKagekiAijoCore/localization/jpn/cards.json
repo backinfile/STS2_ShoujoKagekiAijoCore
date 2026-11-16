@@ -7,5 +7,7 @@
   "KAREN_SHINE_REPRODUCE.description": "[gold]キラめき[/gold]が尽きたカードを{Cards:diff()}枚選び、デッキに戻す。",
   "KAREN_SHINE_REPRODUCE.tip.title": "ヒント",
   "KAREN_SHINE_REPRODUCE.tip": "このカードは[gold]キラめきカード報酬[/gold]に出現する。",
-  "KAREN_SHINE_REPRODUCE.select_title": "キラめきが尽きたカードを選ぶ"
+  "KAREN_SHINE_REPRODUCE.select_title": "キラめきが尽きたカードを選ぶ",
+  "KAREN_STAGE_REASON.title": "舞台に立つ理由",
+  "KAREN_STAGE_REASON.description": ""
 }
