@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Saves;
 using ShoujoKageki.Core.Runtime;
 using ShoujoKageki.Core.V1;
 
@@ -41,6 +43,7 @@ public sealed class TelemetryModule : ICoreModule, IDisposable
             .Select(mod => new { id = mod.Id, name = mod.Id, version = Version(mod.Id, mod.Version) });
         if (models != null)
             mods = models.GroupBy(model => model.ModId).Select(group => new { id = group.Key, name = group.Key, version = Version(group.Key, group.First().ModVersion) });
+        string? language = LocManager.Instance?.Language ?? SaveManager.Instance?.SettingsSave?.Language;
         return new
         {
             schema_version = 2,
@@ -52,6 +55,7 @@ public sealed class TelemetryModule : ICoreModule, IDisposable
             game_target = "stable",
 #endif
             game_version = Context.GameVersion,
+            language = string.IsNullOrWhiteSpace(language) ? "unknown" : language,
             source_mods = mods.OrderBy(mod => mod.id, StringComparer.Ordinal).Take(128).ToArray(),
             model_sources = (models ?? Array.Empty<CoreModelInfo>()).Take(8192).OrderBy(model => model.Id, StringComparer.Ordinal)
                 .Select(model => new { model_id = model.Id, source_mod = model.ModId, source_version = Version(model.ModId, model.ModVersion) }).ToArray()

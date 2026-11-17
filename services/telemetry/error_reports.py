@@ -99,7 +99,8 @@ def validate(data):
     identity += [result["os"], result["game_commit"], data["mods_truncated"], [(mod["id"], mod["version"]) for mod in mods]]
     identity += [normalize(result["message"]), normalize(result["stack"])]
     if version == 2:
-        identity.append(result["core_telemetry"])
+        # Locale is diagnostic context, independent of error identity and retry receipts.
+        identity.append({key: value for key, value in result["core_telemetry"].items() if key != "language"})
     result["fingerprint"] = hashlib.sha256(json.dumps(identity, ensure_ascii=False).encode()).hexdigest()
     return result
 

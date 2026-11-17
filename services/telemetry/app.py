@@ -20,7 +20,7 @@ from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlsplit
 
-from protocol import core_context
+from protocol import core_context, language_code
 from raw_archive import RawArchive, utc_day
 from error_reports import ErrorStore, ErrorLimiter, InvalidError, MAX_BODY as MAX_ERROR_BODY
 
@@ -407,6 +407,14 @@ class Store:
             if value != "all":
                 clauses.append("json_extract(facts, '$.core_telemetry." + key + "')=?")
                 values.append(value)
+        language = query.get("language", ["all"])[0]
+        if language != "all":
+            try:
+                language_code(language)
+            except ValueError as exc:
+                raise Invalid(str(exc)) from exc
+            clauses.append("COALESCE(json_extract(facts, '$.core_telemetry.language'), 'unknown')=?")
+            values.append(language)
         source = query.get("source_mod", ["all"])[0]
         if len(source) > 180:
             raise Invalid("invalid_filter")
@@ -443,15 +451,16 @@ class Store:
             rows = db.execute("SELECT json_extract(facts, '$.core_telemetry') AS context, "
                               "(SELECT json_group_array(json_extract(value, '$.character')) "
                               "FROM json_each(runs.facts, '$.seats')) AS characters FROM runs" + where, values)
-            characters, core_versions, source_mods = set(), set(), set()
+            characters, core_versions, source_mods, languages = set(), set(), set(), set()
             for row in rows:
                 context = json.loads(row["context"]) if row["context"] else {}
+                languages.add(context.get("language", "unknown"))
                 characters.update(json.loads(row["characters"]))
                 if context.get("core_version"):
                     core_versions.add(context["core_version"])
                 source_mods.update(mod["id"] for mod in context.get("source_mods", []))
         return {"builds": builds, "characters": sorted(characters),
-                "core_versions": sorted(core_versions), "source_mods": sorted(source_mods)}
+                "core_versions": sorted(core_versions), "source_mods": sorted(source_mods), "languages": sorted(languages)}
 
     def stats(self, query):
         where, values = self.where(query)
@@ -468,10 +477,13 @@ class Store:
         characters = set()
         core_versions, source_mods, game_targets = set(), set(), set()
         raw_seats = 0
+        languages, language_counts = set(), {}
         limited = False
         for row in rows():
             run = json.loads(row["facts"])
             context = run.get("core_telemetry") or {}
+            language = context.get("language", "unknown")
+            languages.add(language)
             core_versions.update([context["core_version"]] if context else [])
             game_targets.update([context["game_target"]] if context else [])
             source_mods.update(mod["id"] for mod in context.get("source_mods", []))
@@ -485,6 +497,7 @@ class Store:
             if query.get("sample", ["codex"])[0] != "all" and run["outcome"] == "abandon" and run["floor"] <= 5:
                 excluded += len(seats)
                 continue
+            language_counts[language] = language_counts.get(language, 0) + 1
             for seat in seats:
                 total += 1
                 won = run["outcome"] == "win"
@@ -523,7 +536,11 @@ class Store:
                          "win_rate": item["wins"] / item["held"] if item["held"] else None,
                          "hold_rate": item["held"] / total if total else None})
             result.append(item)
-        return {"runs": count, "raw_seats": raw_seats, "seats": total, "wins": wins,
+        language_total = sum(language_counts.values())
+        distribution = [{"language": language, "runs": runs, "share": runs / language_total}
+                        for language, runs in sorted(language_counts.items(), key=lambda pair: (pair[0] == "unknown", -pair[1], pair[0]))]
+        return {"language_distribution": distribution, "language_total_runs": language_total, "languages": sorted(languages),
+                "runs": count, "raw_seats": raw_seats, "seats": total, "wins": wins,
                 "excluded": excluded, "missing_picked": missing,
                 "latest_received": latest, "builds": builds, "card_limit_reached": limited,
                 "cards": result, "character": character, "characters": sorted(characters),

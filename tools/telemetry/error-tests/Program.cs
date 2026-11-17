@@ -82,7 +82,7 @@ Check(incompleteJson.RootElement.GetProperty("mods")[0].GetProperty("name").GetS
 Console.WriteLine("PASS PC/Android, game build and bounded mod inventory");
 
 var coreMods = Enumerable.Range(0, 128).Select(i => new ClientErrorBuffer.ModInfo("Mod_" + i + new string('a', 80), new string('名', 80), new string('v', 40))).ToArray();
-var coreContext = new { schema_version = 2, core_version = "1.0.1", api_version = "1", game_target = "beta", game_version = "0.111.0",
+var coreContext = new { schema_version = 2, core_version = "1.0.1", api_version = "1", game_target = "beta", game_version = "0.111.0", language = "jpn",
     source_mods = coreMods.Select(mod => new { mod.id, name = mod.id, mod.version }).ToArray(), model_sources = Array.Empty<object>() };
 var coreBuffer = new ClientErrorBuffer("0.111.0", "unknown", "pc", () => now, mods: coreMods, coreContext: () => coreContext);
 var coreBodies = new List<string>();
@@ -96,6 +96,7 @@ foreach (string payload in coreBodies)
     Check(System.Text.Encoding.UTF8.GetByteCount(payload) <= 65536, "Complete v2 JSON must fit the error endpoint");
     using var report = JsonDocument.Parse(payload);
     Check(report.RootElement.GetProperty("mods_truncated").GetBoolean(), "Truncated Core inventory must be explicit");
+    Check(report.RootElement.GetProperty("core_telemetry").GetProperty("language").GetString() == "jpn", "Error reports retain game language");
     Check(report.RootElement.GetProperty("core_telemetry").GetProperty("source_mods").GetArrayLength() > 0, "Bounded Core inventory retains sources");
 }
 coreBuffer.Capture("game", "failure " + new string('错', 8192), new string('错', 8192));

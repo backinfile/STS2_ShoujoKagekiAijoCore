@@ -50,3 +50,5 @@
 }
 
 .install-help{padding:24px;line-height:1.8}.offline{min-height:80dvh;display:grid;align-content:center;justify-items:center;gap:24px}.reconnect{padding:12px 24px;border:1px solid var(--line);background:var(--white);border-radius:4px}
+
+.language-summary{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin:0 0 24px}.language-summary h2{font-size:13px}.language-summary ul{display:flex;flex-wrap:wrap;gap:12px 24px;list-style:none;margin:0;padding:0}.language-summary li{display:flex;gap:8px;align-items:baseline}.language-summary li>span:last-child{color:var(--muted);font-variant-numeric:tabular-nums}.language-summary strong{font-weight:600;font-variant-numeric:tabular-nums}
