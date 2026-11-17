@@ -1,7 +1,6 @@
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
-using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 
 namespace ShoujoKageki.Core.Runtime.Modules.Shine;
@@ -17,7 +16,8 @@ internal static class ShineResultMovement
     private static void Prefix(ref IEnumerable<CardModel> cards, CardPile newPile, out List<CardPileAddResult>? __state)
     {
         __state = [];
-        if (!newPile.IsCombatPile || newPile.Type == PileType.Play) return;
+        // Native exhaust must notify relics before the batch removes the depleted card.
+        if (!newPile.IsCombatPile || newPile.Type is PileType.Play or PileType.Exhaust) return;
         var materialized = cards.ToArray();
         var deferred = materialized.Where(ShineService.ShouldDeferResultMove).ToHashSet();
         if (deferred.Count == 0) return;
@@ -30,23 +30,4 @@ internal static class ShineResultMovement
     }
     private static async Task<IReadOnlyList<CardPileAddResult>> Merge(Task<IReadOnlyList<CardPileAddResult>> original, List<CardPileAddResult> deferred)
         => (await original).Concat(deferred).ToArray();
-}
-[HarmonyPatch(typeof(CardCmd), nameof(CardCmd.Exhaust), [typeof(PlayerChoiceContext), typeof(CardModel), typeof(bool), typeof(bool)])]
-internal static class ShineResultExhaust
-{
-    private static bool Prefix(CardModel card,
-#if STS2_BETA
-        ref Task<CardPileAddResult?> __result)
-#else
-        ref Task __result)
-#endif
-    {
-        if (!ShineService.ShouldDeferResultMove(card)) return true;
-#if STS2_BETA
-        __result = Task.FromResult<CardPileAddResult?>(null);
-#else
-        __result = Task.CompletedTask;
-#endif
-        return false;
-    }
 }
