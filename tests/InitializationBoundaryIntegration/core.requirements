@@ -1,0 +1,13 @@
+{
+  "format": 1,
+  "modId": "CoreInitializationBoundaryIntegration",
+  "apiMajor": 1,
+  "minimumApiVersion": "1.0.0",
+  "requiredFeatures": [
+    "card-payloads@1",
+    "model-method-scopes@1"
+  ],
+  "optionalFeatures": [
+    "diagnostics@1"
+  ]
+}

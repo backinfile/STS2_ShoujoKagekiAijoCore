@@ -1,0 +1,28 @@
+{
+  "id": "CoreInitializationBoundaryIntegration",
+  "name": "Core boundary integration",
+  "author": "Core tests",
+  "version": "1.0.0",
+  "has_dll": true,
+  "has_pck": false,
+  "affects_gameplay": false,
+  "min_game_version": "v0.113.1",
+  "dependencies": [
+    {
+      "id": "BaseLib",
+      "min_version": "v3.4.8"
+    },
+    {
+      "id": "ShoujoKagekiAijoCore",
+      "min_version": "1.9.5"
+    },
+    {
+      "id": "ShoujoKagekiAijoKaren",
+      "min_version": "v1.0.0"
+    },
+    {
+      "id": "STS2-RitsuLib",
+      "min_version": "0.6.14"
+    }
+  ]
+}

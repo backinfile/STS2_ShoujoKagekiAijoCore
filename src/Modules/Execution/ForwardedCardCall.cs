@@ -40,7 +40,7 @@ internal static class ForwardedCardCall
         HashSet<MethodBase> path, int depth)
     {
         var assembly = method.Module.Assembly;
-        if (depth >= 6 || method.ReturnType != typeof(Task) || method.ContainsGenericParameters || method.IsAbstract
+        if (depth >= 6 || !typeof(Task).IsAssignableFrom(method.ReturnType) || method.ContainsGenericParameters || method.IsAbstract
             || assembly == typeof(CardModel).Assembly || assembly == typeof(ForwardedCardCall).Assembly
             || assembly == typeof(Task).Assembly || assembly.GetName().Name?.StartsWith("System.", StringComparison.Ordinal) == true)
             yield break;

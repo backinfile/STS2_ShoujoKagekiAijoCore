@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
@@ -71,10 +72,26 @@ public sealed class ModelExecutionModule : ICoreModule, IModelExecutionScopes, I
                 : ModelMethods(type);
             foreach (var candidate in methods.OfType<MethodInfo>())
             {
-                var method = AccessTools.DeclaredMethod(candidate.DeclaringType, candidate.Name,
-                    candidate.GetParameters().Select(parameter => parameter.ParameterType).ToArray());
-                if (method.IsAbstract || method.ContainsGenericParameters || !typeof(Task).IsAssignableFrom(method.ReturnType)
-                    || method.GetMethodBody() == null) continue;
+                var method = candidate;
+                try
+                {
+                    method = AccessTools.DeclaredMethod(candidate.DeclaringType, candidate.Name,
+                        candidate.GetParameters().Select(parameter => parameter.ParameterType).ToArray());
+                    // Compiler callbacks are implementation details, not model entry points.
+                    // Their containing hook or named async method already owns the scope.
+                    if (method.IsPrivate && !method.IsVirtual
+                        && method.IsDefined(typeof(CompilerGeneratedAttribute), false)) continue;
+                    if (method.IsAbstract || method.ContainsGenericParameters || !typeof(Task).IsAssignableFrom(method.ReturnType)
+                        || method.GetMethodBody() == null) continue;
+                }
+                catch (TypeLoadException error) when (method.Module.Assembly != typeof(RuntimeEntry).Assembly
+                    && method.Module.Assembly != typeof(CardModel).Assembly)
+                {
+                    RuntimeEntry.Context.Diagnostics.Report(DiagnosticSeverity.Error, Id, "model.invalid-method-signature",
+                        $"Cannot install model scope for {method.DeclaringType?.FullName}.{method.Name} " +
+                        $"from {method.Module.Assembly.FullName}.", error);
+                    continue;
+                }
                 if (_patched.Contains(method)) continue;
                 try { _ = PatchProcessor.GetOriginalInstructions(method); }
                 catch (MissingMemberException error) when (method.Module.Assembly != typeof(RuntimeEntry).Assembly

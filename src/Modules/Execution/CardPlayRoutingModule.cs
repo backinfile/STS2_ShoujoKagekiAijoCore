@@ -128,9 +128,12 @@ public sealed class CardPlayRoutingModule : ICoreModule, ICardPlayRouting, ICard
         [HarmonyPriority(int.MinValue)]
         private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
+            var code = instructions.ToArray();
             int effects = 0, results = 0;
-            foreach (var instruction in instructions)
+            foreach (var instruction in code)
             {
+                if (instruction.Calls(AccessTools.Method(typeof(CardPlayRoutingModule), nameof(Dispatch)))) effects++;
+                if (instruction.Calls(AccessTools.Method(typeof(CardPlayRoutingModule), nameof(Result)))) results++;
                 if (instruction.operand is MethodInfo hook && IsRitsuDispatch(hook)) effects++;
                 if (instruction.operand is MethodInfo { DeclaringType: var type, Name: var name } && type == typeof(CardModel))
                 {
@@ -158,7 +161,7 @@ public sealed class CardPlayRoutingModule : ICoreModule, ICardPlayRouting, ICard
                         call => call.DeclaringType?.FullName == "STS2RitsuLib.Cards.CardOnPlayHook" && call.Name == "RunCardOnPlayHooks", null))) effects++;
                 yield return instruction;
             }
-            if (effects != 1 || results != 1) throw new InvalidOperationException($"Core card boundaries: effects={effects}, results={results}");
+            if (effects != 1 || results != 1) throw BoundaryDiagnostics.Mismatch($"Core card boundaries: effects={effects}, results={results}", TargetMethod(), code);
         }
     }
     internal static class RitsuBoundary
@@ -166,21 +169,28 @@ public sealed class CardPlayRoutingModule : ICoreModule, ICardPlayRouting, ICard
         private static Type? HookType => AccessTools.TypeByName("STS2RitsuLib.Cards.CardOnPlayHook");
         private static bool Prepare() => HookType != null;
         private static MethodBase TargetMethod() => AccessTools.AsyncMoveNext(AccessTools.Method(HookType!, "RunCardOnPlayHooks"));
+        private static bool IsEffectDelegate(MethodInfo method)
+            => method.Name == "Invoke" && method.DeclaringType != null
+                && typeof(Delegate).IsAssignableFrom(method.DeclaringType) && method.ReturnType == typeof(Task)
+                && method.GetParameters().Select(parameter => parameter.ParameterType)
+                    .SequenceEqual(new[] { typeof(CardModel), typeof(PlayerChoiceContext), typeof(CardPlay) });
         private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
+            var replacement = AccessTools.Method(typeof(CardPlayRoutingModule), nameof(DispatchFromHook));
+            var code = instructions.ToArray();
             int effects = 0;
-            foreach (var instruction in instructions)
+            foreach (var instruction in code)
             {
-                if (instruction.operand is MethodInfo method && method.Name == "Invoke" && method.DeclaringType?.FullName == "STS2RitsuLib.Cards.CardOnPlayHook+CardOnPlayDelegate")
+                if (instruction.Calls(replacement)) effects++;
+                else if (instruction.operand is MethodInfo method && IsEffectDelegate(method))
                 {
-                    instruction.opcode = OpCodes.Call; instruction.operand = AccessTools.Method(typeof(CardPlayRoutingModule), nameof(DispatchFromHook)); effects++;
+                    instruction.opcode = OpCodes.Call; instruction.operand = replacement; effects++;
                 }
                 else if (instruction.operand is MethodInfo forwarded && ForwardedCardCall.Adapt(forwarded,
-                    call => call.Name == "Invoke" && call.DeclaringType?.FullName == "STS2RitsuLib.Cards.CardOnPlayHook+CardOnPlayDelegate",
-                    AccessTools.Method(typeof(CardPlayRoutingModule), nameof(DispatchFromHook)))) effects++;
+                    IsEffectDelegate, replacement)) effects++;
                 yield return instruction;
             }
-            if (effects != 1) throw new InvalidOperationException($"Core RitsuLib card boundary: effects={effects}");
+            if (effects != 1) throw BoundaryDiagnostics.Mismatch($"Core RitsuLib card boundary: effects={effects}", TargetMethod(), code);
         }
     }
 }
