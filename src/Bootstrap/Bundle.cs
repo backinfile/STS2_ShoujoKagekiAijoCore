@@ -149,9 +149,9 @@ public static class BundleSelection
         string gameVersion, string baseLibVersion, string minimumRelease)
     {
         var complete = candidates.ToArray();
-        foreach (var release in complete.GroupBy(x => x.Bundle.ReleaseVersion))
-            if (release.Select(x => x.Fingerprint).Distinct().Count() > 1)
-                throw new InvalidDataException($"Core {release.Key} 存在同版本内容冲突，请重新安装官方发行包。");
+        var conflictingReleases = complete.GroupBy(x => x.Bundle.ReleaseVersion)
+            .Where(release => release.Select(x => x.Fingerprint).Distinct().Skip(1).Any())
+            .Select(release => release.Key).ToHashSet(StringComparer.Ordinal);
         var baselib = SemVersion.Parse(baseLibVersion);
         var selected = complete.Select(candidate => new { Candidate = candidate, Target = SelectTarget(candidate.Bundle, gameVersion) })
             .Where(x => x.Target != null && x.Candidate.Bundle.ApiMajor == 1
@@ -162,6 +162,7 @@ public static class BundleSelection
                     && r.RequiredFeatures.All(f => x.Candidate.Bundle.Features.Contains(f, StringComparer.Ordinal))))
             .OrderByDescending(x => SemVersion.Parse(x.Target!.Target.MinimumGameVersion))
             .ThenByDescending(x => SemVersion.Parse(x.Candidate.Bundle.ReleaseVersion))
+            .ThenBy(x => conflictingReleases.Contains(x.Candidate.Bundle.ReleaseVersion) ? Random.Shared.NextDouble() : 0)
             .ThenBy(x => x.Candidate.Source, StringComparer.Ordinal).ThenBy(x => x.Candidate.Root, StringComparer.Ordinal)
             .Select(x => x.Candidate).FirstOrDefault();
         if (selected == null) throw new InvalidOperationException("没有共同兼容的 Core。请更新 Core 工坊订阅或 Karen 包，检查游戏版本、BaseLib、API 与必需功能。" +

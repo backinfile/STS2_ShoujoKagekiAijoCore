@@ -30,8 +30,13 @@ var missingFeature = newer with { Bundle = newer.Bundle with { Features = ["musi
 Check(ReferenceEquals(Select(candidate, missingFeature), candidate), "newer missing required feature falls back");
 var betaOnly = newer with { Bundle = newer.Bundle with { Targets = new() { ["beta"] = newer.Bundle.Targets["beta"] } } };
 Check(ReferenceEquals(Select(candidate, betaOnly), candidate), "newer target mismatch falls back");
-Reject(() => Select(candidate, candidate with { Fingerprint = "conflicting" }), "same release content conflict");
-Reject(() => Select(candidate, missingFeature with { Bundle = missingFeature.Bundle with { ReleaseVersion = candidate.Bundle.ReleaseVersion } }), "conflict checked before requirement filtering");
+var conflicting = candidate with { Root = "conflicting-copy", Source = "Workshop:conflicting", Fingerprint = "conflicting" };
+var selections = Enumerable.Range(0, 128).Select(_ => Select(candidate, conflicting)).ToArray();
+Check(selections.All(x => ReferenceEquals(x, candidate) || ReferenceEquals(x, conflicting)), "same release content differences select a compatible candidate without error");
+Console.WriteLine($"Conflict selection samples: official={selections.Count(x => ReferenceEquals(x, candidate))}, alternate={selections.Count(x => ReferenceEquals(x, conflicting))}");
+Check(ReferenceEquals(Select(candidate, missingFeature with { Bundle = missingFeature.Bundle with { ReleaseVersion = candidate.Bundle.ReleaseVersion } }), candidate), "same release differences filter incompatible features before selection");
+Check(ReferenceEquals(Select(candidate, conflicting, newer), newer), "older conflicting copies do not block the preferred release");
+Check(ReferenceEquals(Select(candidate, betaOnly with { Bundle = betaOnly.Bundle with { ReleaseVersion = candidate.Bundle.ReleaseVersion } }), candidate), "same release differences filter incompatible game baselines before selection");
 Check(ReferenceEquals(BundleSelection.Select([candidate], requirements, "0.112.0", "3.4.8", "1.0.0"), candidate), "unknown intermediate version attempts the lower baseline");
 Reject(() => BundleSelection.Select([candidate], requirements, "0.107.0", "3.4.8", "1.0.0"), "game older than every baseline rejected");
 foreach (var version in new[] { "0.113.1", "0.114.0", "1.0.0" })
