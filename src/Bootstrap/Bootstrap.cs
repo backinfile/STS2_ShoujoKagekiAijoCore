@@ -92,10 +92,6 @@ public static class Bootstrap
         _logicalMod.version = SemanticVersion.TryFromString(selected.Bundle.ReleaseVersion, out var version) ? version : throw new InvalidDataException("Invalid release version.");
         foreach (var duplicate in ModManager.Mods.Where(x => x != _logicalMod && x.manifest?.id == ModId && Eligible(x)))
             duplicate.state = ModLoadState.DisabledDuplicate;
-        // Replace the lookup list. The game's active foreach keeps its original list iterator.
-        var reordered = new List<Mod> { _logicalMod };
-        reordered.AddRange(ModManager.Mods.Where(x => x != _logicalMod));
-        AccessTools.Field(typeof(ModManager), "_mods").SetValue(null, reordered);
         var context = AssemblyLoadContext.GetLoadContext(typeof(Bootstrap).Assembly) ?? AssemblyLoadContext.Default;
         var api = LoadExact(context, BundleSelection.ResolvePath(selected.Root, selected.Bundle.ApiAssembly));
         RuntimeAssembly = LoadExact(context, BundleSelection.ResolvePath(selected.Root, target.Target.Assembly));
