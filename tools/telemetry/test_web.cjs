@@ -5,17 +5,18 @@ const vm = require('node:vm');
 const source = fs.readFileSync(__dirname + '/../../web/telemetry/app.js', 'utf8').split("document.addEventListener('click',event=>{")[0];
 const browserSource = fs.readFileSync(__dirname + '/../../web/telemetry/app.js', 'utf8');
 const restoreCode = browserSource.slice(browserSource.indexOf('const urlState=comparisonURL;'), browserSource.indexOf("if(['cards','runs','compare'].includes(urlState.get('view')))"));
-const restoredControls = Object.fromEntries(['build', 'core_version', 'source_mod'].map(key => [key, {
+const restoredControls = Object.fromEntries(['build', 'core_version', 'source_mod', 'language'].map(key => [key, {
   value: 'all', options: [{value: 'all'}], append(option) { this.options.push(option); }
 }]));
 vm.runInNewContext(restoreCode, {
-  comparisonURL: new URLSearchParams('build=test-build&core_version=1.0.1&source_mod=Example'),
+  comparisonURL: new URLSearchParams('build=test-build&core_version=1.0.1&source_mod=Example&language=jpn'),
   document: {createElement: () => ({})},
   $: () => ({elements: {namedItem: key => restoredControls[key]}}),
 });
 assert.equal(restoredControls.build.value, 'test-build');
 assert.equal(restoredControls.core_version.value, '1.0.1');
 assert.equal(restoredControls.source_mod.value, 'Example');
+assert.equal(restoredControls.language.value, 'jpn');
 console.log('PASS dynamic filter URL restoration');
 const nodes = new Map();
 const node = id => {
@@ -38,6 +39,18 @@ const cards = [
   {id:'COORDINATE',name:'协作',owner:'colorless',owner_name:'无色',rarity:'普通',type:'技能',cost:1,held:1,wins:0,picked:1,offered:2,pick_rate:.5,win_rate:0,hold_rate:1,recorded_offers:3,recorded_picked:1,unknown_picked:1},
 ];
 context.sample = {cards,seats:1,runs:1,wins:1,excluded:0,missing_picked:1,builds:[],latest_received:null};
+run(`renderLanguages({language_distribution:[{language:'zhs',runs:2,share:.5},{language:'eng',runs:1,share:.25},{language:'unknown',runs:1,share:.25}]})`);
+assert.equal(node('languageSummary').hidden,false);
+assert.ok(node('languageSummary').innerHTML.includes('简体中文'));
+assert.ok(node('languageSummary').innerHTML.includes('2 局'));
+assert.ok(node('languageSummary').innerHTML.includes('50.0%'));
+assert.ok(node('languageSummary').innerHTML.includes('未知'));
+run(`renderLanguages({language_distribution:[{language:'<img src=x>',runs:1,share:1}]})`);
+assert.ok(!node('languageSummary').innerHTML.includes('<img'));
+assert.ok(node('languageSummary').innerHTML.includes('&lt;img'));
+run('renderLanguages({})');
+assert.equal(node('languageSummary').hidden,true);
+console.log('PASS language distribution labels, counts, percentages, escaping and empty state');
 (async()=>{
   run(`state.stats=sample;state.runs={items:[],page:1,total:0,page_size:20};
     params=()=>new URLSearchParams({ascension:'0'});save=(_name,blob)=>{saved=blob;exports++};

@@ -1,11 +1,20 @@
 """Versioned Core context. Legacy client identity and payload fields retain their meaning."""
 import json
+import re
+
+
+def language_code(value):
+    if not isinstance(value, str) or len(value) > 32 or not re.fullmatch(r"[a-z]{2,3}(?:[-_][a-z0-9]{2,8})*|unknown", value):
+        raise ValueError("invalid_core_language")
+    return value
 
 
 def core_context(value):
-    if not isinstance(value, dict) or set(value) != {"schema_version", "core_version", "api_version", "game_target", "game_version", "source_mods", "model_sources"} or type(value["schema_version"]) is not int or value["schema_version"] != 2:
+    if not isinstance(value, dict) or set(value) - {"language"} != {"schema_version", "core_version", "api_version", "game_target", "game_version", "source_mods", "model_sources"} or type(value["schema_version"]) is not int or value["schema_version"] != 2:
         raise ValueError("invalid_core_schema")
     result = dict(value)
+    if "language" in value:
+        result["language"] = language_code(value["language"])
     for key in ("core_version", "api_version", "game_target", "game_version"):
         if not isinstance(value[key], str) or not value[key].strip() or len(value[key]) > 120 or any(ord(c) < 32 for c in value[key]):
             raise ValueError("invalid_core_" + key)

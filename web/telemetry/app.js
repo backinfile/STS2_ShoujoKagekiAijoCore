@@ -4,6 +4,8 @@ const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;',
 const pct = value => value == null ? '—' : (value * 100).toFixed(1) + '%';
 const num = value => new Intl.NumberFormat('zh-CN').format(value ?? 0);
 const date = value => value ? new Date(value * 1000).toLocaleString('zh-CN', {hour12:false}) : '—';
+const LANGUAGES={eng:'英语',ara:'阿拉伯语',zhs:'简体中文',zht:'繁体中文',deu:'德语',esp:'西班牙语（拉美）',fra:'法语',ind:'印度尼西亚语',ita:'意大利语',jpn:'日语',kor:'韩语',pol:'波兰语',ptb:'葡萄牙语（巴西）',rus:'俄语',spa:'西班牙语（西班牙）',tha:'泰语',tur:'土耳其语',unknown:'未知'};
+const languageName=value=>LANGUAGES[value]??value;
 const OUTCOME = {win:'胜利',death:'死亡',abandon:'放弃'};
 const CHARACTERS={KAREN:'爱城华恋',IRONCLAD:'铁甲战士',SILENT:'静默猎手',DEFECT:'故障机器人',REGENT:'储君',NECROBINDER:'亡灵契约师',WATCHER:'观者'};
 const RARITIES=['基础','普通','罕见','稀有','先古','衍生','诅咒','状态','特殊','事件','任务','未知'];
@@ -65,8 +67,8 @@ async function load(scope=primary,{force=true}={}){
   state.loadedQuery=new URLSearchParams(query);state.fresh=true;
   const filters=cards?data:data.filters??{};
   updateCharacters(filters.characters??[],$('character').value,scope);
-  for(const [id,values] of [['build',filters.builds??[]],['coreVersion',filters.core_versions??[]],['sourceMod',filters.source_mods??[]]]){
-   const control=$(id);if(control?.options){const selected=control.value;control.innerHTML='<option value="all">全部</option>'+[...new Set([...values,selected].filter(value=>value&&value!=='all'))].map(value=>'<option value="'+esc(value)+'">'+esc(value)+'</option>').join('');control.value=selected||'all';}
+  for(const [id,values] of [['build',filters.builds??[]],['coreVersion',filters.core_versions??[]],['sourceMod',filters.source_mods??[]],['language',filters.languages??[]]]){
+   const control=$(id);if(control?.options){const selected=control.value;control.innerHTML='<option value="all">全部</option>'+[...new Set([...values,selected].filter(value=>value&&value!=='all'))].map(value=>'<option value="'+esc(value)+'">'+esc(id==='language'?languageName(value):value)+'</option>').join('');control.value=selected||'all';}
   }
   if(cards){const owner=$('owner');for(const card of data.cards)if(card.owner&&owner?.options&&!Array.from(owner.options).some(option=>option.value===card.owner))owner.add(new Option(card.owner_name??card.owner,card.owner));}
   $('error').hidden=true;$('connection').textContent='已更新';$('connection').className='connection ok';$('updated').textContent='更新于 '+new Date().toLocaleTimeString('zh-CN',{hour12:false});
@@ -93,17 +95,23 @@ function cardGroups(rows,scope=primary){
 function render(scope=primary){
  const {state,$}=scope;
  const s=state.stats;if(s){
+ renderLanguages(s,scope);
  const cohort=s.character&&s.character!=='all'?characterName(s.character):'全部角色';
  $('summary').innerHTML=[['已收对局',num(s.runs)],['统计席位',num(s.seats)],['胜利 / 未胜',num(s.wins)+' / '+num(s.seats-s.wins)],['有记录卡牌',num(s.cards.length)]].map(([label,value])=>'<div><span>'+label+'</span><strong>'+value+'</strong></div>').join('')+'<div class="latest"><span>最近接收</span><strong>'+date(s.latest_received)+'</strong></div>';
  $('cohort').innerHTML='<span>'+esc(cohort)+' · '+num(s.seats)+' 个席位 · 排除 '+num(s.excluded)+' 个早期放弃席位'+(s.seats<20?' · 当前样本较少，请结合分母阅读':'')+'</span><span>'+(s.card_limit_reached?'已达到 4,096 种卡牌显示上限 · ':'')+'选牌结果缺失 '+num(s.missing_picked)+' 项</span>';
  }
  if(scope.cardsOnly){renderCards(scope);exportState(scope);return;}
  document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.view===state.view));
- const compare=state.view==='compare';$('cardsView').hidden=state.view!=='cards';$('runsView').hidden=state.view!=='runs';$('compareView').hidden=!compare;$('filters').hidden=compare;const toggle=$('filters').previousElementSibling;if(toggle?.classList.contains('filter-toggle'))toggle.hidden=compare;$('summary').hidden=state.view!=='cards';$('error').hidden=compare||state.fresh;$('export').hidden=compare;$('pageTitle').textContent=compare?'对比模式':state.view==='cards'?'卡牌统计':'对局记录';
+ const compare=state.view==='compare';$('cardsView').hidden=state.view!=='cards';$('runsView').hidden=state.view!=='runs';$('compareView').hidden=!compare;$('filters').hidden=compare;const toggle=$('filters').previousElementSibling;if(toggle?.classList.contains('filter-toggle'))toggle.hidden=compare;$('summary').hidden=state.view!=='cards';$('languageSummary').hidden=state.view!=='cards'||!s?.language_distribution?.length;$('error').hidden=compare||state.fresh;$('export').hidden=compare;$('pageTitle').textContent=compare?'对比模式':state.view==='cards'?'卡牌统计':'对局记录';
  if(compare)openComparison();
  if(state.view==='cards'){if(s)renderCards();else $('cards').innerHTML=empty('加载中','');}
  if(state.view==='runs'){if(state.runs)renderRuns();else $('runs').innerHTML=empty('加载中','');}
  exportState();
+}
+function renderLanguages(stats,scope=primary){
+ const panel=scope.$('languageSummary'),rows=listOf(stats.language_distribution);
+ panel.hidden=!rows.length;
+ panel.innerHTML=rows.length?'<h2>对局语言</h2><ul>'+rows.map(row=>'<li><span>'+esc(languageName(row.language))+'</span><strong>'+num(row.runs)+' 局</strong><span>'+pct(row.share)+'</span></li>').join('')+'</ul>':'';
 }
 function empty(text='暂无收到的对局',sub='新对局上传后会出现在这里'){return '<div class="empty"><strong>'+text+'</strong><p>'+sub+'</p></div>';}
 function renderCards(scope=primary){
@@ -145,7 +153,7 @@ function renderRuns(){
 }
 function renderRunDetail(){
  const run=state.runs?.items.find(r=>r.id===state.run);
- $('runDetail').innerHTML=run?'<span class="tag">已接收</span><h2>'+OUTCOME[run.outcome]+' · 第 '+run.floor+' 层</h2><span class="model-id">'+run.id+'</span><div class="metrics">'+metric('游戏时间',date(run.start_time))+metric('游戏版本',esc(run.build))+metric('进阶 / 人数',run.ascension+' / '+run.player_count)+metric('时长',Math.floor(run.duration/60)+' 分 '+Math.floor(run.duration%60)+' 秒')+metric('选牌结果缺失',num(run.missing_picked)+' 项')+metric('重复上传',num(run.duplicates)+' 次')+'</div><button class="primary" data-history="'+run.id+'">查看对局详情 ↗</button><button class="secondary" data-raw="'+run.id+'">下载原始记录 ↓</button>':empty('选择对局查看数据','');
+ $('runDetail').innerHTML=run?'<span class="tag">已接收</span><h2>'+OUTCOME[run.outcome]+' · 第 '+run.floor+' 层</h2><span class="model-id">'+run.id+'</span><div class="metrics">'+metric('游戏时间',date(run.start_time))+metric('游戏版本',esc(run.build))+metric('游戏语言',esc(languageName(run.core_telemetry?.language??'unknown')))+metric('进阶 / 人数',run.ascension+' / '+run.player_count)+metric('时长',Math.floor(run.duration/60)+' 分 '+Math.floor(run.duration%60)+' 秒')+metric('选牌结果缺失',num(run.missing_picked)+' 项')+metric('重复上传',num(run.duplicates)+' 次')+'</div><button class="primary" data-history="'+run.id+'">查看对局详情 ↗</button><button class="secondary" data-raw="'+run.id+'">下载原始记录 ↓</button>':empty('选择对局查看数据','');
 }
 function openModal(title,html){$('modalTitle').textContent=title;$('modalBody').innerHTML=html;if(!$('modal').open)$('modal').showModal();}
 function rules(){openModal('统计规则',[
@@ -217,13 +225,13 @@ function openComparison(){
   const saved=comparisonURL.get(side),initial=new URLSearchParams(saved&&saved.length<=8000?saved:seed);
   const root=document.createElement('section');root.className='comparison-pane';root.setAttribute('aria-label',side==='left'?'左侧卡牌统计':'右侧卡牌统计');
   root.innerHTML='<header class="comparison-header"><h2>'+(side==='left'?'左侧':'右侧')+'</h2><span id="connection" class="connection" role="status">连接中</span><button id="refresh">刷新</button><button id="export" disabled>导出筛选卡牌 CSV ↓</button></header>';
-  for(const id of ['filters','summary','error','cardsView','cardSheet']){const clone=$(id).cloneNode(true);clone.hidden=id==='error';clone.removeAttribute('open');root.append(clone);}
+  for(const id of ['filters','summary','languageSummary','error','cardsView','cardSheet']){const clone=$(id).cloneNode(true);clone.hidden=id==='error';clone.removeAttribute('open');root.append(clone);}
   const updated=document.createElement('div');updated.id='updated';updated.className='comparison-updated';root.append(updated);
   const controls=new Map();root.querySelectorAll('[id]').forEach(node=>{const id=node.id;controls.set(id,node);node.dataset.control=id;node.id='compare-'+side+'-'+id;});
   root.querySelectorAll('[aria-labelledby]').forEach(node=>node.setAttribute('aria-labelledby',node.getAttribute('aria-labelledby').split(' ').map(id=>controls.get(id)?.id??id).join(' ')));
   const scope={root,$:id=>controls.get(id),cardsOnly:true,state:{...state,view:'cards',stats:null,runs:null,loading:false,fresh:false,loadedQuery:null,historyId:null,page:1}};
   scope.onChange=value=>{scope.saved=value;syncURL();};comparisons[side]=scope;
-  for(const [key,value] of initial){const control=controls.get(key)??scope.$('filters').elements.namedItem(key);if(!control)continue;if(control.tagName==='SELECT'){if((['build','core_version','source_mod'].includes(key)&&value.length<=(key==='source_mod'?180:120))||(key==='character'&&/^[A-Z0-9_:-]{1,180}$/.test(value))){if(![...control.options].some(o=>o.value===value))control.add(new Option(key==='character'?characterName(value):value,value));}if([...control.options].some(o=>o.value===value))control.value=value;}else if(key==='search')control.value=value.slice(0,180);}
+  for(const [key,value] of initial){const control=controls.get(key)??scope.$('filters').elements.namedItem(key);if(!control)continue;if(control.tagName==='SELECT'){if((['build','core_version','source_mod','language'].includes(key)&&value.length<=(key==='source_mod'?180:120))||(key==='character'&&/^[A-Z0-9_:-]{1,180}$/.test(value))){if(![...control.options].some(o=>o.value===value))control.add(new Option(key==='character'?characterName(value):value,value));}if([...control.options].some(o=>o.value===value))control.value=value;}else if(key==='search')control.value=value.slice(0,180);}
   if(['table','chart'].includes(initial.get('display')))scope.state.display=initial.get('display');
   if(Object.hasOwn(CARD_SORTS,initial.get('sort')))scope.state.sort=initial.get('sort');
   scope.state.order=initial.get('order')==='1'?1:-1;scope.state.card=initial.get('card');
@@ -280,7 +288,7 @@ matchMedia('(max-width:900px)').addEventListener('change',()=>{if(state.view==='
 $('history').addEventListener('close',()=>{historyVersion++;primary.historyController?.abort();state.historyId=null;syncURL();});
 for(let i=0;i<=10;i++){const option=document.createElement('option');option.value=i;option.textContent='进阶 '+i;$('filters').elements.ascension.append(option);}
 const urlState=comparisonURL;
-for(const [key,value] of urlState){const control=$('filters').elements.namedItem(key);if(['build','core_version','source_mod'].includes(key)&&value!=='all'&&value.length<=(key==='source_mod'?180:120)){const option=document.createElement('option');option.value=value;option.textContent=value;control.append(option);}if(control&&[...control.options].some(o=>o.value===value))control.value=value;}
+for(const [key,value] of urlState){const control=$('filters').elements.namedItem(key);if(['build','core_version','source_mod','language'].includes(key)&&value!=='all'&&value.length<=(key==='source_mod'?180:120)){const option=document.createElement('option');option.value=value;option.textContent=value;control.append(option);}if(control&&[...control.options].some(o=>o.value===value))control.value=value;}
 if(['cards','runs','compare'].includes(urlState.get('view')))state.view=urlState.get('view');
 if(urlState.get('compareSide')==='right'){$('comparison').dataset.side='right';document.querySelectorAll('[data-compare-side]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.compareSide==='right'));}
 if(['table','chart'].includes(urlState.get('display')))state.display=urlState.get('display');

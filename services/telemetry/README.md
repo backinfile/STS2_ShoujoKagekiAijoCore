@@ -23,7 +23,7 @@ python services/telemetry/app.py
 
 ## 数据格式与兼容
 
-原生 schema_version 保持原含义。Core 对局扩展位于 core_telemetry，其 schema_version 为 2，并携带 core_version、api_version、game_target、game_version、source_mods 和 model_sources。模型来源记录完整 model_id、source_mod 和 source_version。卡牌附加 model_full_id，完整身份保存在载荷与来源映射。原生 Category.Entry 继续使用既有 Entry 统计键，附带额外命名空间的完整 ID 保持独立。旧模型输入及旧历史字段继续解析。Core 耗尽牌使用 core_shine_exhaust_cards，旧 karen_shine_exhaust_cards 继续参与历史统计。
+原生 schema_version 保持原含义。Core 对局扩展位于 core_telemetry，其 schema_version 为 2，并携带 core_version、api_version、game_target、game_version、source_mods 和 model_sources。可选 `language` 字段记录游戏当前语言代码（如 `zhs`、`eng`、`jpn`），未初始化时为 `unknown`；旧客户端缺少该字段时保留原协议，展示为未知。对局在生成历史时读取语言，报错沿用会话初始化时的环境快照。先升级服务端以接受可选字段，再发布客户端。模型来源记录完整 model_id、source_mod 和 source_version。卡牌附加 model_full_id，完整身份保存在载荷与来源映射。原生 Category.Entry 继续使用既有 Entry 统计键，附带额外命名空间的完整 ID 保持独立。旧模型输入及旧历史字段继续解析。Core 耗尽牌使用 core_shine_exhaust_cards，旧 karen_shine_exhaust_cards 继续参与历史统计。
 
 报错 v1 原样接受，v2 增加相同 core_telemetry。旧 mod_version 仍指 Karen 版本，Core 版本独立保存。错误指纹包含版本及来源，稳定 report_id、session_id 和累计 count 保持重复及乱序幂等。409 表示报错身份冲突。
 
@@ -37,7 +37,7 @@ python services/telemetry/app.py --rebuild
 python services/telemetry/app.py --archive-raw
 ```
 
-对局支持原有筛选，以及 core_version、game_target、source_mod。报错支持原有筛选，以及 core_version、game_target、source_mod。SQL 值使用参数绑定，页面动态字段转义，CSV 保留公式前缀防护。
+对局支持原有筛选，以及 core_version、game_target、source_mod、language。`GET /api/stats` 的 `language_distribution` 返回 `language`、`runs`、`share`，`language_total_runs` 为分母；按当前服务端筛选与统计样本计算，每个上报对局计一次，多人席位不重复计数，旧数据计入 `unknown`。语言属于上传端；同一多人局沿用现有对局去重，统计首个成功接收载荷的语言。语言字段不参与对局身份与错误指纹。报错支持原有筛选，以及 core_version、game_target、source_mod。SQL 值使用参数绑定，页面动态字段转义，CSV 保留公式前缀防护。
 
 ## 游戏端
 
