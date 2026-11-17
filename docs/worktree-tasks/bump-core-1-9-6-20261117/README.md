@@ -182,6 +182,14 @@
 
 > 提升core版本号
 
+### 消息 3
+
+```text
+<send_user_message_question_reply>
+[{"questionItemId":"[\"request_user_input_async\",\"call_10316fe1342e4083b2c75f8cc7cba2f5\",0]","question":"提交 9199951 已将 Core 1.9.5 升至 1.9.6，静态校验通过。是否合并到 main？清理将删除任务分支 codex/bump-core-1-9-6-20261117 和工作树 ../worktrees/STS2_ShoujoKagekiAijoCore/bump-core-1-9-6-20261117。","answer":"合并并清理"}]
+</send_user_message_question_reply>
+```
+
 ## 简要计划
 
 1. 从原始 `main` 的 `c6c6e7debb05cb9e508227b6ec3ff4ee2e492c61` 创建 `codex/bump-core-1-9-6-20261117`，工作树位于 `../worktrees/STS2_ShoujoKagekiAijoCore/bump-core-1-9-6-20261117`；原检出干净。
@@ -195,4 +203,4 @@
 - 最小验证通过：XML 与 JSON 解析；PowerShell AST 语法和默认版本；三处发行版本及 README 一致性；MSBuild 版本继承；API 程序集版本；历史最低依赖；四文件修改范围；`git diff --check`。
 - 审阅全部 91 个已跟踪及新增文档路径，未发现本地绝对路径、凭据令牌或私人邮箱候选；提交身份使用 GitHub noreply 邮箱。
 - 本任务交付源码版本元数据与任务记录；验证范围为上述静态检查。
-- 合并目标为原始 `main`；工作树和任务分支保留，等待按 `$worktree-task` 确认合并与清理。
+- 用户已确认“合并并清理”。版本提交 `9199951` 已快进合并到原始 `main`；提交与树一致、提交归属、版本与语法、差异格式和干净工作区检查全部通过。本任务工作树及分支按批准范围清理，任务记录保留在主分支。
