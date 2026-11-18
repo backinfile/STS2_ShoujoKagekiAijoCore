@@ -56,7 +56,7 @@ internal static class RunHistoryUploadPatch
     }
     private static void Postfix()
     {
-        if (!TelemetryModule.DataUploadEnabled || RunManager.Instance.History is not { } history) return;
+        if (!TelemetryModule.Active || !TelemetryModule.DataUploadEnabled || RunManager.Instance.History is not { } history) return;
         try
         {
             if (Queue() is not { } queue) return;

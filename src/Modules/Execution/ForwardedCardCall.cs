@@ -36,6 +36,12 @@ internal static class ForwardedCardCall
         return true;
     }
 
+    internal static void RemovePatches()
+    {
+        Patcher.UnpatchAll(Patcher.Id);
+        Redirects.Clear();
+    }
+
     private static IEnumerable<Site> Find(MethodInfo method, Func<MethodInfo, bool> matches,
         HashSet<MethodBase> path, int depth)
     {

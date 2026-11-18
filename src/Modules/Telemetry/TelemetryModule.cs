@@ -25,10 +25,18 @@ public sealed class TelemetryModule : ICoreModule, IDisposable
         Context = _context = context;
         Active = true;
         context.Configuration.Changed += ConfigurationChanged;
-        try { LegacyQueueMigration.Import(); }
-        catch (Exception error) { Warn($"旧遥测队列迁移暂停，原记录保留 {error.GetType().Name}"); }
-        CoreErrorReporter.Initialize();
-        RunHistoryUploadPatch.ResumePendingUploads();
+        try
+        {
+            try { LegacyQueueMigration.Import(); }
+            catch (Exception error) { Warn($"旧遥测队列迁移暂停，原记录保留 {error.GetType().Name}"); }
+            CoreErrorReporter.Initialize();
+            RunHistoryUploadPatch.ResumePendingUploads();
+        }
+        catch (Exception error)
+        {
+            var failure = Cleanup.Capture([Dispose], error);
+            context.Diagnostics.Report(DiagnosticSeverity.Warning, Id, "startup.disabled", "Telemetry startup failed.", failure);
+        }
     }
     private static void ConfigurationChanged(CoreSettings oldSettings, CoreSettings newSettings)
     {
@@ -51,6 +59,8 @@ public sealed class TelemetryModule : ICoreModule, IDisposable
             api_version = CoreApi.ApiMajor.ToString(),
 #if STS2_BETA
             game_target = "beta",
+#elif STS2_CHOICE_OWNER
+            game_target = "main",
 #else
             game_target = "stable",
 #endif
@@ -85,8 +95,7 @@ public sealed class TelemetryModule : ICoreModule, IDisposable
         if (_context == null) return;
         _context.Configuration.Changed -= ConfigurationChanged;
         Active = false;
-        CoreErrorReporter.Shutdown();
-        RunHistoryUploadPatch.Shutdown();
         _context = null;
+        Cleanup.Run([CoreErrorReporter.Shutdown, RunHistoryUploadPatch.Shutdown]);
     }
 }

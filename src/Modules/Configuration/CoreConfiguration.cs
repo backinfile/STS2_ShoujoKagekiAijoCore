@@ -16,9 +16,12 @@ public sealed class CoreConfiguration : ICoreConfiguration
         View = new ShoujoKagekiAijoCore.CoreModConfig();
         if (Current.FormatVersion > 1) throw new InvalidDataException($"Core config format {Current.FormatVersion} requires a newer Core.");
         Update(Current with { FormatVersion = 1 });
-        ModConfigRegistry.Register(CoreApi.ModId, View);
         View.Save();
     }
+
+    internal void RegisterView() => ModConfigRegistry.Register(CoreApi.ModId, View!);
+    internal void ClearObservers() => Changed = null;
+
     public void Update(CoreSettings settings)
     {
         ArgumentNullException.ThrowIfNull(settings);

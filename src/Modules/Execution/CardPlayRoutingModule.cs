@@ -114,7 +114,7 @@ public sealed class CardPlayRoutingModule : ICoreModule, ICardPlayRouting, ICard
             if (route.Destination(card) is { } destination) return destination;
         return null;
     }
-#if STS2_BETA
+#if STS2_CARD_LOCATION
     public static CardLocation Result(CardModel card) => Destination(card) is { } destination
         ? new(card.Owner, destination, CardPilePosition.Bottom)
         : (CardLocation)Destinations.GetOrAdd(card.GetType(), type => AccessTools.Method(type, "GetResultLocationForCardPlay")).Invoke(card, BindingFlags.DoNotWrapExceptions, null, null, null)!;
@@ -140,7 +140,7 @@ public sealed class CardPlayRoutingModule : ICoreModule, ICardPlayRouting, ICard
                     string? replacement = name switch
                     {
                         "OnPlay" => nameof(Dispatch),
-#if STS2_BETA
+#if STS2_CARD_LOCATION
                         "GetResultLocationForCardPlay" => nameof(Result),
 #else
                         "GetResultPileTypeForCardPlay" => nameof(Result),

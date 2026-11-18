@@ -6,7 +6,7 @@ using MegaCrit.Sts2.Core.Models;
 namespace ShoujoKageki.Core.Runtime.Modules.Shine;
 
 [HarmonyPatch(typeof(CardPileCmd), nameof(CardPileCmd.Add))]
-#if STS2_BETA
+#if STS2_CARD_LOCATION
 [HarmonyPatch([typeof(IEnumerable<CardModel>), typeof(CardPile), typeof(CardPilePosition), typeof(AbstractModel), typeof(bool), typeof(bool)])]
 #else
 [HarmonyPatch([typeof(IEnumerable<CardModel>), typeof(CardPile), typeof(CardPilePosition), typeof(AbstractModel), typeof(bool)])]

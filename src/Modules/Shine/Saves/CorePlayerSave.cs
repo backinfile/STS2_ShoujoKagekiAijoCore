@@ -38,8 +38,13 @@ public sealed class CorePlayerSave : ICoreModule, IPlayerStateEvents
     {
         _instance = this;
         context.Services.Add<IPlayerStateEvents>(this);
-        ExtendedSaveTypes.RegisterSavedValue<Player, string>(SaveId, Capture, Restore,
-            (json, writer) => writer.WriteString(json), ReadNetwork);
+    }
+
+    internal static void RegisterSave()
+    {
+        if (!ExtendedSaveTypes.RegisterSavedValue<Player, string>(SaveId, Capture, Restore,
+                (json, writer) => writer.WriteString(json), ReadNetwork))
+            throw new InvalidOperationException("BaseLib did not register the Core player save value.");
     }
     private static string Capture(Player player) => JsonSerializer.Serialize(new Snapshot(1,
         ShineArchive.Snapshots(player).ToList(), ShineArchive.GetRules(player) with { NetworkFingerprint = RuntimeEntry.Fingerprint }), Options);

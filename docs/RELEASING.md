@@ -4,15 +4,15 @@ Core 作为独立创意工坊 Mod 发布，仅 Karen 内嵌完整 Core；Junna �
 
 ## 1. 构建完整 Mod
 
-使用 PowerShell 7、.NET 9、MegaDot 4.5.1，以及正式版和测试版的真实游戏目录。版本由 `build.ps1 -Version` 指定，根目录 `ShoujoKagekiAijoCore.json` 是 Mod 清单来源，构建时将清单版本同步为发行版本。
+使用 PowerShell 7、.NET 9、MegaDot 4.5.1，以及v0.107.1、v0.111.1 和测试版的真实游戏目录。版本由 `build.ps1 -Version` 指定，根目录 `ShoujoKagekiAijoCore.json` 是 Mod 清单来源，构建时将清单版本同步为发行版本。
 
 ```powershell
-./build.ps1 -StableGameDir $StableGame -BetaGameDir $BetaGame -Godot $MegaDot `
+./build.ps1 -StableGameDir $StableGame -MainGameDir $MainGame -BetaGameDir $BetaGame -Godot $MegaDot `
   -TelemetryEndpointPath $LocalEndpointConfig -Version 1.0.1 `
   -OutputDirectory dist/ShoujoKagekiAijoCore-1.0.1
 ```
 
-输出目录包含 Mod 清单、引导 DLL、API、双版本 Runtime、资源 PCK、`core.bundle` 和 SDK，可作为完整 Mod 安装到游戏 mods 目录。每次构建使用新输出目录。
+输出目录包含 Mod 清单、引导 DLL、API、三个目标的 Runtime、资源 PCK、`core.bundle` 和 SDK，可作为完整 Mod 安装到游戏 mods 目录。每次构建使用新输出目录。独立发布与 Karen 内嵌包应同时更新为同一份构建，旧引导器的目标清单只识别 stable 和 beta。
 
 ```powershell
 ./sdk/validate-package.ps1 -CorePackage dist/ShoujoKagekiAijoCore-1.0.1 -Strict

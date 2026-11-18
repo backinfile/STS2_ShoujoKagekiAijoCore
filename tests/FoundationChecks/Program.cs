@@ -19,7 +19,16 @@ BundleCandidate Select(params BundleCandidate[] candidates) => BundleSelection.S
 Check(ReferenceEquals(Select(candidate), candidate), "single complete bundle");
 Check(ReferenceEquals(BundleSelection.Select([candidate], requirements, "0.113.0", "3.4.8", "1.0.0"), candidate), "v0.113.0 selects the current beta runtime");
 Check(ReferenceEquals(BundleSelection.Select([candidate], requirements, "0.113.1", "3.4.8", "1.0.0"), candidate), "new beta patch attempts the installed runtime");
-Check(BundleSelection.SelectTarget(candidate.Bundle, "0.111.0")?.Name == "stable", "older game does not load a newer beta baseline");
+Check(BundleSelection.SelectTarget(candidate.Bundle, "0.111.0")?.Name == "main", "v0.111.0 selects the owner-aware runtime");
+Check(BundleSelection.SelectTarget(candidate.Bundle, "0.111.1", "main")?.Name == "main", "v0.111.1 selects the owner-aware runtime");
+Check(BundleSelection.SelectTarget(candidate.Bundle, "0.111.1", "beta") == null, "A higher baseline remains ineligible even when the ABI matches");
+var legacyBundle = candidate with { Bundle = candidate.Bundle with { Targets = new(candidate.Bundle.Targets) }, Fingerprint = "legacy" };
+legacyBundle.Bundle.Targets.Remove("main");
+Check(BundleSelection.SelectTarget(legacyBundle.Bundle, "0.111.1", "main") == null, "OBS-058: old bundles cannot attempt Stable on the owner ABI");
+Check(ReferenceEquals(BundleSelection.Select([legacyBundle, candidate], requirements, "0.111.1", "3.4.8", "1.0.0", "main"), candidate),
+    "Mixed bundles select the compatible Main target");
+Reject(() => BundleSelection.Select([legacyBundle], requirements, "0.111.1", "3.4.8", "1.0.0", "main"),
+    "A legacy-only installation fails before loading incompatible Runtime types");
 var identical = candidate with { Root = "workshop-copy", Source = "Workshop:copy" };
 Check(Select(identical, candidate).Source == candidate.Source, "identical copies converge by stable source identity");
 var release = Version.Parse(candidate.Bundle.ReleaseVersion.Split('-')[0].TrimStart('v'));

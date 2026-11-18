@@ -4,11 +4,60 @@ using System.Runtime.CompilerServices;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Entities.Multiplayer;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 using ShoujoKageki.Core.Runtime;
 using ShoujoKageki.Core.Runtime.Modules.Shine;
 using ShoujoKageki.Core.V1;
+
+if (args.Contains("--scoped-choice-only"))
+{
+    var original = new ChoiceProbe();
+    var olderModel = new PayloadCard();
+    var innerModel = new PayloadCard();
+    original.PushModel(olderModel);
+    original.PushModel(innerModel);
+    var scopedType = typeof(RuntimeEntry).Assembly.GetType("ShoujoKageki.Core.Runtime.Modules.Execution.ScopedChoiceContext", true)!;
+    var scope = (PlayerChoiceContext)Activator.CreateInstance(scopedType, BindingFlags.Instance | BindingFlags.NonPublic, null, [original], null)!;
+    if (!ReferenceEquals(scope.LastInvolvedModel, innerModel))
+        throw new InvalidOperationException("Scoped choice lost the most recent model.");
+    var chooser = (Player)RuntimeHelpers.GetUninitializedObject(typeof(Player));
+    const PlayerChoiceOptions options = (PlayerChoiceOptions)1;
+#if STS2_CHOICE_OWNER
+    if (scope.OwnerId != original.OwnerId || !scope.ModelStack!.SequenceEqual(original.ModelStack!))
+        throw new InvalidOperationException("Scoped choice lost owner or model stack.");
+    Task Begin() => scope.SignalPlayerChoiceBegun(chooser, options);
+#else
+    Task Begin() => scope.SignalPlayerChoiceBegun(options);
+#endif
+#if STS2_BETA
+    if (scope.GameActionType != original.GameActionType)
+        throw new InvalidOperationException("Scoped choice lost action type.");
+#endif
+    await Begin();
+    await scope.SignalPlayerChoiceEnded();
+    await Begin();
+    await Begin();
+    original.FailNextBegin = true;
+    var beginFailed = false;
+    try { await Begin(); }
+    catch (IOException error) when (error.Message == "begin") { beginFailed = true; }
+    original.FailNextEnd = true;
+    var endFailed = false;
+    var disposable = (IAsyncDisposable)scope;
+    try { await disposable.DisposeAsync(); }
+    catch (IOException error) when (error.Message == "end") { endFailed = true; }
+    await disposable.DisposeAsync();
+    if (!beginFailed || !endFailed || original.Begun != 3 || original.Ended != 3 || original.Options != options)
+        throw new InvalidOperationException("Scoped choice failed to forward signals or close its remaining choices.");
+#if STS2_CHOICE_OWNER
+    if (!ReferenceEquals(original.Chooser, chooser))
+        throw new InvalidOperationException("Scoped choice lost the native chooser.");
+#endif
+    Console.WriteLine("PASS scoped choice forwarding, stack and failure cleanup.");
+    return;
+}
 
 if (args.Contains("--configuration-only"))
 {
@@ -126,7 +175,7 @@ if (args.Contains("--payloads-only"))
     }
     CardPlay Play(CardModel card) => new() { Card = card, Target = null, ResultPile = PileType.Discard,
         Resources = default, IsAutoPlay = true, PlayIndex = 0, PlayCount = 1,
-#if STS2_BETA
+#if STS2_CARD_LOCATION
         Player = null!,
 #endif
     };
@@ -495,7 +544,7 @@ public abstract class ResolutionWrapperBase() : CardModel(0, CardType.Skill, Car
                 Card = this, Target = null, ResultPile = PileType.Exhaust,
                 Resources = new ResourceInfo { EnergySpent = 0, EnergyValue = 0, StarsSpent = 0, StarValue = 0 },
                 IsAutoPlay = true, PlayIndex = index, PlayCount = Plays,
-#if STS2_BETA
+#if STS2_CARD_LOCATION
                 Player = null!,
 #endif
             };
@@ -567,5 +616,43 @@ public sealed class MethodScopeProbe
         private readonly string? _previous = Current.Value;
         public Scope(string value) => Current.Value = value;
         public void Dispose() => Current.Value = _previous;
+    }
+}
+
+sealed class ChoiceProbe : PlayerChoiceContext
+{
+    internal bool FailNextBegin;
+    internal bool FailNextEnd;
+    internal int Begun;
+    internal int Ended;
+    internal PlayerChoiceOptions Options;
+#if STS2_CHOICE_OWNER
+    internal Player? Chooser;
+    public override ulong? OwnerId => 42;
+    public override Task SignalPlayerChoiceBegun(Player chooser, PlayerChoiceOptions options)
+    {
+        Chooser = chooser;
+        return Begin(options);
+    }
+#else
+    public override Task SignalPlayerChoiceBegun(PlayerChoiceOptions options) => Begin(options);
+#endif
+#if STS2_BETA
+    public override GameActionType? GameActionType => (GameActionType)1;
+#endif
+    private Task Begin(PlayerChoiceOptions options)
+    {
+        if (FailNextBegin) return Task.FromException(new IOException("begin"));
+        Begun++;
+        Options = options;
+        return Task.CompletedTask;
+    }
+
+    public override Task SignalPlayerChoiceEnded()
+    {
+        Ended++;
+        if (!FailNextEnd) return Task.CompletedTask;
+        FailNextEnd = false;
+        return Task.FromException(new IOException("end"));
     }
 }

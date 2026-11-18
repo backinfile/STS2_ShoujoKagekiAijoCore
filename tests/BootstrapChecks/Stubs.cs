@@ -13,8 +13,15 @@ namespace HarmonyLib {
         public HarmonyPatch(Type type, string method) { }
         public HarmonyPatch(Type type, string method, MethodType kind) { }
     }
-    public sealed class Harmony(string id) { public void PatchAll(Assembly assembly) { } }
+    public sealed class Harmony(string id) {
+        public string Id { get; } = id;
+        public Harmony CreateClassProcessor(Type type) => this;
+        public void Patch() { }
+        public void UnpatchAll(string owner) { }
+    }
     public static class AccessTools {
+        public static MethodInfo? Method(Type type, string name, Type[] parameters) =>
+            type.GetMethod(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static, parameters);
         public static FieldInfo Field(Type type, string name) => type.GetField(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)!;
     }
 }
@@ -58,5 +65,21 @@ namespace MegaCrit.Sts2.Core.Modding {
     public static class ModManager {
         public static List<Mod> _mods = [];
         public static IReadOnlyList<Mod> Mods => _mods;
+        public static event Action<Mod>? OnModDetected;
+        public static void NotifyModDetected(Mod mod) => OnModDetected?.Invoke(mod);
+    }
+}
+
+namespace MegaCrit.Sts2.Core.Entities.Cards { public enum PileType { Discard } }
+namespace MegaCrit.Sts2.Core.Entities.Multiplayer { public enum PlayerChoiceOptions { None } }
+namespace MegaCrit.Sts2.Core.Entities.Players { public sealed class Player { } }
+namespace MegaCrit.Sts2.Core.Models {
+    public abstract class AbstractModel { }
+    public class CardModel { protected virtual Entities.Cards.PileType GetResultPileTypeForCardPlay() => Entities.Cards.PileType.Discard; }
+}
+namespace MegaCrit.Sts2.Core.GameActions.Multiplayer {
+    public abstract class PlayerChoiceContext {
+        public abstract Task SignalPlayerChoiceBegun(Entities.Multiplayer.PlayerChoiceOptions options);
+        public abstract Task SignalPlayerChoiceEnded();
     }
 }

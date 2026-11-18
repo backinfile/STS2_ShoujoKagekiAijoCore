@@ -8,7 +8,7 @@ internal static class CardModelApi
     /// <summary>Only new copies and detached snapshots enter here, before they are placed in a pile.</summary>
     internal static void AssignRecipient(CardModel snapshot, Player owner)
     {
-#if STS2_BETA
+#if STS2_CARD_LOCATION
         snapshot.GiveToAnotherPlayer(owner);
 #else
         if (snapshot.Owner == owner) return;

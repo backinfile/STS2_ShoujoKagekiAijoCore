@@ -1,12 +1,18 @@
+using System.Collections;
 using System.Reflection;
 using System.Runtime.Loader;
 using Godot;
 using Godot.Bridge;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Debug;
+using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Multiplayer;
+using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Modding;
+using MegaCrit.Sts2.Core.Models;
 
 namespace ShoujoKageki.Core.Bootstrap;
 
@@ -17,8 +23,24 @@ public static class Bootstrap
     public const string ModId = "ShoujoKagekiAijoCore";
     internal const string CoordinationKey = "ShoujoKagekiAijoCore.BootstrapProtocol1";
     private static readonly MegaCrit.Sts2.Core.Logging.Logger Log = new(ModId, LogType.Generic);
-    internal static Assembly? RuntimeAssembly;
+    private const string BridgeId = ModId + ".Discovery";
+    internal static Type[] RuntimeTypes { get; private set; } = [];
     private static Mod? _logicalMod;
+
+    private sealed class Startup
+    {
+        internal string Stage = "mod identity";
+        internal string Game = "unknown";
+        internal string Release = "unknown";
+        internal string Target = "none";
+        internal string Baseline = "none";
+        internal string Fingerprint = "unknown";
+        internal Assembly? Api;
+        internal Assembly? Runtime;
+
+        public override string ToString() =>
+            $"stage={Stage}, game={Game}, core={Release}, target={Target}, baseline={Baseline}, fingerprint={Fingerprint}";
+    }
 
     public static void Initialize()
     {
@@ -28,31 +50,63 @@ public static class Bootstrap
             if (prior == "ready") return;
             if (prior != null) throw new InvalidOperationException($"Core bootstrap is {prior}. Restart after correcting the reported error.");
             AppDomain.CurrentDomain.SetData(CoordinationKey, "initializing");
-            new Harmony(ModId + ".Bootstrap").PatchAll(typeof(Bootstrap).Assembly);
+            var startup = new Startup();
+            var bridges = new Harmony(BridgeId);
             try
             {
-                InitializeOnce();
+                InitializeOnce(startup, bridges);
                 AppDomain.CurrentDomain.SetData(CoordinationKey, "ready");
             }
             catch (Exception error)
             {
                 AppDomain.CurrentDomain.SetData(CoordinationKey, "failed");
-                Log.Error($"[Core bootstrap] {error}");
+                RuntimeTypes = [];
+                // The native loader assigns Loaded after an initializer exception, then raises this event.
+                ModManager.OnModDetected += MarkFailed;
                 foreach (var mod in ModManager.Mods.Where(x => x.manifest?.id == ModId || DependsOnCore(x)))
                     if (mod.state is ModLoadState.None or ModLoadState.Loaded) mod.state = ModLoadState.Failed;
-                // BaseLib owns the pending startup-error dialog.
-                var config = Type.GetType("BaseLib.Config.ModConfig+ModConfigLogger, BaseLib");
-                (config?.GetProperty("PendingUserMessages")?.GetValue(null) as IList<string>)?.Add($"Core 加载失败。{error.GetBaseException().Message}");
+
+                Log.Error($"[Core startup] failed {startup}: {error}");
+                TryFailureStep("assembly association", () =>
+                {
+                    // The native association method is available only on games with a multi-assembly Mod.
+                    if (_logicalMod != null && AccessTools.Field(typeof(Mod), "assemblies")?.GetValue(_logicalMod) is IList assemblies)
+                    {
+                        if (startup.Runtime != null) assemblies.Remove(startup.Runtime);
+                        if (startup.Api != null) assemblies.Remove(startup.Api);
+                    }
+                });
+                TryFailureStep("discovery bridges", () => bridges.UnpatchAll(BridgeId));
+                TryFailureStep("player message", () =>
+                {
+                    var config = Type.GetType("BaseLib.Config.ModConfig+ModConfigLogger, BaseLib");
+                    (config?.GetProperty("PendingUserMessages")?.GetValue(null) as IList<string>)?.Add(
+                        $"Core 加载失败（游戏 {startup.Game}，Core {startup.Release}，阶段 {startup.Stage}）。{error.GetBaseException().Message}");
+                });
                 throw;
             }
         }
     }
 
+    private static void MarkFailed(Mod mod)
+    {
+        if (mod.manifest?.id != ModId) return;
+        mod.state = ModLoadState.Failed;
+        ModManager.OnModDetected -= MarkFailed;
+    }
+
+    private static void TryFailureStep(string step, Action action)
+    {
+        try { action(); }
+        catch (Exception error) { Log.Error($"[Core startup] {step} cleanup failed: {error}"); }
+    }
+
     private static bool DependsOnCore(Mod mod) => mod.manifest?.dependencies?.Any(d => d.id == ModId) == true;
     private static bool Eligible(Mod mod) => mod.state is ModLoadState.None or ModLoadState.DisabledDuplicate;
 
-    private static void InitializeOnce()
+    private static void InitializeOnce(Startup startup, Harmony bridges)
     {
+        startup.Stage = "mod identity";
         var entries = ModManager.Mods.Where(x => x.manifest?.id == ModId && Eligible(x)).ToArray();
         var location = Path.GetDirectoryName(typeof(Bootstrap).Assembly.Location);
         _logicalMod = entries.FirstOrDefault(x => !string.IsNullOrEmpty(location)
@@ -60,9 +114,14 @@ public static class Bootstrap
                 Path.TrimEndingDirectorySeparator(Path.GetFullPath(location)), StringComparison.OrdinalIgnoreCase))
             // Android may report a canonical assembly path instead of the mod directory alias.
             ?? (entries.Length == 1 ? entries[0] : throw new InvalidOperationException("Cannot identify the active Core mod entry."));
+        startup.Release = _logicalMod.manifest?.version ?? "unknown";
+        startup.Game = ReleaseInfoManager.Instance?.SemVer?.ToString() ?? "unknown";
+        startup.Stage = "dependencies";
         var baseLib = ModManager.Mods.FirstOrDefault(x => x.manifest?.id == "BaseLib" && x.state == ModLoadState.Loaded)
             ?? throw new InvalidOperationException("缺少已加载的 BaseLib，请按 BaseLib → Core → 角色 Mod 排列，并安装包含 BaseLibCompatibilityHelper 的 BaseLib 3.4.8 完整包。");
-        if (AccessTools.Field(typeof(ReflectionHelper), "_modTypes").GetValue(null) != null)
+        var modTypesCache = AccessTools.Field(typeof(ReflectionHelper), "_modTypes")
+            ?? throw new MissingFieldException(typeof(ReflectionHelper).FullName, "_modTypes");
+        if (modTypesCache.GetValue(null) != null)
             throw new InvalidOperationException("Core 在模型反射缓存初始化后加载，请按 BaseLib → Core → 角色 Mod 排列。");
         var requirements = new List<CoreRequirements>();
         var minimumRelease = "1.0.0";
@@ -76,35 +135,87 @@ public static class Bootstrap
             if (requirement.ModId != role.manifest.id) throw new InvalidDataException($"{role.manifest.id} 的 Core 需求身份不一致。");
             requirements.Add(requirement);
         }
+        startup.Stage = "bundle selection";
         var candidates = new List<BundleCandidate>();
         foreach (var mod in ModManager.Mods.Where(x => x.manifest?.id == ModId && Eligible(x)))
         {
             try { candidates.Add(BundleSelection.Validate(mod.path, mod.modSource + ":" + Path.GetFullPath(mod.path))); }
             catch (Exception error) { Log.Warn($"[Core candidate rejected] {mod.modSource} {error.Message}"); }
         }
-        var gameVersion = ReleaseInfoManager.Instance!.SemVer!.ToString();
-        var selected = BundleSelection.Select(candidates, requirements, gameVersion, baseLib.manifest!.version ?? "0.0.0", minimumRelease);
-        var target = BundleSelection.SelectTarget(selected.Bundle, gameVersion)
-            ?? throw new InvalidOperationException("Selected Core has no applicable runtime baseline.");
-        if (SemVersion.Parse(gameVersion).CompareTo(SemVersion.Parse(target.Target.MaximumGameVersion)) > 0)
-            Log.Warn($"[Core bootstrap] Game {gameVersion} is newer than the reference range; trying {target.Name} runtime built for {target.Target.MinimumGameVersion}.");
-        _logicalMod.manifest!.version = selected.Bundle.ReleaseVersion;
-        _logicalMod.version = SemanticVersion.TryFromString(selected.Bundle.ReleaseVersion, out var version) ? version : throw new InvalidDataException("Invalid release version.");
-        foreach (var duplicate in ModManager.Mods.Where(x => x != _logicalMod && x.manifest?.id == ModId && Eligible(x)))
-            duplicate.state = ModLoadState.DisabledDuplicate;
+        startup.Stage = "game ABI";
+        var compatibleTarget = DetectRuntimeTarget();
+        startup.Stage = "bundle selection";
+        startup.Target = compatibleTarget;
+        if (!candidates.Any(candidate => BundleSelection.SelectTarget(candidate.Bundle, startup.Game, compatibleTarget) != null))
+            throw new InvalidOperationException($"No Core bundle provides the {compatibleTarget} runtime for game {startup.Game}. " +
+                $"Checked {string.Join(", ", candidates.Select(candidate => $"{candidate.Bundle.ReleaseVersion}/{candidate.Fingerprint}"))}. 请更新 Core 工坊订阅或 Karen 包。");
+        var selected = BundleSelection.Select(candidates, requirements, startup.Game, baseLib.manifest!.version ?? "0.0.0", minimumRelease, compatibleTarget);
+        var target = BundleSelection.SelectTarget(selected.Bundle, startup.Game, compatibleTarget)!;
+        startup.Release = selected.Bundle.ReleaseVersion;
+        startup.Baseline = target.Target.MinimumGameVersion;
+        startup.Fingerprint = selected.Fingerprint;
+        if (SemVersion.Parse(startup.Game).CompareTo(SemVersion.Parse(target.Target.MaximumGameVersion)) > 0)
+            Log.Warn($"[Core startup] Game {startup.Game} is newer than the reference range; trying ABI-compatible {target.Name} runtime built for {startup.Baseline}.");
+
+        startup.Stage = "assembly preflight";
         var context = AssemblyLoadContext.GetLoadContext(typeof(Bootstrap).Assembly) ?? AssemblyLoadContext.Default;
-        var api = LoadExact(context, BundleSelection.ResolvePath(selected.Root, selected.Bundle.ApiAssembly));
-        RuntimeAssembly = LoadExact(context, BundleSelection.ResolvePath(selected.Root, target.Target.Assembly));
-        var associate = typeof(ModManager).GetMethod("AssociateAssemblyWithMod", [typeof(string), typeof(Assembly)]);
-        associate?.Invoke(null, [ModId, api]);
-        associate?.Invoke(null, [ModId, RuntimeAssembly]);
+        startup.Api = LoadExact(context, BundleSelection.ResolvePath(selected.Root, selected.Bundle.ApiAssembly));
+        startup.Runtime = LoadExact(context, BundleSelection.ResolvePath(selected.Root, target.Target.Assembly));
+        _ = startup.Api.GetTypes();
+        var types = startup.Runtime.GetTypes();
+        var entry = startup.Runtime.GetType("ShoujoKageki.Core.Runtime.RuntimeEntry", true)!;
+        var initialize = entry.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static, null,
+            [typeof(string), typeof(string), typeof(string)], null)
+            ?? throw new MissingMethodException(entry.FullName, "Initialize");
+
+        startup.Stage = "discovery bridges";
+        bridges.CreateClassProcessor(typeof(ModTypesBridge)).Patch();
+        bridges.CreateClassProcessor(typeof(SubtypeBridge)).Patch();
+
+        startup.Stage = "resource registration";
         if (!ProjectSettings.LoadResourcePack(BundleSelection.ResolvePath(selected.Root, selected.Bundle.ResourcePack), true))
             throw new InvalidDataException("Core 公共资源包挂载失败。");
-        ScriptManagerBridge.LookupScriptsInAssembly(RuntimeAssembly);
-        var entry = RuntimeAssembly.GetType("ShoujoKageki.Core.Runtime.RuntimeEntry", true)!;
-        entry.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static)!.Invoke(null,
-            [selected.Bundle.ReleaseVersion, gameVersion, selected.Fingerprint]);
-        Log.Info($"[Core bootstrap] Selected {selected.Bundle.ReleaseVersion}/{target.Name}, {candidates.Count} complete candidates, fingerprint {selected.Fingerprint}.");
+        ScriptManagerBridge.LookupScriptsInAssembly(startup.Runtime);
+
+        startup.Stage = "native association";
+        _logicalMod.version = SemanticVersion.TryFromString(startup.Release, out var version)
+            ? version : throw new InvalidDataException("Invalid release version.");
+        _logicalMod.manifest!.version = startup.Release;
+        foreach (var duplicate in ModManager.Mods.Where(x => x != _logicalMod && x.manifest?.id == ModId && Eligible(x)))
+            duplicate.state = ModLoadState.DisabledDuplicate;
+        var associate = typeof(ModManager).GetMethod("AssociateAssemblyWithMod", [typeof(string), typeof(Assembly)]);
+        associate?.Invoke(null, [ModId, startup.Api]);
+        associate?.Invoke(null, [ModId, startup.Runtime]);
+
+        startup.Stage = "runtime initialization";
+        initialize.Invoke(null, [startup.Release, startup.Game, startup.Fingerprint]);
+        RuntimeTypes = types;
+        Log.Info($"[Core startup] ready {startup}, candidates={candidates.Count}.");
+    }
+
+    internal static string DetectRuntimeTarget()
+    {
+        var choice = typeof(PlayerChoiceContext);
+        var owner = choice.GetProperty("OwnerId");
+        var action = choice.GetProperty("GameActionType");
+        var parameters = owner == null ? new[] { typeof(PlayerChoiceOptions) } : [typeof(Player), typeof(PlayerChoiceOptions)];
+        var begun = choice.GetMethod("SignalPlayerChoiceBegun", parameters);
+        var ended = choice.GetMethod("SignalPlayerChoiceEnded", Type.EmptyTypes);
+        if (begun is not { IsAbstract: true } || begun.ReturnType != typeof(Task)
+            || ended is not { IsAbstract: true } || ended.ReturnType != typeof(Task)
+            || (owner != null && (owner.PropertyType != typeof(ulong?) || owner.GetMethod is not { IsAbstract: true }
+                || choice.GetProperty("ModelStack")?.PropertyType != typeof(IEnumerable<AbstractModel>)))
+            || (action != null && (owner == null || Nullable.GetUnderlyingType(action.PropertyType)?.Name != "GameActionType"
+                || action.GetMethod is not { IsAbstract: true })))
+            throw new NotSupportedException("Unsupported PlayerChoiceContext ABI (OwnerId, GameActionType, ModelStack or choice signals).");
+
+        var card = typeof(CardModel);
+        var result = owner == null
+            ? AccessTools.Method(card, "GetResultPileTypeForCardPlay", Type.EmptyTypes)
+            : AccessTools.Method(card, "GetResultLocationForCardPlay", Type.EmptyTypes);
+        if (result == null || (owner == null ? result.ReturnType != typeof(PileType) : result.ReturnType.Name != "CardLocation"))
+            throw new NotSupportedException("Unsupported CardModel play result ABI.");
+        return action != null ? "beta" : owner != null ? "main" : "stable";
     }
 
     private static Assembly LoadExact(AssemblyLoadContext context, string path)
@@ -126,7 +237,8 @@ internal static class ModTypesBridge
 {
     private static void Postfix(ref Type[] __result)
     {
-        if (Bootstrap.RuntimeAssembly != null) __result = __result.Concat(Bootstrap.RuntimeAssembly.GetTypes()).Distinct().ToArray();
+        var types = Bootstrap.RuntimeTypes;
+        if (types.Length != 0) __result = __result.Concat(types).Distinct().ToArray();
     }
 }
 [HarmonyPatch(typeof(ReflectionHelper), nameof(ReflectionHelper.GetSubtypesFromAssembly))]
@@ -134,15 +246,7 @@ internal static class SubtypeBridge
 {
     private static void Postfix(Assembly assembly, Type parentType, ref IEnumerable<Type> __result)
     {
-        if (assembly == typeof(Bootstrap).Assembly && Bootstrap.RuntimeAssembly != null)
-            __result = __result.Concat(Bootstrap.RuntimeAssembly.GetTypes().Where(t => !t.IsAbstract && !t.IsInterface && parentType.IsAssignableFrom(t))).Distinct();
-    }
-}
-[HarmonyPatch(typeof(ModManager), "TryLoadMod")]
-internal static class BootstrapFailureGuard
-{
-    private static void Postfix(Mod mod)
-    {
-        if (mod.manifest?.id == Bootstrap.ModId && AppDomain.CurrentDomain.GetData(Bootstrap.CoordinationKey) as string == "failed") mod.state = ModLoadState.Failed;
+        if (assembly == typeof(Bootstrap).Assembly)
+            __result = __result.Concat(Bootstrap.RuntimeTypes.Where(t => !t.IsAbstract && !t.IsInterface && parentType.IsAssignableFrom(t))).Distinct();
     }
 }

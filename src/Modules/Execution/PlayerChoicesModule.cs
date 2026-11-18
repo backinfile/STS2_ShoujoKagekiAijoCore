@@ -26,7 +26,7 @@ public sealed class PlayerChoicesModule : ICoreModule, IPlayerChoices
         uint id = sync.ReserveChoiceId(player);
         await using var choice = context == null ? null : new ScopedChoiceContext(context);
         if (choice != null)
-#if STS2_BETA
+#if STS2_CHOICE_OWNER
             await choice.SignalPlayerChoiceBegun(player, PlayerChoiceOptions.None);
 #else
             await choice.SignalPlayerChoiceBegun(PlayerChoiceOptions.None);

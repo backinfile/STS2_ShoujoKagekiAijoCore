@@ -4,7 +4,8 @@ param(
     [string]$Godot = $env:GODOT_BIN,
     [string]$TelemetryEndpointPath = $env:SHOUJO_TELEMETRY_ENDPOINT_PATH,
     [string]$OutputDirectory = '',
-    [string]$Version = '1.9.6'
+    [string]$Version = '1.9.6',
+    [string]$MainGameDir = $env:SHOUJO_MAIN_GAME
 )
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
@@ -13,7 +14,7 @@ if (-not $TelemetryEndpointPath) {
     if (Test-Path -LiteralPath $localEndpoint -PathType Leaf) { $TelemetryEndpointPath = $localEndpoint }
 }
 if ($TelemetryEndpointPath -and -not (Test-Path -LiteralPath $TelemetryEndpointPath -PathType Leaf)) { throw 'TelemetryEndpointPath must identify an existing endpoint configuration.' }
-if (-not $StableGameDir -or -not $BetaGameDir -or -not $Godot) { throw 'Provide StableGameDir, BetaGameDir and Godot, or their documented environment variables.' }
+if (-not $StableGameDir -or -not $MainGameDir -or -not $BetaGameDir -or -not $Godot) { throw 'Provide StableGameDir, MainGameDir, BetaGameDir and Godot, or their documented environment variables.' }
 if (-not $OutputDirectory) { $OutputDirectory = Join-Path $root 'dist/ShoujoKagekiAijoCore' }
 $output = [IO.Path]::GetFullPath($OutputDirectory)
 $staging = Join-Path $root ('artifacts/package-' + [Guid]::NewGuid().ToString('N'))
@@ -26,10 +27,10 @@ function Build-Core([string]$project, [string]$game, [string]$api) {
     if ($LASTEXITCODE) { throw "Core $api build failed." }
 }
 $lib = Join-Path $staging "lib/$Version"
-foreach ($api in @('stable','beta')) {
-    $game = if ($api -eq 'stable') { $StableGameDir } else { $BetaGameDir }
-    Build-Core 'src/Runtime/ShoujoKagekiAijoCore.Runtime.csproj' $game $api
-    $name = if ($api -eq 'stable') { 'Stable' } else { 'Beta' }
+$games = [ordered]@{ stable = $StableGameDir; main = $MainGameDir; beta = $BetaGameDir }
+foreach ($api in $games.Keys) {
+    Build-Core 'src/Runtime/ShoujoKagekiAijoCore.Runtime.csproj' $games[$api] $api
+    $name = (Get-Culture).TextInfo.ToTitleCase($api)
     New-Item -ItemType Directory -Force -Path (Join-Path $lib $api) | Out-Null
     Copy-Item -LiteralPath (Join-Path $root ".godot/mono/temp/bin/ExportRelease/ShoujoKagekiAijoCore.Runtime.$name.dll") -Destination (Join-Path $lib $api)
     if ($api -eq 'stable') {
@@ -61,6 +62,7 @@ $bundle = [ordered]@{
     features=@('player-state-events@1','card-clone-events@1','model-method-scopes@1','shine-reward-pools@1','shine-rewards@1','card-staging@1','card-payloads@1','player-choices@1','card-picking@1','card-upgrades@1','music-overrides@1','shine@1','diagnostics@1','music@1','configuration@1','card-play-routing@1','card-effects@1','card-execution@1','card-options@1','effect-registration@1','movement-pipeline@1','model-execution@1','card-copies@1','card-snapshots@1','card-selection@1','presentation@1','temporary-music@1') + @(if (Test-Path (Join-Path $root 'src/Modules/Telemetry')) { 'telemetry@1' }) + @(if (Test-Path (Join-Path $root 'src/Modules/Exports')) { 'card-export@1' })
     targets=[ordered]@{
         stable=[ordered]@{ minimumGameVersion='0.107.1'; maximumGameVersion='0.107.1'; assembly="lib/$Version/stable/ShoujoKagekiAijoCore.Runtime.Stable.dll" }
+        main=[ordered]@{ minimumGameVersion='0.111.0'; maximumGameVersion='0.111.1'; assembly="lib/$Version/main/ShoujoKagekiAijoCore.Runtime.Main.dll" }
         beta=[ordered]@{ minimumGameVersion='0.113.0'; maximumGameVersion='0.113.0'; assembly="lib/$Version/beta/ShoujoKagekiAijoCore.Runtime.Beta.dll" }
     }
     files=$files

@@ -1,4 +1,4 @@
-#if STS2_BETA
+#if STS2_CARD_LOCATION
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Nodes.Cards;
 using MegaCrit.Sts2.Core.Nodes.Vfx.Cards;

@@ -15,7 +15,7 @@ using ShoujoKageki.Core.Runtime.Modules.Shine;
 
 namespace ShoujoKageki.Core.Runtime.Modules.Presentation;
 
-public sealed class ShinePresentation : ICoreModule, IShinePresentation, IShinePileView
+public sealed class ShinePresentation : ICoreModule, IShinePresentation, IShinePileView, IDisposable
 {
     public string Id => "shine-presentation";
     public int Order => 0;
@@ -31,6 +31,7 @@ public sealed class ShinePresentation : ICoreModule, IShinePresentation, IShineP
         };
         ShineArchive.Changed += ShinePileManager.Refresh;
     }
+    public void Dispose() => ShineArchive.Changed -= ShinePileManager.Refresh;
     public NCardPileScreen Show(Player player) => ShinePileManager.ShowScreen(player);
     public bool IsDepletionAnimating(CardModel card) => NKarenShineDepleteVfx.IsAnimating(card);
     internal void PlayDepletion(CardModel card)

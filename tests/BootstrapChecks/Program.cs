@@ -1,9 +1,11 @@
 using System.Reflection;
+using HarmonyLib;
 using MegaCrit.Sts2.Core.Modding;
 using ShoujoKageki.Core.Bootstrap;
 
 if (args.Length != 1) throw new ArgumentException("Pass a directory junction to this check's build-output directory.");
 var initialize = typeof(Bootstrap).GetMethod("InitializeOnce", BindingFlags.NonPublic | BindingFlags.Static)!;
+var startup = typeof(Bootstrap).GetNestedType("Startup", BindingFlags.NonPublic)!;
 var logical = typeof(Bootstrap).GetField("_logicalMod", BindingFlags.NonPublic | BindingFlags.Static)!;
 var directory = Path.GetDirectoryName(typeof(Bootstrap).Assembly.Location)!;
 var alias = Path.GetFullPath(args[0]);
@@ -18,7 +20,7 @@ void Check(string name, Mod[] mods, Mod? expected) {
     logical.SetValue(null, null);
     ModManager._mods = mods.ToList();
     Exception? observed = null;
-    try { initialize.Invoke(null, null); }
+    try { initialize.Invoke(null, [Activator.CreateInstance(startup, nonPublic: true), new Harmony("Core.BootstrapChecks")]); }
     catch (TargetInvocationException error) { observed = error.InnerException; }
     var actual = (Mod?)logical.GetValue(null);
     bool ok = expected == null
@@ -47,5 +49,16 @@ var duplicate = Core(alias, ModLoadState.DisabledDuplicate);
 Check("exact match wins when an eligible duplicate exists", [duplicate, exact], exact);
 Check("ambiguous entries without a matching assembly directory are rejected", [Core(alias), Core(alias + Path.DirectorySeparatorChar)], null);
 Check("missing Core is rejected", [], null);
+var broken = Core(directory);
+var dependent = new Mod { manifest = new() { id = "Role", dependencies = [new() { id = Bootstrap.ModId }] } };
+ModManager._mods = [broken, dependent];
+try { Bootstrap.Initialize(); }
+catch (InvalidOperationException error) when (error.Message.Contains("BaseLib")) { }
+broken.state = ModLoadState.Loaded; // Native TryLoadMod writes this after CallModInitializer returns false.
+ModManager.NotifyModDetected(broken);
+if (broken.state != ModLoadState.Failed || dependent.state != ModLoadState.Failed || Bootstrap.RuntimeTypes.Length != 0)
+    throw new InvalidOperationException("A failed Core or its dependency was exposed as loaded.");
+checks++;
+Console.WriteLine("PASS initializer failure survives the native loader's state update");
 Console.WriteLine($"Bootstrap checks: {checks} passed, {failures} failed.");
 return failures == 0 ? 0 : 1;

@@ -94,9 +94,15 @@ public static class BundleSelection
             throw new InvalidDataException("Unexpected Core API assembly identity.");
         foreach (var (name, target) in bundle.Targets)
         {
-            if (name is not ("stable" or "beta")) throw new InvalidDataException($"Unknown game target {name}.");
+            var variant = name switch
+            {
+                "stable" => "Stable",
+                "main" => "Main",
+                "beta" => "Beta",
+                _ => throw new InvalidDataException($"Unknown game target {name}.")
+            };
             var asm = AssemblyName.GetAssemblyName(ResolvePath(root, target.Assembly));
-            var expected = $"ShoujoKagekiAijoCore.Runtime.{(name == "stable" ? "Stable" : "Beta")}";
+            var expected = $"ShoujoKagekiAijoCore.Runtime.{variant}";
             if (asm.Name != expected) throw new InvalidDataException($"Unexpected runtime identity for {name}.");
             if (SemVersion.Parse(target.MinimumGameVersion).CompareTo(SemVersion.Parse(target.MaximumGameVersion)) > 0)
                 throw new InvalidDataException($"Inverted game range for {name}.");
@@ -136,24 +142,25 @@ public static class BundleSelection
         }
     }
 
-    public static BundleTargetMatch? SelectTarget(CoreBundle bundle, string gameVersion)
+    public static BundleTargetMatch? SelectTarget(CoreBundle bundle, string gameVersion, string? compatibleTarget = null)
     {
         var game = SemVersion.Parse(gameVersion);
-        return bundle.Targets.Where(x => game.CompareTo(SemVersion.Parse(x.Value.MinimumGameVersion)) >= 0)
+        return bundle.Targets.Where(x => (compatibleTarget == null || x.Key == compatibleTarget)
+                && game.CompareTo(SemVersion.Parse(x.Value.MinimumGameVersion)) >= 0)
             .OrderByDescending(x => SemVersion.Parse(x.Value.MinimumGameVersion))
             .ThenBy(x => x.Key, StringComparer.Ordinal)
             .Select(x => new BundleTargetMatch(x.Key, x.Value)).FirstOrDefault();
     }
 
     public static BundleCandidate Select(IEnumerable<BundleCandidate> candidates, IReadOnlyList<CoreRequirements> requirements,
-        string gameVersion, string baseLibVersion, string minimumRelease)
+        string gameVersion, string baseLibVersion, string minimumRelease, string? compatibleTarget = null)
     {
         var complete = candidates.ToArray();
         var conflictingReleases = complete.GroupBy(x => x.Bundle.ReleaseVersion)
             .Where(release => release.Select(x => x.Fingerprint).Distinct().Skip(1).Any())
             .Select(release => release.Key).ToHashSet(StringComparer.Ordinal);
         var baselib = SemVersion.Parse(baseLibVersion);
-        var selected = complete.Select(candidate => new { Candidate = candidate, Target = SelectTarget(candidate.Bundle, gameVersion) })
+        var selected = complete.Select(candidate => new { Candidate = candidate, Target = SelectTarget(candidate.Bundle, gameVersion, compatibleTarget) })
             .Where(x => x.Target != null && x.Candidate.Bundle.ApiMajor == 1
                 && SemVersion.Parse(x.Candidate.Bundle.ReleaseVersion).CompareTo(SemVersion.Parse(minimumRelease)) >= 0
                 && baselib.CompareTo(SemVersion.Parse(x.Candidate.Bundle.BaseLibMinimumVersion)) >= 0

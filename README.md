@@ -24,7 +24,7 @@ Core 是少女歌剧系列 Mod 共用的基础 Mod，作为独立创意工坊 Mo
 | 少女歌剧工作台 | 在 Core、华恋、纯那之间切换，维护设计内容；[工作台与接入说明](tools/workbench/README.md) |
 | 作者工具 | 按发行能力提供卡牌导出、重放、移牌与音频辅助 |
 
-Core 支持《杀戮尖塔 2》正式版与测试版。当前适配正式版 0.107.1、测试版 0.113.0 和 BaseLib 3.4.8。BaseLib 3.4.8 需同时安装官方发行包中的 BaseLibCompatibilityHelper DLL 与清单。
+Core 支持《杀戮尖塔 2》正式版与测试版。当前适配正式版 0.111.1、旧正式版 0.107.1、测试版 0.113.0 及 BaseLib 3.4.8。BaseLib 3.4.8 需同时安装官方发行包中的 BaseLibCompatibilityHelper DLL 与清单。
 
 游戏更新后，Core 默认尝试加载不高于当前游戏版本的最新 Runtime 基线；同一基线选择满足全部角色要求的最新 Core。`maximumGameVersion` 保留构建参考范围，后续版本不会仅因超过它而被拦截。依赖、API、能力和包完整性仍会核对。
 
@@ -237,7 +237,7 @@ Core 更新以旧角色 DLL 直接运行和旧存档读取作为验收条件。�
 
 本说明对应 Core 1.2.0 和 API V1。公开类型签名以 src/Api.V1/ 为准，模块协作约定见 contracts/runtime-v1.md。
 
-开发、部署和维护 Core 时阅读 [Core 实现文档](docs/IMPLEMENTATION.md)，其中记录独立发布与 Karen 内嵌目录、固定引导协议、版本选择、加载顺序检查、双版本适配、服务端与 Web 迁移，以及必要验证范围。
+开发、部署和维护 Core 时阅读 [Core 实现文档](docs/IMPLEMENTATION.md)，其中记录独立发布与 Karen 内嵌目录、固定引导协议、版本选择、加载顺序检查、目标适配、服务端与 Web 迁移，以及必要验证范围。
 
 ### 实际卡牌选择、升级与临时音乐
 

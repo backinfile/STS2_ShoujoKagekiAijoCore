@@ -1,4 +1,4 @@
-#if STS2_BETA
+#if STS2_CARD_LOCATION
 using HarmonyLib;
 using ShoujoKageki.Core.Runtime.Modules.Execution;
 using MegaCrit.Sts2.Core.Commands;

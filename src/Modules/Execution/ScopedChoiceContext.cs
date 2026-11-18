@@ -11,18 +11,20 @@ internal sealed class ScopedChoiceContext : PlayerChoiceContext, IAsyncDisposabl
     internal ScopedChoiceContext(PlayerChoiceContext original)
     {
         _original = original;
-#if STS2_BETA
+#if STS2_CHOICE_OWNER
         foreach (var model in original.ModelStack?.Reverse() ?? []) PushModel(model);
 #else
         if (original.LastInvolvedModel is { } model) PushModel(model);
 #endif
     }
 
-#if STS2_BETA
+#if STS2_CHOICE_OWNER
     public override ulong? OwnerId => _original.OwnerId;
-    public override GameActionType? GameActionType => _original.GameActionType;
 #endif
 #if STS2_BETA
+    public override GameActionType? GameActionType => _original.GameActionType;
+#endif
+#if STS2_CHOICE_OWNER
     public override async Task SignalPlayerChoiceBegun(Player chooser, PlayerChoiceOptions options)
     {
         await _original.SignalPlayerChoiceBegun(chooser, options);
@@ -40,6 +42,12 @@ internal sealed class ScopedChoiceContext : PlayerChoiceContext, IAsyncDisposabl
     }
     public async ValueTask DisposeAsync()
     {
-        while (_open > 0) await SignalPlayerChoiceEnded();
+        Exception? failure = null;
+        while (_open > 0)
+        {
+            try { await SignalPlayerChoiceEnded(); }
+            catch (Exception error) { failure = Cleanup.Combine(failure, error); }
+        }
+        if (failure != null) System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw();
     }
 }

@@ -8,6 +8,7 @@
     <Version>$(CoreVersion)</Version>
     <Sts2Api Condition="'$(Sts2Api)' == ''">stable</Sts2Api>
     <DefineConstants Condition="'$(Sts2Api)' == 'beta'">$(DefineConstants);STS2_BETA</DefineConstants>
+    <DefineConstants Condition="'$(Sts2Api)' == 'main' Or '$(Sts2Api)' == 'beta'">$(DefineConstants);STS2_CHOICE_OWNER;STS2_CARD_LOCATION</DefineConstants>
     <GameDataDir>$(GameDir)/data_sts2_windows_x86_64</GameDataDir>
     <BaseLibPath Condition="'$(BaseLibPath)' == ''">$(GameDir)/mods/BaseLib/BaseLib.dll</BaseLibPath>
     <Deterministic>true</Deterministic>
