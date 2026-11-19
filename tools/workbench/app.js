@@ -432,7 +432,8 @@
       const remove=self?'':'<button type="button" class="icon-btn" data-remove-grant="'+escape(id)+'" aria-label="移除关联 '+escape(c.name)+'">×</button>';
       html+='<div class="related-entry"><div class="related-heading">'+name+'<input type="number" min="1" step="1" value="'+count+'" data-grant-count="'+escape(id)+'" aria-label="'+escape(c.name)+(self?'自身数量':'发放数量')+'">'+remove+'</div><div class="related-meta">'+escape(c.cost)+'费 · '+escape(c.type)+' · '+(c.pool?'入池':'不入池')+'</div><p>'+energyText(c.text,c)+'</p></div>';
     }
-    html+='<div class="inline-actions"><button type="button" class="button" data-action="add-grant">新增同组牌</button></div><div class="field"><span class="field-label">关联已有牌</span><input class="filter-search" type="search" data-grant-search aria-label="搜索关联牌" placeholder="牌名或编号" autocomplete="off"><select data-add-grant aria-label="关联已有牌">'+grantOptions(card)+'</select></div>';
+    const independentAction=JunnaWorkbenchDomain.canMakeCardIndependent(state.data,card)?'<button type="button" class="button" data-action="make-card-independent">设为独立牌</button>':'';
+    html+='<div class="inline-actions"><button type="button" class="button" data-action="add-grant">新增同组牌</button>'+independentAction+'</div><div class="field"><span class="field-label">关联已有牌</span><input class="filter-search" type="search" data-grant-search aria-label="搜索关联牌" placeholder="牌名或编号" autocomplete="off"><select data-add-grant aria-label="关联已有牌">'+grantOptions(card)+'</select></div>';
     return html;
   }
   function arrowFocusEditor(card){
@@ -534,6 +535,16 @@
   function setKnowledgeMain(groupUid){
     const card=current();if(ui.selected?.collection!=='cards'||!card||card.trashedAt)return;
     transact('设置为主牌 · '+card.name,d=>{JunnaWorkbenchDomain.setGroupMain(d,groupUid,card.uid);ui.selected.cardOrigin=card.uid;ui.selected.cardSlot=card.uid+'::0';});
+  }
+  function makeCardIndependent(){
+    const card=current();
+    if(ui.selected?.collection!=='cards'||!card||!JunnaWorkbenchDomain.canMakeCardIndependent(state.data,card))return;
+    const result=transact('设为独立牌 · '+card.name,data=>{
+      JunnaWorkbenchDomain.makeCardIndependent(data,card.uid);
+      ui.selected.cardOrigin=card.uid;
+      delete ui.selected.cardSlot;
+    });
+    if(result)toast('已设为独立牌');
   }
   function moveCardGroup(action){
     const card=current(),selected=ui.selected;if(selected?.collection!=='cards'||!card||card.trashedAt)return;
@@ -702,6 +713,7 @@
     else if(action==='add')addEntity();else if(action==='upgrade'){flushEdit();ui.upgraded=!ui.upgraded;renderWorkspace();renderInspector();saveUI();}
     else if(action==='clear-filters'){flushEdit();ui.search='';ui.type=ui.rarity=ui.cost=ui.archetype=ui.routePosition=ui.term=ui.breakthrough='all';ui.routePositions=[];ui.routeExcludedPositions=[];ui.cardPool=defaultCardPool(ui.tab);renderAll();}
     else if(action==='archetypes')showArchetypes();else if(action==='meta')openEditor('root','meta');else if(action==='add-grant')newGrant();
+    else if(action==='make-card-independent')makeCardIndependent();
     else if(action==='upload-art'){flushEdit();$('art-file').click();}else if(action==='reset-art'){const e=current();if(e)transact('恢复默认插画 · '+e.name,()=>{e.art=ui.selected.collection==='fitPool'?'':'defaultPortrait';});}
     else if(action==='copy-template'){const text=current()?.template||'';if(navigator.clipboard?.writeText)navigator.clipboard.writeText(text).then(()=>toast('已复制')).catch(()=>toast('复制失败'));else toast('请从文本框复制');}
     else if(action==='cards-by-term'){const e=current();if(e){flushEdit();selectTab('cards');ui.term=e.kind==='关键词'?e.id:'all';ui.search=e.kind==='关键词'?'':e.name;ui.selected=null;renderAll();}}

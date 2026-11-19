@@ -12,6 +12,28 @@
   function assignRoot(data,key,value){const next=JSON.parse(JSON.stringify(value));if(key==='meta')for(const collection of META_COLLECTIONS)if(!Object.hasOwn(next,collection)&&Object.hasOwn(data.meta||{},collection))next[collection]=data.meta[collection];data[key]=next;}
   const TYPES=['攻击','技能','能力','飞矢','状态','诅咒','任务'],RARITIES=['基础','普通','罕见','稀有','远古','事件','衍生','状态','诅咒','任务'];
   const CARD_POOLS=['角色','无色','事件','衍生','状态','诅咒','任务'];
+  const isKnowledgeTerm=term=>term.kind==='关键词'&&term.name==='知识';
+  const leadingKnowledge=/^(?:\s*知识。)+\s*/;
+  function canMakeCardIndependent(data,card){
+    return !card.trashedAt&&(
+      data.partnerGroups.some(group=>group.mainCardId===card.id||group.grantedCardIds.includes(card.id))||
+      card.keywords.includes('知识')||data.terms.some(term=>isKnowledgeTerm(term)&&card.termIds.includes(term.id))||
+      leadingKnowledge.test(card.text)||leadingKnowledge.test(card.upgradedText)
+    );
+  }
+  function makeCardIndependent(data,cardUid){
+    const card=data.cards.find(entry=>entry.uid===cardUid);
+    if(!card||card.trashedAt)return;
+    data.partnerGroups=data.partnerGroups.filter(group=>group.mainCardId!==card.id);
+    for(const group of data.partnerGroups){
+      if(group.grantedCardIds.includes(card.id))group.grantedCardIds=group.grantedCardIds.filter(id=>id!==card.id);
+    }
+    const knowledgeTermIds=new Set(data.terms.filter(isKnowledgeTerm).map(term=>term.id));
+    card.keywords=card.keywords.filter(keyword=>keyword!=='知识');
+    card.termIds=card.termIds.filter(id=>!knowledgeTermIds.has(id));
+    card.text=card.text.replace(leadingKnowledge,'');
+    card.upgradedText=card.upgradedText.replace(leadingKnowledge,'');
+  }
   function groupCardCount(group,cardId){return Math.max(1,Math.floor(Number(cardId===group.mainCardId?group.mainCardCount:group.grantedCardCounts?.[cardId])||1));}
   function setGroupMain(data,groupUid,cardUid){
     const group=data.partnerGroups.find(entry=>entry.uid===groupUid),card=data.cards.find(entry=>entry.uid===cardUid);
@@ -91,7 +113,7 @@
     for(const key of COLLECTIONS){if(!Array.isArray(d[key]))d[key]=[];const seen=new Set(),seenUid=new Set();for(const e of d[key]){if(!e||typeof e!=='object')throw Error('条目格式有误');e.uid=String(e.uid||uid());e.id=String(e.id||uid());if(seen.has(e.id))throw Error('编号重复：'+e.id);if(seenUid.has(e.uid))throw Error('内部编号重复：'+e.id);seen.add(e.id);seenUid.add(e.uid);}}
     d.title=String(d.title||'纯那 Mod 设计工作台');d.meta=d.meta&&typeof d.meta==='object'?d.meta:{};
     for(const collection of META_COLLECTIONS){const list=entityList(d,collection),ids=new Set(),uids=new Set();if(!Array.isArray(list))throw Error('条目格式有误：'+collection);for(const entry of list){if(!entry||typeof entry!=='object'||!entry.uid||!entry.id)throw Error('条目缺少编号：'+collection);if(ids.has(entry.id)||uids.has(entry.uid))throw Error('条目编号重复：'+entry.id);ids.add(entry.id);uids.add(entry.uid);}}
-    const cardIds=new Set(d.cards.map(c=>c.id)),termIds=new Set(d.terms.map(t=>t.id)),archetypeIds=new Set(d.archetypes.map(a=>a.id)),knowledgeTerm=d.terms.find(t=>t.kind==='关键词'&&t.name==='知识'),oldWordIds=new Set(d.terms.filter(t=>t.kind==='关键词'&&t.name==='言葉').map(t=>t.id));
+    const cardIds=new Set(d.cards.map(c=>c.id)),termIds=new Set(d.terms.map(t=>t.id)),archetypeIds=new Set(d.archetypes.map(a=>a.id)),knowledgeTerm=d.terms.find(isKnowledgeTerm),oldWordIds=new Set(d.terms.filter(t=>t.kind==='关键词'&&t.name==='言葉').map(t=>t.id));
     d.partnerGroups=d.partnerGroups.filter(g=>cardIds.has(g.mainCardId)).map(g=>({...g,grantedCardIds:[...new Set(Array.isArray(g.grantedCardIds)?g.grantedCardIds:[g.grantedCardId].filter(Boolean))].filter(id=>cardIds.has(id)&&id!==g.mainCardId)})).filter(g=>g.grantedCardIds.length||groupCardCount(g,g.mainCardId)>1);
     const mains=new Set(d.partnerGroups.map(g=>g.mainCardId)),grants=new Set(d.partnerGroups.flatMap(g=>g.grantedCardIds));
     if(mains.size!==d.partnerGroups.length)throw Error('关联牌列表重复');
@@ -124,7 +146,7 @@
 
     return normalizeData;
   }
-  const api={COLLECTIONS,ENTITY_COLLECTIONS,CARD_POOLS,entityList,rootEntity,assignRoot,create,cardGroup,moveCards,groupCardCount,setGroupMain};
+  const api={COLLECTIONS,ENTITY_COLLECTIONS,CARD_POOLS,entityList,rootEntity,assignRoot,create,cardGroup,moveCards,groupCardCount,setGroupMain,canMakeCardIndependent,makeCardIndependent};
   if(typeof module==='object'&&module.exports)module.exports=api;
   else root.JunnaWorkbenchDomain=api;
 })(typeof globalThis==='object'?globalThis:this);
