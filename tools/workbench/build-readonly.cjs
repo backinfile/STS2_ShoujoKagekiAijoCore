@@ -20,7 +20,7 @@ const state = {
   workspaceId: original.workspaceId + ':readonly:' + original.revision,
   revision: original.revision, data: original.data, assets: {},
   history: [], undoStack: [], redoStack: [], seedBatches: [], appliedSeedBatches: [],
-  ui: {tab: 'cards', pool: 'pool', sort: 'natural', selected: null}, exportedAt: stamp
+  ui: {tab: 'cards', sort: 'natural', selected: null}, exportedAt: stamp
 };
 fs.mkdirSync(path.join(out, 'assets'), {recursive: true});
 const assets = {...json(path.join(here, 'assets.json')), ...original.assets};
