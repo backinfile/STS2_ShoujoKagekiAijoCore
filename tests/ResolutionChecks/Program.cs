@@ -491,6 +491,56 @@ card.FailEffect = false;
 service.SetState(card, 3, 3);
 await service.ResolveAsync(card, card.Effect, CardResolutionKind.Arrow);
 Check("A failed native batch releases its context", service.GetState(card)?.Remaining == 2);
+
+services.Add<IShinePresentation>(new NoShinePresentation());
+var batchOwner = (Player)RuntimeHelpers.GetUninitializedObject(typeof(Player));
+AccessTools.Field(typeof(Player), "<Deck>k__BackingField").SetValue(batchOwner, new CardPile(PileType.Deck));
+
+foreach (var scenario in new[] { "awaited", "late native start", "late native finish", "late arrow" })
+{
+    var actual = (ResolutionCard)ModelDb.Card<ResolutionCard>().MutableClone();
+    actual.Owner = batchOwner;
+    service.SetState(actual, 1, 3, temporary: true);
+
+    var start = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    var effectStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    var finish = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    actual.EffectStarted = effectStarted;
+    actual.ResumeEffect = finish.Task;
+    Task child;
+    await using (service.BeginResolutionBatch())
+    {
+        child = RunChild();
+        if (scenario is "awaited" or "late native finish")
+        {
+            start.SetResult();
+            await effectStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Check($"{scenario}: started before the parent closes",
+                service.GetState(actual) is { Remaining: 0, PendingDepletion: true } && !actual.HasBeenRemovedFromState);
+        }
+        if (scenario == "awaited")
+        {
+            finish.SetResult();
+            await child;
+            Check("An open parent retains responsibility for its awaited child",
+                service.GetState(actual)?.PendingDepletion == true && !actual.HasBeenRemovedFromState);
+        }
+    }
+    start.TrySetResult();
+    finish.TrySetResult();
+    await child;
+    Check($"{scenario}: the spent card is cleaned up",
+        service.GetState(actual) is { Remaining: 0, PendingDepletion: false } && actual.HasBeenRemovedFromState);
+
+    async Task RunChild()
+    {
+        await start.Task;
+        if (scenario == "late arrow")
+            await service.ResolveAsync(actual, actual.Effect, CardResolutionKind.Arrow);
+        else
+            await StartInlined(wrapper, actual);
+    }
+}
 Console.WriteLine("Native resolution checks passed.");
 
 static Task StartInlined(MethodInfo wrapper, ResolutionCard card)
@@ -562,12 +612,16 @@ public abstract class ResolutionWrapperBase() : CardModel(0, CardType.Skill, Car
 public sealed class ResolutionCard : ResolutionWrapperBase
 {
     public int RuntimeValue;
+    public TaskCompletionSource? EffectStarted;
+    public Task? ResumeEffect;
     public override int MaxUpgradeLevel => 3;
     protected override Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
         => Deferred ? Task.CompletedTask : Effect();
     public async Task Effect()
     {
         Effects++;
+        EffectStarted?.SetResult();
+        if (ResumeEffect is { } resume) await resume;
         if (YieldEffect) await Task.Yield();
         if (Nested is { } nested)
         {
@@ -576,6 +630,11 @@ public sealed class ResolutionCard : ResolutionWrapperBase
         }
         if (FailEffect) throw new InvalidOperationException("expected effect failure");
     }
+}
+
+sealed class NoShinePresentation : IShinePresentation
+{
+    public bool IsDepletionAnimating(CardModel card) => false;
 }
 
 public sealed class PlainCard() : CardModel(0, CardType.Skill, CardRarity.Token, TargetType.Self) { }

@@ -29,6 +29,7 @@ public sealed class ShineService : IShineService, ICoreModule
     private static readonly SavedSpireField<CardModel, int> LegacyMaximum = new(() => -1, "karen_shine_max");
     private readonly List<Func<CardModel, bool>> _deferred = [];
     private static readonly AsyncLocal<Batch?> ActiveBatch = new();
+    private static Batch? CurrentBatch => ActiveBatch.Value?.OpenBatch;
     private static readonly AsyncLocal<int> SnapshotCopyDepth = new();
     [ThreadStatic] private static int _cardReadDepth;
     private static readonly ConditionalWeakTable<CardModel, object> PermanentOrigins = new();
@@ -111,23 +112,39 @@ public sealed class ShineService : IShineService, ICoreModule
         public PlayerChoiceContext? Choice = choice;
         public readonly HashSet<CardModel> Executed = new(ReferenceEqualityComparer.Instance);
         public readonly Dictionary<CardModel, int> Running = new(ReferenceEqualityComparer.Instance);
-        private bool _disposed;
-        internal void Detach() { if (ReferenceEquals(ActiveBatch.Value, this)) ActiveBatch.Value = Parent; }
+        private readonly object _completionGate = new();
+        private volatile bool _closed;
+        public Batch? OpenBatch => _closed ? Parent?.OpenBatch : this;
+        internal void Detach()
+        {
+            if (ReferenceEquals(ActiveBatch.Value, this)) ActiveBatch.Value = Parent?.OpenBatch;
+        }
         public ValueTask DisposeAsync()
         {
-            if (_disposed) return ValueTask.CompletedTask;
-            _disposed = true;
+            lock (_completionGate)
+            {
+                if (_closed) return ValueTask.CompletedTask;
+                _closed = true;
+            }
             Detach();
             return FlushAsync();
         }
+        private bool TryCollect(Batch child)
+        {
+            lock (_completionGate)
+            {
+                if (_closed) return false;
+                Executed.UnionWith(child.Executed);
+                Choice ??= child.Choice;
+                return true;
+            }
+        }
         private async ValueTask FlushAsync()
         {
-            if (Parent != null)
-            {
-                Parent.Executed.UnionWith(Executed);
-                Parent.Choice ??= Choice;
-                return;
-            }
+            // An async child can finish after its parent has already flushed.
+            for (var ancestor = Parent; ancestor != null; ancestor = ancestor.Parent)
+                if (ancestor.TryCollect(this)) return;
+
             List<Exception>? errors = null;
             foreach (var card in Executed)
             {
@@ -140,20 +157,20 @@ public sealed class ShineService : IShineService, ICoreModule
     }
     internal static Batch BeginBatch(PlayerChoiceContext? context, CardModel? nativeCard = null)
     {
-        var batch = new Batch(ActiveBatch.Value, context, nativeCard);
+        var batch = new Batch(CurrentBatch, context, nativeCard);
         ActiveBatch.Value = batch;
         return batch;
     }
     internal sealed record ResolutionLease(Batch Batch, CardModel Card, bool OwnBatch, bool Counted);
     private ResolutionLease Enter(CardModel card, CardResolutionKind kind, PlayerChoiceContext? choice)
     {
-        var batch = ActiveBatch.Value;
+        var batch = CurrentBatch;
         var own = batch == null;
         batch ??= BeginBatch(choice);
         batch.Choice ??= choice;
         var running = batch.Running.GetValueOrDefault(card);
         var ancestorRunning = false;
-        for (var ancestor = batch.Parent; ancestor != null; ancestor = ancestor.Parent)
+        for (var ancestor = batch.Parent?.OpenBatch; ancestor != null; ancestor = ancestor.Parent?.OpenBatch)
             ancestorRunning |= ancestor.Running.GetValueOrDefault(card) > 0;
         var independentNativePlay = kind == CardResolutionKind.NativePlay && ReferenceEquals(batch.NativeCard, card);
         var counted = running == 0 && (!ancestorRunning || independentNativePlay) && kind != CardResolutionKind.Effect
@@ -270,7 +287,7 @@ public sealed class ShineService : IShineService, ICoreModule
     }
     internal static bool ShouldDeferResultMove(CardModel card)
     {
-        var batch = ActiveBatch.Value;
+        var batch = CurrentBatch;
         return batch != null && batch.Executed.Contains(card) && batch.Running.GetValueOrDefault(card) == 0
             && !card.Keywords.Contains(CardKeyword.Eternal)
             && (Pending.Get(card) || Instance.GetState(card) is { Remaining: <= 0 });
