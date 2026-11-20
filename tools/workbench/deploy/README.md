@@ -12,6 +12,12 @@
 | <workbench-web-directory>/current | 四个公开工作区的当前快照 |
 | <workbench-web-directory>/assets | 共享哈希资产 |
 
+## 公开快照保留
+
+公开工作台只保留 `<workbench-web-directory>/current` 指向的一份快照，包含四个公开工作区。公开快照由工作区 SQLite 数据和发布模板生成。
+
+发布新快照后，原子切换 `current` 并确认公开入口可访问。清理时核对 `current` 的实际目标，删除 `releases/` 中已结束发布且不再被引用的历史快照。历史快照目前由运维在发布后清理。
+
 ## 构建
 
 1. 通过 MCP 读取 workbench_get_state，指定 assetURLs: true，将返回的 bundle 连同 versions 保存到忽略目录。纯那导出仍使用原工作区编号。
