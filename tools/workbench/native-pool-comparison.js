@@ -1,14 +1,15 @@
 (function(root,factory){
-  const api=factory(typeof module==='object'&&module.exports?require('./native-card-pools.js'):root.JunnaNativeCardPools);
+  const commonJS=typeof module==='object'&&module.exports;
+  const api=commonJS?factory(require('./native-card-pools.js'),require('./workbench-domain.js')):
+    factory(root.JunnaNativeCardPools,root.JunnaWorkbenchDomain);
   if(typeof module==='object'&&module.exports)module.exports=api;else root.JunnaNativePoolComparison=api;
-})(typeof globalThis==='object'?globalThis:this,function(native){
+})(typeof globalThis==='object'?globalThis:this,function(native,domain){
   'use strict';
   const keys=['rarity','type','cost','upgradedCost'];
-  const isReward=card=>card.pool&&['普通','罕见','稀有'].includes(card.rarity);
   const value=(card,key)=>String((key==='type'&&card.type==='飞矢'?card.arrowSubtype:card[key])??'')||'未分类';
-  function compute(cards,{dimensions=[],includeAll=false,modName='纯那'}={}){
+  function compute(cards,{dimensions=[],includeAll=false,workspaceId,modName='纯那'}={}){
     const shared=dimensions.filter(d=>keys.includes(d.key));
-    const columns=[{id:'junna',name:modName,cards},...native.characters].map(character=>({...character,cards:character.cards.filter(card=>!card.trashedAt&&!card.reservedAt&&(includeAll||isReward(card)))}));
+    const columns=[{id:'junna',name:modName,cards,workspaceId},...native.characters].map(character=>({...character,cards:character.cards.filter(card=>!card.trashedAt&&!card.reservedAt&&(includeAll||domain.isRewardCard(card,character.workspaceId)))}));
     const groups=new Map(),collator=new Intl.Collator('zh-CN',{numeric:true});
     columns.forEach((column,index)=>{
       for(const card of column.cards){

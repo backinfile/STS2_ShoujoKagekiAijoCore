@@ -1,9 +1,9 @@
 function createJunnaRouteStatisticsView(deps) {
-  const {data,ui,defaults,dom,escape,table,cardScope,flush,render,transact}=deps;
+  const {data,ui,defaults,workspaceId,dom,escape,table,cardScope,flush,render,transact}=deps;
   const formatCardText=deps.formatCardText||escape;
   const logic=JunnaRouteStatistics;
   const scopes={cards:'卡池',reserve:'备用',trash:'垃圾桶'};
-  const stats=(scope=ui().flowScope)=>logic.compute(data(),defaults,{scope,onlyRewards:ui().flowOnlyRewards,position:ui().routePositions,excludedPositions:ui().routeExcludedPositions});
+  const stats=(scope=ui().flowScope)=>logic.compute(data(),defaults,{scope,workspaceId,onlyRewards:ui().flowOnlyRewards,position:ui().routePositions,excludedPositions:ui().routeExcludedPositions});
   const selectedRoutes=value=>value.routes.filter(route=>JunnaFilters.matches(ui().flowRoute,route.uid));
   const selectedCards=value=>{const selection=JunnaFilters.read(ui().flowRoute);return selection.included.length||selection.excluded.length?value.cards.filter(card=>selectedRoutes(value).some(route=>route.members.some(member=>member.uid===card.uid))):value.cards;};
   const focus=value=>value.routes.find(route=>route.uid===ui().flowDrill?.route);
@@ -106,7 +106,7 @@ function createJunnaRouteStatisticsView(deps) {
   }
   function inspector() {
     const value=stats(),routes=selectedRoutes(value),cards=selectedCards(value),unclassified=new Set(routes.flatMap(route=>route.buckets.unclassified.map(card=>card.uid))).size,related=new Set(data().partnerGroups.flatMap(group=>group.grantedCardIds));
-    const facts=[['当前牌面',cards.length],['流派',routes.filter(route=>route.level!=='小体系').length],['小体系',routes.filter(route=>route.level==='小体系').length],['待分类',unclassified],['常规奖励',cards.filter(logic.isReward).length],['知识附带牌面',cards.filter(card=>related.has(card.id)).length],...(value.scope==='cards'&&ui().flowRoute==='all'&&!ui().routePositions?.length&&!ui().routeExcludedPositions?.length?[['标准比较牌面',value.summary.comparable]]:[])];
+    const facts=[['当前牌面',cards.length],['流派',routes.filter(route=>route.level!=='小体系').length],['小体系',routes.filter(route=>route.level==='小体系').length],['待分类',unclassified],['常规奖励',cards.filter(card=>JunnaWorkbenchDomain.isRewardCard(card,workspaceId)).length],['知识附带牌面',cards.filter(card=>related.has(card.id)).length],...(value.scope==='cards'&&ui().flowRoute==='all'&&!ui().routePositions?.length&&!ui().routeExcludedPositions?.length?[['标准比较牌面',value.summary.comparable]]:[])];
     dom('inspector').hidden=false;dom('inspector-title').textContent='统计';dom('close-inspector').hidden=true;dom('preview').innerHTML='';dom('preview').removeAttribute('tabindex');dom('preview').removeAttribute('aria-label');dom('inspector-footer').hidden=true;
     dom('editor-form').innerHTML='<section class="overview-section"><h2>'+scopes[value.scope]+'</h2><dl class="overview-facts">'+facts.map(([name,count])=>'<div><dt>'+name+'</dt><dd>'+count+'</dd></div>').join('')+'</dl></section>';
   }

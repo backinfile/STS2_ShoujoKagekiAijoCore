@@ -3,7 +3,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const crypto=require('node:crypto');
 const domain=require('./workbench-domain.js');
-const {ENTITY_COLLECTIONS,entityList,rootEntity,assignRoot}=domain;
+const {ENTITY_COLLECTIONS,entityList,rootEntity,assignRoot,withoutRewardFlag}=domain;
 const fitPool=require('./fit-pool-view.js');
 const clone=value=>JSON.parse(JSON.stringify(value));
 const stable=value=>JSON.stringify(value&&typeof value==='object'?Array.isArray(value)?value.map(v=>JSON.parse(stable(v))):Object.fromEntries(Object.keys(value).sort().map(k=>[k,JSON.parse(stable(value[k]))])):value);
@@ -26,6 +26,7 @@ function conflictingFields(current,change){
   for(const field of fields)assert(Object.hasOwn(expected,field)||absent.has(field),'缺少字段原值：'+field);
   if(current===null)return ['$entry'];
   return [...new Set([...fields,...Object.keys(expected),...absent])].filter(field=>{
+    if(change.collection==='cards'&&field==='pool')return false;
     const exists=Object.hasOwn(current,field);
     const matches=Object.hasOwn(expected,field)?exists&&equal(current[field],expected[field]):!exists;
     const alreadyApplied=Object.hasOwn(change.updates,field)?exists&&equal(current[field],change.updates[field]):(change.unset||[]).includes(field)&&!exists;
@@ -44,7 +45,11 @@ class WorkbenchStore{
     if(/\.(sqlite|db)$/.test(file))this.storage=new (require('./mcp-sqlite.cjs').SqliteStorage)(this.file,{assetDirectory});
   }
   read({copy=true}={}){
-    if(this.storage&&copy)return this.storage.read({full:true});
+    if(this.storage&&copy){
+      const bundle=this.storage.read({full:true});
+      bundle.data=this.normalize(bundle.data);
+      return bundle;
+    }
     const stat=this.storage?null:fs.statSync(this.file);
     const signature=this.storage?this.storage.signature():[stat.mtimeMs,stat.ctimeMs,stat.size,stat.ino].join(':');
     if(this.cache?.signature!==signature){
@@ -120,7 +125,12 @@ class WorkbenchStore{
     for(const p of changes){validTarget(p.collection,p.uid);const key=keyOf(p.collection,p.uid);assert(!targets.has(key),'同一次提交包含重复条目');targets.add(key);const current=entity(b.data,p.collection,p.uid),actual=version(b,p.collection,p.uid);assert(typeof p.expectedVersion==='string','缺少条目版本','VERSION_REQUIRED');
       const guarded=Object.hasOwn(p,'expectedFields')||Object.hasOwn(p,'expectedAbsent');
       const fields=guarded?conflictingFields(current,p):[];
-      if(guarded?fields.length>0:p.expectedVersion!==actual||(Object.hasOwn(p,'before')&&!equal(p.before,p.collection==='root'&&p.uid==='meta'&&!Object.hasOwn(p.before||{},'powers')&&!Object.hasOwn(p.before||{},'relics')?rootEntity(b.data,'meta'):current))){conflicts.push({collection:p.collection,uid:p.uid,expectedVersion:p.expectedVersion,currentVersion:actual,current,...(guarded?{fields}:{})});continue;}
+      const beforeMatches=!Object.hasOwn(p,'before')||equal(
+        withoutRewardFlag(p.collection,p.before),
+        p.collection==='root'&&p.uid==='meta'&&!Object.hasOwn(p.before||{},'powers')&&!Object.hasOwn(p.before||{},'relics')?
+          rootEntity(b.data,'meta'):withoutRewardFlag(p.collection,current)
+      );
+      if(guarded?fields.length>0:p.expectedVersion!==actual||!beforeMatches){conflicts.push({collection:p.collection,uid:p.uid,expectedVersion:p.expectedVersion,currentVersion:actual,current,...(guarded?{fields}:{})});continue;}
       let after;if(Object.hasOwn(p,'after')){assert(Object.hasOwn(p,'before'),'整体替换需要读取时的内容');after=p.after;}else {assert(current!==null,'条目不存在','NOT_FOUND');assert(p.updates&&typeof p.updates==='object'&&!Array.isArray(p.updates),'缺少修改字段');assert(p.collection!=='root','根字段请使用整体替换');after={...current,...p.updates};for(const field of p.unset||[]){assert(!['uid','id','__proto__','constructor','prototype'].includes(field),'删除字段无效');delete after[field];}}
       if(p.collection==='root'){assert(after!==null,'根字段需要保留');assignRoot(next,p.uid,after);}else{assert(after===null||after&&typeof after==='object'&&!Array.isArray(after)&&after.uid===p.uid,'内部编号需要保持一致');const list=entityList(next,p.collection,true),at=list.findIndex(e=>e.uid===p.uid);if(at>=0)list.splice(at,1);if(after!==null)list.splice(at>=0?at:Math.min(Number.isInteger(p.afterIndex)&&p.afterIndex>=0?p.afterIndex:list.length,list.length),0,clone(after));}
     }

@@ -8,11 +8,11 @@ const { randomUUID } = require('node:crypto');
 const { WorkbenchStore } = require('./mcp-store.cjs');
 const { SqliteStorage } = require('./mcp-sqlite.cjs');
 
-function fixture(t) {
+function fixture(t, cardFields = {}) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'junna-sqlite-'));
   const file = path.join(directory, 'state.sqlite');
   const seed = { schemaVersion: 1, workspaceId: 'sqlite-test', revision: 1, assets: {}, history: [], mcpRequests: {}, entityVersions: {},
-    data: { title: '测试', meta: {}, cards: [{ uid: 'a', id: 'A', name: '甲', text: '牌效', type: '技能', cost: 1 }],
+    data: { title: '测试', meta: {}, cards: [{ uid: 'a', id: 'A', name: '甲', text: '牌效', type: '技能', cost: 1, ...cardFields }],
       terms: [], mechanisms: [], partnerGroups: [], archetypes: [], styles: [], fitPool: [] } };
   const storage = new SqliteStorage(file);
   storage.import(seed);
@@ -21,6 +21,29 @@ function fixture(t) {
   t.after(() => { store.storage.close(); fs.rmSync(directory, { recursive: true, force: true }); });
   return { store, file, seed };
 }
+
+test('SQLite exports computed reward eligibility for legacy cards', async t => {
+  const { store } = fixture(t, { rarity: '基础', pool: true });
+  const current = store.get({ collection: 'cards', uid: 'a' });
+  assert.equal(current.entity.pool, false);
+  assert.equal(store.read().data.cards[0].pool, false);
+  const result = await store.commit({
+    requestId: randomUUID(), clientId: 'test', label: '修改稀有度', changes: [
+      { collection: 'cards', uid: 'a', expectedVersion: current.version,
+        updates: { rarity: '普通', pool: false }, expectedFields: { rarity: '基础', pool: true } }
+    ]
+  });
+  assert.equal(result.record.patches[0].after.pool, true);
+  assert.equal(store.read().data.cards[0].pool, true);
+  const saved = store.get({ collection: 'cards', uid: 'a' });
+  await store.commit({
+    requestId: randomUUID(), clientId: 'test', label: '旧快照恢复', changes: [
+      { collection: 'cards', uid: 'a', expectedVersion: saved.version,
+        before: { ...saved.entity, pool: false }, after: { ...current.entity, pool: true } }
+    ]
+  });
+  assert.equal(store.get({ collection: 'cards', uid: 'a' }).entity.pool, false);
+});
 
 test('SQLite saves, replays, conflicts and restores in durable transactions', async t => {
   const { store } = fixture(t);

@@ -2,7 +2,6 @@
  * Reference basis: STS2_Card_Reserch/docs/职业卡池设计要求_按五职业规律.md
  * sections 1, 2 and 6; 体系驱动卡池设计流程.md, stage 4.
  * These are absolute complete-pool references, not quotas scaled to draft size.
- * All-face statistics count pool entries and their related faces once each.
  */
 const JunnaPoolReference = (() => {
   'use strict';
@@ -23,15 +22,8 @@ const JunnaPoolReference = (() => {
   ];
   const types = [{name:'攻击',min:27,max:37},{name:'技能',min:30,max:42},{name:'能力',min:18,max:20}];
   const active = card => !card.trashedAt&&!card.reservedAt;
-  const isReward = card => card.pool&&['普通','罕见','稀有'].includes(card.rarity);
+  const domain=typeof module!=='undefined'&&module.exports?require('./workbench-domain.js'):JunnaWorkbenchDomain;
   const baseType = card => card.type==='飞矢'?card.arrowSubtype:card.type;
-  function poolFaces(data,scope='cards') {
-    const cards=data.cards.filter(card=>(card.trashedAt?'trash':card.reservedAt?'reserve':'cards')===scope);
-    const roots=cards.filter(card=>card.pool),poolIds=new Set(roots.map(card=>card.id)),ids=new Set(poolIds);
-    for(const card of roots)for(const id of card.partnerCardIds||[])ids.add(id);
-    for(const group of data.partnerGroups||[]){const members=[group.mainCardId,...group.grantedCardIds||[]];if(poolIds.has(group.mainCardId))for(const id of members)ids.add(id);}
-    return cards.filter(card=>ids.has(card.id));
-  }
   function range(row) {
     if(row.min===undefined||row.max===undefined)return '—';
     return (row.min===row.max?row.min:row.min+'–'+row.max)+(row.unit||'张');
@@ -41,10 +33,9 @@ const JunnaPoolReference = (() => {
     const unit=row.unit||'张';
     return row.current<row.min?'少'+(row.min-row.current)+unit:row.current>row.max?'多'+(row.current-row.max)+unit:'范围内';
   }
-  function compute(data,{includeAll=false}={}) {
-    // Match the existing standard-pool comparison: distinct entry faces plus basics.
-    const cards=includeAll?poolFaces(data):data.cards.filter(card=>active(card)&&(card.pool||card.rarity==='基础'));
-    const rewards=cards.filter(isReward),routes=data.archetypes||[];
+  function compute(data,{includeAll=false,workspaceId}={}) {
+    const cards=data.cards.filter(card=>active(card)&&(includeAll||domain.isCharacterReferenceCard(card,workspaceId)));
+    const rewards=cards.filter(card=>domain.isRewardCard(card,workspaceId)),routes=data.archetypes||[];
     const large=routes.filter(route=>route.level!=='小体系'),small=routes.filter(route=>route.level==='小体系');
     const breakthroughIds=new Set((data.terms||[]).filter(term=>term.kind==='突破').map(term=>term.id));
     const count=match=>cards.filter(match).length;
@@ -78,6 +69,6 @@ const JunnaPoolReference = (() => {
       })
     };
   }
-  return {compute,range,difference,poolFaces};
+  return {compute,range,difference};
 })();
 if(typeof module!=='undefined'&&module.exports)module.exports=JunnaPoolReference;

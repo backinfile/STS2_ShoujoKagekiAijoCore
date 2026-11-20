@@ -10,7 +10,7 @@ const JunnaRouteStatistics = (() => {
   const ports = {output:'输出',defense:'防御',operation:'运转'};
   const rarities = ['基础','普通','罕见','稀有','远古','事件','衍生','状态','诅咒','任务'];
   const cardScope = card => card.trashedAt ? 'trash' : card.reservedAt ? 'reserve' : 'cards';
-  const isReward = card => card.pool && ['普通','罕见','稀有'].includes(card.rarity);
+  const domain=typeof module!=='undefined'&&module.exports?require('./workbench-domain.js'):JunnaWorkbenchDomain;
   function inferProfile(card,route) {
     const text=String(card.text||'').replace(/^知识[。．]?/,''),knowledge=(card.keywords||[]).includes('知识')||/^知识[。．]/.test(card.text||'');
     let trigger=false,payoff=false;
@@ -79,6 +79,7 @@ const JunnaRouteStatistics = (() => {
     return next;
   }
   function compute(data,defaults,options={}) {
+    const isReward=card=>domain.isRewardCard(card,options.workspaceId);
     const scope = ['cards','reserve','trash'].includes(options.scope)?options.scope:'cards';
     const scopedCards = data.cards.filter(card=>cardScope(card)===scope&&(!options.onlyRewards||isReward(card)));
     const order = new Map(defaults.routes.map((route,index)=>[route.uid,index]));
@@ -101,9 +102,9 @@ const JunnaRouteStatistics = (() => {
     });
     const cards=scopedCards.filter(card=>matchesPosition(card,data.archetypes,defaults,options.position,'all',options.excludedPositions));
     const active = data.cards.filter(card=>cardScope(card)==='cards');
-    const comparable = active.filter(card=>card.pool||card.rarity==='基础');
+    const comparable = active.filter(card=>domain.isCharacterReferenceCard(card,options.workspaceId));
     const standard = defaults.standard.map(row=>({...row,current:comparable.filter(card=>card.rarity===row.rarity).length}));
-    return {scope,cards,routes,summary:{faces:active.length,rewards:active.filter(isReward).length,related:active.filter(card=>!card.pool&&card.rarity!=='基础').length,comparable:comparable.length,standard:standard.reduce((n,row)=>n+row.count,0)},standard};
+    return {scope,cards,routes,summary:{faces:active.length,rewards:active.filter(isReward).length,comparable:comparable.length,standard:standard.reduce((n,row)=>n+row.count,0)},standard};
   }
   function membersFor(route,key) {
     if(key.startsWith('effect:'))return route.effects?.find(effect=>effect.id===key.slice(7))?.members||[];
@@ -122,6 +123,6 @@ const JunnaRouteStatistics = (() => {
   function roleRatio(trigger,payoff) {
     if(!trigger&&!payoff)return '—';let a=trigger,b=payoff;while(b){const rest=a%b;a=b;b=rest;}return trigger/a+'∶'+payoff/a;
   }
-  return {roles,positions,normalizePositions,positionTags,isBreakthrough,togglePositionFilter,ports,rarities,cardScope,isReward,inferProfile,profile,matchesPosition,compute,membersFor,roleRatio};
+  return {roles,positions,normalizePositions,positionTags,isBreakthrough,togglePositionFilter,ports,rarities,cardScope,inferProfile,profile,matchesPosition,compute,membersFor,roleRatio};
 })();
 if(typeof module!=='undefined'&&module.exports)module.exports=JunnaRouteStatistics;

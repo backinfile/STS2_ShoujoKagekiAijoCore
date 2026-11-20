@@ -12,6 +12,25 @@
   function assignRoot(data,key,value){const next=JSON.parse(JSON.stringify(value));if(key==='meta')for(const collection of META_COLLECTIONS)if(!Object.hasOwn(next,collection)&&Object.hasOwn(data.meta||{},collection))next[collection]=data.meta[collection];data[key]=next;}
   const TYPES=['攻击','技能','能力','飞矢','状态','诅咒','任务'],RARITIES=['基础','普通','罕见','稀有','远古','事件','衍生','状态','诅咒','任务'];
   const CARD_POOLS=['角色','无色','事件','衍生','状态','诅咒','任务'];
+  const JUNNA_WORKSPACE='junna-mod-workbench-20261101-v1';
+  // CardCatalog.IsRewardCard exclusions for regular rarities in Junna's game catalog (revision 5585).
+  const JUNNA_REWARD_EXCLUSIONS=new Set([
+    'B','JH27B','JK11','JK32B','JK32C','JK37','JK37B','JK49B',
+    'JK82B','JK84','JK122B','JK206B','JK235B','JK272B'
+  ]);
+  const isCharacterCard=card=>(card.cardPool??'角色')==='角色';
+  function isRewardCard(card,workspaceId){
+    return isCharacterCard(card)&&['普通','罕见','稀有'].includes(card.rarity)&&!card.choiceOnly&&
+      (workspaceId!==JUNNA_WORKSPACE||!JUNNA_REWARD_EXCLUSIONS.has(card.id));
+  }
+  function isCharacterReferenceCard(card,workspaceId){
+    return isRewardCard(card,workspaceId)||isCharacterCard(card)&&['基础','远古'].includes(card.rarity);
+  }
+  function withoutRewardFlag(collection,value){
+    if(collection!=='cards'||!value)return value;
+    const {pool,...card}=value;
+    return card;
+  }
   const isKnowledgeTerm=term=>term.kind==='关键词'&&term.name==='知识';
   const leadingKnowledge=/^(?:\s*知识。)+\s*/;
   function canMakeCardIndependent(data,card){
@@ -39,16 +58,7 @@
     const group=data.partnerGroups.find(entry=>entry.uid===groupUid),card=data.cards.find(entry=>entry.uid===cardUid);
     if(!group||!card||card.trashedAt)throw Error('请选择组内的知识牌');
     const ids=[group.mainCardId,...group.grantedCardIds];
-    if(group.mainCardId===card.id){
-      if(card.pool)return false;
-      const sourceGroup=data.partnerGroups.find(entry=>{
-        const source=data.cards.find(candidate=>candidate.id===entry.mainCardId);
-        return source?.pool&&!source.trashedAt&&entry.grantedCardIds.length+1===ids.length&&[entry.mainCardId,...entry.grantedCardIds].every(id=>ids.includes(id));
-      });
-      if(sourceGroup)return setGroupMain(data,sourceGroup.uid,cardUid);
-      card.pool=card.rarity!=='基础';
-      return card.pool;
-    }
+    if(group.mainCardId===card.id)return false;
     if(!group.grantedCardIds.includes(card.id))throw Error('此牌不属于该知识组');
     const oldMain=data.cards.find(entry=>entry.id===group.mainCardId);
     if(!oldMain)throw Error('知识组缺少主牌');
@@ -56,17 +66,16 @@
     if(targetGroup){
       const targetIds=new Set([targetGroup.mainCardId,...targetGroup.grantedCardIds]);
       if(targetIds.size!==ids.length||ids.some(id=>!targetIds.has(id)))throw Error('此牌已有自己的关联牌列表');
-    }else{
-      const counts=Object.fromEntries(ids.map(id=>[id,groupCardCount(group,id)]));
-      group.mainCardId=card.id;group.grantedCardIds=ids.filter(id=>id!==card.id);
-      group.grantedCardCounts=Object.fromEntries(group.grantedCardIds.map(id=>[id,counts[id]]));
-      if(counts[card.id]>1)group.mainCardCount=counts[card.id];else delete group.mainCardCount;
-      if(!group.title||[oldMain.id,oldMain.name].includes(group.title))group.title=card.name;
+      return false;
     }
-    oldMain.pool=false;card.pool=card.rarity!=='基础';
+    const counts=Object.fromEntries(ids.map(id=>[id,groupCardCount(group,id)]));
+    group.mainCardId=card.id;group.grantedCardIds=ids.filter(id=>id!==card.id);
+    group.grantedCardCounts=Object.fromEntries(group.grantedCardIds.map(id=>[id,counts[id]]));
+    if(counts[card.id]>1)group.mainCardCount=counts[card.id];else delete group.mainCardCount;
+    if(!group.title||[oldMain.id,oldMain.name].includes(group.title))group.title=card.name;
     return true;
   }
-  function cardGroup(data,cardUid,originUid=cardUid){
+  function cardGroup(data,cardUid,originUid=cardUid,workspaceId){
     const card=data.cards.find(entry=>entry.uid===cardUid),origin=data.cards.find(entry=>entry.uid===originUid);if(!card)return null;
     const sourceGroup=data.partnerGroups.find(group=>group.mainCardId===origin?.id);
     const fromSource=sourceGroup&&(sourceGroup.mainCardId===card.id||sourceGroup.grantedCardIds.includes(card.id));
@@ -83,16 +92,16 @@
     );
     const sharedIds=new Set(otherGroups.flatMap(other=>[other.mainCardId,...other.grantedCardIds]));
     const movableCards=cards.filter(entry=>!entry.trashedAt&&(
-      entry.id===group.mainCardId||!sharedIds.has(entry.id)&&(!entry.pool||memberMainIds.has(entry.id))
+      entry.id===group.mainCardId||!sharedIds.has(entry.id)&&(!isRewardCard(entry,workspaceId)||memberMainIds.has(entry.id))
     ));
     return {group,cards,movableCards,reserveAction:movableCards.some(entry=>entry.reservedAt)?'pool':'reserve'};
   }
-  function moveCards(data,cardUid,action,{group=false,originUid=cardUid,at=new Date().toISOString()}={}){
+  function moveCards(data,cardUid,action,{group=false,originUid=cardUid,workspaceId,at=new Date().toISOString()}={}){
     if(!['trash','reserve','pool'].includes(action))throw Error('未知卡牌操作');
     const selected=data.cards.find(entry=>entry.uid===cardUid);if(!selected||selected.trashedAt)return [];
     let cards=[selected];
     if(group){
-      const context=cardGroup(data,cardUid,originUid);
+      const context=cardGroup(data,cardUid,originUid,workspaceId);
       if(!context)return [];
       cards=context.movableCards;
     }
@@ -130,7 +139,10 @@
       if(c.cardPool!==undefined&&!CARD_POOLS.includes(c.cardPool))throw Error('卡池无效：'+c.id);
       c.name=String(c.name||'未命名');c.text=String(c.text??'');c.upgradedText=String(c.upgradedText??c.text);c.type=TYPES.includes(c.type)?c.type:'技能';c.cost=String(c.cost).toUpperCase()==='X'?'X':Math.max(0,Math.floor(Number(c.cost)||0));c.upgradedCost=String(c.upgradedCost??c.cost).toUpperCase()==='X'?'X':Math.max(0,Math.floor(Number(c.upgradedCost??c.cost)||0));c.turns=c.type==='飞矢'?(String(c.turns).trim().toUpperCase()==='X'?'X':Math.max(0,Math.floor(Number(c.turns)||0))):null;c.upgradedTurns=c.type==='飞矢'?(String(c.upgradedTurns??c.turns).trim().toUpperCase()==='X'?'X':Math.max(0,Math.floor(Number(c.upgradedTurns??c.turns)||0))):null;
       if(c.type==='飞矢'){const subtype=c.arrowSubtype??seed.data.cards.find(entry=>entry.id===c.id)?.arrowSubtype??'技能';if(!['攻击','技能','能力'].includes(subtype))throw Error('飞矢子类型无效：'+c.id);c.arrowSubtype=subtype;}
-      c.pool=typeof c.pool==='boolean'?c.pool:true;c.rarity=RARITIES.includes(c.rarity)?c.rarity:'普通';c.system=c.system||'stage';c.keywords=[...new Set(Array.isArray(c.keywords)?c.keywords:[])];c.termIds=[...new Set(c.termIds||[])].filter(id=>termIds.has(id));c.archetypeIds=[...new Set(c.archetypeIds||[])].filter(id=>archetypeIds.has(id));c.breakthroughIds=c.termIds.filter(id=>d.terms.some(t=>t.id===id&&t.kind==='突破'));c.naming=c.naming&&typeof c.naming==='object'?c.naming:{};c.art=c.art||'defaultPortrait';
+      c.rarity=RARITIES.includes(c.rarity)?c.rarity:'普通';
+      // Junna's existing catalog generator consumes this derived snapshot field.
+      c.pool=isRewardCard(c,seed.workspaceId);
+      c.system=c.system||'stage';c.keywords=[...new Set(Array.isArray(c.keywords)?c.keywords:[])];c.termIds=[...new Set(c.termIds||[])].filter(id=>termIds.has(id));c.archetypeIds=[...new Set(c.archetypeIds||[])].filter(id=>archetypeIds.has(id));c.breakthroughIds=c.termIds.filter(id=>d.terms.some(t=>t.id===id&&t.kind==='突破'));c.naming=c.naming&&typeof c.naming==='object'?c.naming:{};c.art=c.art||'defaultPortrait';
       c.partnerCardIds=[];
       c.keywords=c.keywords.filter(k=>!['言葉','知识牌'].includes(k));c.termIds=c.termIds.filter(id=>!oldWordIds.has(id));
       if(mains.has(c.id)||grants.has(c.id)){c.keywords=[...new Set([...c.keywords,'知识'])];if(knowledgeTerm)c.termIds=[...new Set([...c.termIds,knowledgeTerm.id])];if(!c.text.startsWith('知识。'))c.text='知识。'+c.text;if(!c.upgradedText.startsWith('知识。'))c.upgradedText='知识。'+c.upgradedText;}
@@ -146,7 +158,7 @@
 
     return normalizeData;
   }
-  const api={COLLECTIONS,ENTITY_COLLECTIONS,CARD_POOLS,entityList,rootEntity,assignRoot,create,cardGroup,moveCards,groupCardCount,setGroupMain,canMakeCardIndependent,makeCardIndependent};
+  const api={COLLECTIONS,ENTITY_COLLECTIONS,CARD_POOLS,isRewardCard,isCharacterReferenceCard,withoutRewardFlag,entityList,rootEntity,assignRoot,create,cardGroup,moveCards,groupCardCount,setGroupMain,canMakeCardIndependent,makeCardIndependent};
   if(typeof module==='object'&&module.exports)module.exports=api;
   else root.JunnaWorkbenchDomain=api;
 })(typeof globalThis==='object'?globalThis:this);

@@ -67,7 +67,7 @@ app = app.replace(/  try\{oldDraftKey=sessionStorage[^\n]+\n/, '');
 app = app.replace(/  async function connectLocalService\(\)\{[\s\S]*?\n  \}/, '  async function connectLocalService(){return false;}');
 app = app.replace(/  async function saveHTML\(\)\{[\s\S]*?(?=  function imageDataURL)/, '  async function saveHTML(){}\n');
 const guard = read('readonly-view.js');
-const sources = ['mod-switcher.js','filter-state.js','arrow-focus.js','energy-wording.js','card-reference-wording.js','effect-statistics.js','route-statistics.js','route-statistics-view.js','pool-reference.js','native-card-pools.js','native-pool-comparison.js','card-model-view.js','fit-pool-view.js','event-view.js','potion-view.js','relic-view.js','power-view.js','card-hover-tips.js','workbench-domain.js','initial-config.js','mobile-layout.js'].map(read);
+const sources = ['workbench-domain.js','mod-switcher.js','filter-state.js','arrow-focus.js','energy-wording.js','card-reference-wording.js','effect-statistics.js','route-statistics.js','route-statistics-view.js','pool-reference.js','native-card-pools.js','native-pool-comparison.js','card-model-view.js','fit-pool-view.js','event-view.js','potion-view.js','relic-view.js','power-view.js','card-hover-tips.js','initial-config.js','mobile-layout.js'].map(read);
 const script = [guard, read('pwa.js'), ...sources, app].join('\n');
 new vm.Script(script);
 const css = ['workbench.css','card-model.css','fit-pool.css','relic.css','power.css','card-hover-tips.css','readonly.css','initial-config.css','mobile.css','mod-switcher.css'].map(read).join('\n').replaceAll('__REGULAR_FONT__', assets['game-regular']).replaceAll('__BOLD_FONT__', assets['game-bold']);

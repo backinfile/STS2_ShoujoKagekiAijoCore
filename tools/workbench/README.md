@@ -17,6 +17,10 @@ node tools/workbench/mcp-client.cjs workbench_get_entity <参数JSON文件>
 
 参数中的 modId 可为 core、karen、junna 或 sts2（本体只读）；各次调用显式指定，避免工作区混淆。编辑流程见 [AGENTS.md](AGENTS.md)。
 
+## 战斗奖励牌
+
+卡牌列表、总览和流派统计按游戏的常规战斗奖励规则计算。候选来自角色卡池，稀有度为普通、罕见或稀有。基础牌仍在初始牌组和全部牌面中查看。纯那额外沿用游戏卡牌目录中常规稀有度的奖励排除项，来源为 `data/card-pool.json` 修订 5585 和 `CardCatalog.IsRewardCard`。游戏调整这些排除项时，同步更新 `workbench-domain.js` 中的名单。导出继续提供自动计算的 `pool`，供纯那现有卡牌目录生成器读取。
+
 ## 构建与验证
 
 通过 workbench_get_state（assetURLs: true）导出 bundle，用于原址部署构建：
