@@ -40,7 +40,8 @@ function meta(value){const id=model(value);return {id,...state.catalog[id],name:
 function tag(outcome){return '<span class="tag '+outcome+'">'+OUTCOME[outcome]+'</span>';}
 function image(card,cls=''){return card.image?'<img class="'+cls+'" src="'+esc(card.image)+'" alt="" width="420" height="300" loading="lazy">':'<span class="card-placeholder '+cls+'" aria-hidden="true">?</span>';}
 function title(card){return esc(card.name)+(card.current_upgrade_level>0?' +'+card.current_upgrade_level:'');}
-function identity(card){return '<span class="card-ident">'+image(card)+'<span><strong>'+title(card)+'</strong><small>'+esc([card.owner_name,card.rarity,card.type,card.cost==null?'费用未知':card.cost<0?'特殊费用':card.cost+' 费'].filter(Boolean).join(' · '))+'</small></span></span>';}
+function cardMetadata(card){return [card.owner_name,card.rarity,card.type,card.cost==null?'费用未知':card.cost<0?'特殊费用':card.cost+' 费'].filter(Boolean).join(' · ');}
+function identity(card){return '<span class="card-ident">'+image(card)+'<span><strong>'+title(card)+'</strong><small>'+esc(cardMetadata(card))+'</small></span></span>';}
 function metric(label,value,fraction){return '<div class="metric-row"><span>'+label+'</span><div><strong>'+value+'</strong>'+(fraction?'<small>'+fraction+'</small>':'')+'</div></div>';}
 function syncURL(scope=primary){const {state,$}=scope,p=params(scope);for(const key of ['search','owner','type','rarity','starters','group','character','outcome'])if($(key))p.set(key,$(key).value);for(const key of ['view','display','sort','order','page','card','run'])if(state[key]!=null)p.set(key,state[key]);if(state.historyId){p.set('history',state.historyId);p.set('seat',state.seat);p.set('floor',state.floor);}if(scope.onChange){scope.onChange(p.toString());return;}for(const side of ['left','right']){const saved=comparisons[side]?.saved??comparisonURL.get(side);if(saved)p.set(side,saved);}p.set('compareSide',$('comparison').dataset.side??'left');history.replaceState(null,'','#'+p);}
 function updateCharacters(characters=[],selected=$('character').value,scope=primary){
@@ -48,7 +49,13 @@ function updateCharacters(characters=[],selected=$('character').value,scope=prim
  const choices=[...new Set([...Object.keys(CHARACTERS),...characters,selected])].filter(c=>c&&c!=='all');
  $('character').innerHTML='<option value="all">全部角色</option>'+choices.map(c=>'<option value="'+esc(c)+'">'+esc(characterName(c))+'</option>').join('');$('character').value=selected;
 }
-function exportState(scope=primary){const {state,$}=scope;$('export').disabled=state.loading||!state.fresh;$('export').textContent=state.view==='cards'?'导出筛选卡牌 CSV ↓':'导出当前页 CSV ↓';}
+function exportState(scope=primary){
+ const {state,$}=scope;
+ const disabled=state.loading||!state.fresh;
+ $('export').disabled=disabled;
+ $('export').textContent=state.view==='cards'?'导出筛选卡牌 CSV ↓':'导出当前页 CSV ↓';
+ $('exportImage').disabled=disabled||!scope.shownGroups?.length||Boolean(scope.exportingImage);
+}
 async function load(scope=primary,{force=true}={}){
  const {state,$}=scope;
  if(!scope.cardsOnly&&state.view==='compare'){render();return;}
@@ -122,6 +129,7 @@ function renderCards(scope=primary){
  const focused=scope.root===document?document.activeElement:scope.root.contains(document.activeElement)?document.activeElement:null,focusSort=focused?.dataset.sort,focusCard=focused?.dataset.card;
  const allRows=filteredCards(scope),rows=allRows.slice(0,state.cardLimit??60),groups=cardGroups(rows,scope);$('sort').value=state.sort;$('sortOrder').textContent=state.order<0?'↓ 降序':'↑ 升序';$('sortLabel').textContent=$('group').value!=='none'?'组内排序':'排序';if(!rows.some(c=>c.id===state.card))state.card=rows[0]?.id??null;
  $('cardsView').querySelectorAll('[data-display]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.display===state.display));
+ scope.shownGroups=groups;exportState(scope);
  if(!rows.length){$('cards').innerHTML=empty(state.stats.cards.length?'没有匹配的卡牌':'暂无卡牌数据',state.stats.cards.length?'调整搜索或卡牌筛选':'');$('cardDetail').innerHTML=empty('选择卡牌查看数据','');return;}
  const head=(key,label)=>'<th aria-sort="'+(state.sort===key?(state.order<0?'descending':'ascending'):'none')+'"><button data-sort="'+key+'">'+label+(state.sort===key?(state.order<0?' ↓':' ↑'):'')+'</button></th>';
  const rate=(c,key,numerator,denominator)=>'<td><span class="num">'+pct(c[key])+'</span><span class="fraction">'+numerator+' / '+denominator+'</span></td>';
@@ -202,6 +210,144 @@ async function raw(id){
  catch(error){toast(error.message);}
 }
 function save(name,blob){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+function statisticsCanvas(groups, display, seats){
+ const chart=display==='chart';
+ const padding=8, gap=12, rowHeight=chart?44:34, groupHeight=24, headerHeight=chart?42:26;
+ const height=padding*2+headerHeight+groups.reduce((sum,g)=>sum+g.cards.length*rowHeight+(g.name?groupHeight:0),0);
+ if(height>8192)throw Error('图片过大，请缩小卡牌筛选范围');
+
+ const canvas=document.createElement('canvas');
+ const ctx=canvas.getContext('2d',{alpha:false});
+ if(!ctx)throw Error('无法生成图片');
+ const font='13px system-ui,sans-serif', smallFont='11px system-ui,sans-serif';
+ const ink='#222925', muted='#5f665d', line='#eeefe8', shade='#f8f8f3';
+ const compact=value=>String(value??'').trim().replace(/\s+/gu,' ');
+ const measure=(value,face=font)=>{ctx.font=face;return Math.ceil(ctx.measureText(value).width);};
+ const headings=['卡牌',...SERIES.map(series=>series.label),'选牌记录','持有席位'];
+ const sections=groups.map(group=>({
+  label:group.name?compact(group.name)+' · '+num(group.cards.length)+' 张':'',
+  rows:group.cards.map(card=>{
+   const ratios=[[card.picked,card.offered],[card.wins,card.held],[card.held,seats]];
+   const rates=SERIES.map((series,index)=>{
+    const [numerator,denominator]=ratios[index];
+    return {
+     value:card[series.key],
+     percent:pct(card[series.key]),
+     sample:chart?'n='+num(denominator):num(numerator)+' / '+num(denominator)
+    };
+   });
+   return {
+    name:compact(card.name), metadata:compact(cardMetadata(card)), rates,
+    counts:[num(card.recorded_offers),num(card.held)]
+   };
+  })
+ }));
+ const widths=headings.map(label=>measure(label));
+ let sampleWidth=measure('100%',smallFont);
+ for(const section of sections){
+  for(const row of section.rows){
+   widths[0]=Math.max(widths[0],measure(row.name),measure(row.metadata,smallFont));
+   row.rates.forEach((rate,index)=>{
+    widths[index+1]=Math.max(widths[index+1],measure(rate.percent),measure(rate.sample,smallFont));
+    if(chart)sampleWidth=Math.max(sampleWidth,measure(rate.percent)+6+measure(rate.sample,smallFont));
+   });
+   if(!chart)row.counts.forEach((count,index)=>{widths[index+4]=Math.max(widths[index+4],measure(count));});
+  }
+ }
+ const legendWidths=chart?SERIES.map(series=>measure(series.label,smallFont)+13):[];
+ const legendWidth=legendWidths.reduce((sum,width)=>sum+width,0)+gap*(SERIES.length-1);
+ const barsWidth=Math.max(160,legendWidth-widths[0]-sampleWidth-2*gap);
+ const contentWidth=chart?widths[0]+barsWidth+sampleWidth+2*gap:widths.reduce((sum,width)=>sum+width,0)+gap*(widths.length-1);
+ const width=padding*2+Math.max(contentWidth,...sections.map(section=>measure(section.label,smallFont)));
+ if(width*height>8_000_000)throw Error('图片过大，请缩小卡牌筛选范围');
+ canvas.width=width;
+ canvas.height=height;
+ ctx.textBaseline='middle';
+
+ function rect(x,y,w,h,color){
+  ctx.fillStyle=color;
+  ctx.fillRect(x,y,w,h);
+ }
+ function text(value,x,y,{small=false,color=ink,align='left'}={}){
+  ctx.font=small?smallFont:font;
+  ctx.textAlign=align;
+  ctx.fillStyle=color;
+  ctx.fillText(value,x,y);
+ }
+ const lefts=widths.map((_,index)=>padding+widths.slice(0,index).reduce((sum,w)=>sum+w+gap,0));
+ const barX=padding+widths[0]+gap;
+ const lastX=width-padding;
+ rect(0,0,width,height,'#fff');
+ rect(padding,padding,width-2*padding,headerHeight,shade);
+ if(chart){
+  let legendX=padding;
+  SERIES.forEach((series,index)=>{
+   rect(legendX,padding+9,8,3,series.color);
+   text(series.label,legendX+13,padding+11,{small:true});
+   legendX+=legendWidths[index]+gap;
+  });
+  text('卡牌',padding,padding+31,{small:true,color:muted});
+  ['0','25','50','75','100%'].forEach((tick,index)=>{
+   text(tick,barX+barsWidth*index/4,padding+31,{small:true,color:muted,align:index===0?'left':index===4?'right':'center'});
+  });
+ }else{
+  headings.forEach((label,index)=>text(label,lefts[index]+(index?widths[index]:0),padding+headerHeight/2,
+   {color:muted,align:index?'right':'left'}));
+ }
+
+ let y=padding+headerHeight;
+ for(const section of sections){
+  if(section.label){
+   rect(padding,y,width-2*padding,groupHeight,shade);
+   text(section.label,padding,y+groupHeight/2,{small:true,color:muted});
+   y+=groupHeight;
+  }
+  for(const row of section.rows){
+   const blankMetadata=!row.metadata;
+   text(row.name,padding,y+(blankMetadata?rowHeight/2:rowHeight/2-7));
+   if(!blankMetadata)text(row.metadata,padding,y+rowHeight/2+8,{small:true,color:muted});
+   if(chart){
+    row.rates.forEach((rate,index)=>{
+     const center=y+9+index*13;
+     rect(barX,center-2,barsWidth,4,line);
+     if(rate.value!=null)rect(barX,center-2,barsWidth*Math.max(0,Math.min(rate.value,1)),4,SERIES[index].color);
+     text(rate.sample,lastX,center,{small:true,color:muted,align:'right'});
+     text(rate.percent,lastX-measure(rate.sample,smallFont)-6,center,{align:'right'});
+    });
+   }else{
+    row.rates.forEach((rate,index)=>{
+     const x=lefts[index+1]+widths[index+1];
+     text(rate.percent,x,y+10,{align:'right'});
+     text(rate.sample,x,y+24,{small:true,color:muted,align:'right'});
+    });
+    row.counts.forEach((count,index)=>text(count,lefts[index+4]+widths[index+4],y+rowHeight/2,{align:'right'}));
+   }
+   y+=rowHeight;
+   rect(padding,y-1,width-2*padding,1,line);
+  }
+ }
+ return canvas;
+}
+async function downloadStatisticsImage(scope=primary){
+ const {state}=scope;
+ if(state.loading||!state.fresh||!scope.shownGroups?.length||scope.exportingImage)return;
+ const display=state.display;
+ scope.exportingImage=true;
+ exportState(scope);
+ try{
+  const canvas=statisticsCanvas(scope.shownGroups,display,state.stats.seats);
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+  canvas.width=0;
+  canvas.height=0;
+  if(!blob)throw Error('无法生成图片');
+  save(display==='chart'?'卡牌对比图.png':'卡牌统计表.png',blob);
+ }catch(error){
+  toast(error.message||'无法生成图片');
+ }finally{
+  scope.exportingImage=false;
+  exportState(scope);
+ }
+}
 function csv(scope=primary){
  const {state,$}=scope;
  if(!state.stats||state.loading||!state.fresh||!state.loadedQuery){toast('请先刷新并成功加载当前筛选结果');return;}
@@ -241,7 +387,7 @@ function openComparison(){
   root.addEventListener('click',event=>{
    event.stopPropagation();const b=event.target.closest('button'),control=b?.dataset.control;
    if(b?.dataset.close){scope.$(b.dataset.close).close();return;}
-   if(control==='refresh'){load(scope);return;}if(control==='export'){csv(scope);return;}if(control==='rules'){rules();return;}
+   if(control==='refresh'){load(scope);return;}if(control==='export'){csv(scope);return;}if(control==='exportImage'){downloadStatisticsImage(scope);return;}if(control==='rules'){rules();return;}
    if(b?.hasAttribute('data-more')){scope.state.cardLimit=(scope.state.cardLimit??60)+60;renderCards(scope);return;}
    if(b?.dataset.display){scope.state.display=b.dataset.display;renderCards(scope);syncURL(scope);return;}
    if(control==='sortOrder'){scope.state.order=-scope.state.order;renderCards(scope);syncURL(scope);return;}
@@ -287,6 +433,7 @@ function refreshActive(){return state.view==='compare'?refreshComparison():load(
 $('refresh').addEventListener('click',refreshActive);
 window.addEventListener('observatory:refresh',refreshActive);
 matchMedia('(max-width:900px)').addEventListener('change',()=>{if(state.view==='compare')openComparison();});$('rules').addEventListener('click',rules);$('export').addEventListener('click',()=>csv());
+$('exportImage').addEventListener('click',()=>downloadStatisticsImage());
 $('history').addEventListener('close',()=>{historyVersion++;primary.historyController?.abort();state.historyId=null;syncURL();});
 for(let i=0;i<=10;i++){const option=document.createElement('option');option.value=i;option.textContent='进阶 '+i;$('filters').elements.ascension.append(option);}
 const urlState=comparisonURL;
