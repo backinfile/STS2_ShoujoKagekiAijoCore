@@ -161,6 +161,26 @@ console.log('PASS language distribution labels, counts, percentages, escaping an
   assert.ok((await context.saved.text()).includes("' \t=1+1"));
   console.log('PASS CSV formula prefix escaped');
 
+  const modeRuns = ['dread', 'blitz'].map(mode => ({
+    id: mode, mode, received_at: 0, start_time: 0, outcome: 'death',
+    floor: 2, duration: 10, ascension: 0, player_count: 1, build: 'v0.113.1',
+    players: [{id: 1, character: 'IRONCLAD', deck: [], relics: []}]
+  }));
+  context.modeRuns = modeRuns;
+  run('state.runs={items:modeRuns,page:1,total:2,page_size:20};renderRuns();csv()');
+  const runCsv = await context.saved.text();
+  assert.ok(runCsv.includes('"游戏模式"'));
+  for (const [record, label] of [[modeRuns[0], 'Dread'], [modeRuns[1], 'Blitz']]) {
+    assert.ok(node('runs').innerHTML.includes(label));
+    assert.ok(runCsv.includes('"' + label + '"'));
+    context.modeRun = record;
+    run('state.run=modeRun.id;renderRunDetail();state.history={summary:modeRun,history:{players:modeRun.players}};renderHistory()');
+    assert.ok(node('runDetail').innerHTML.includes(label));
+    assert.ok(node('historyBody').innerHTML.includes(label));
+  }
+  console.log('PASS beta modes appear in run lists, details and CSV');
+
+
   context.pending=[];
   run("params=()=>new URLSearchParams({build:'slow'});api=(path,signal)=>new Promise(resolve=>pending.push({path,signal,resolve}));state.view='cards'");
   const slow=run('load()');run("params=()=>new URLSearchParams({build:'fast'})");const fast=run('load()');
