@@ -28,8 +28,8 @@
   let persistedRecords=new Set(),persistedAssets=new Set(),lastSaveError=null;
   let diskHandle=null,diskFingerprint=null,diskGranted=false,diskConflict=false,diskError=null,diskWriting=false,diskDirty=false,diskSuspended=false,diskQueue=Promise.resolve();
   const blobURLs=new Map();
-  const TAB_FILTER_DEFAULTS={search:'',kind:'all',type:'all',rarity:'all',cardPool:'all',cost:'all',archetype:'all',term:'all',breakthrough:'all',sort:'natural',descending:false,upgraded:false,routePosition:'all',routePositions:null,routeExcludedPositions:null,fitTheme:'all',fitStatus:'all',powerSystem:'all',powerOrigin:'all',mechanismFilter:'all',flowRoute:'all',eventAct:'all',eventCharacter:'all'};
-  const URL_FILTERS=['search','kind','type','rarity','cardPool','cost','archetype','term','sort','fitTheme','fitStatus','powerSystem','powerOrigin','mechanismFilter','eventAct','eventCharacter'];
+  const TAB_FILTER_DEFAULTS={search:'',kind:'all',type:'all',rarity:'all',cardPool:'all',cost:'all',turns:'all',archetype:'all',term:'all',breakthrough:'all',sort:'natural',descending:false,upgraded:false,routePosition:'all',routePositions:null,routeExcludedPositions:null,fitTheme:'all',fitStatus:'all',powerSystem:'all',powerOrigin:'all',mechanismFilter:'all',flowRoute:'all',eventAct:'all',eventCharacter:'all'};
+  const URL_FILTERS=['search','kind','type','rarity','cardPool','cost','turns','archetype','term','sort','fitTheme','fitStatus','powerSystem','powerOrigin','mechanismFilter','eventAct','eventCharacter'];
   const defaultCardPool=tab=>tab==='cards'?'角色':'all';
   function savedFilters(filters,tab){
     const {pool,...saved}=filters||{};
@@ -155,9 +155,11 @@
   function beginEdit(){if(!pending){mcp?.invalidateSnapshots();pending={before:clone(state.data),label:(LABELS[ui.selected?.collection]||'制作台')+' · '+(current()?.name||state.data.title)};}}
   function flushEdit(){clearTimeout(editTimer);if(!pending)return;const edit=pending;pending=null;try{const entry=record(edit.before,edit.label);if(entry?.patches.length===1&&entry.patches[0].collection==='cards'&&['cards','reserve','trash'].includes(ui.tab)){
       const patch=entry.patches[0],before=patch.before,after=patch.after;
-      const stableLayout=before&&after&&['id','name','cost','upgradedCost','type','rarity','cardPool','system','reservedAt','trashedAt','termIds','archetypeIds','keywords','partnerCardIds'].every(field=>JSON.stringify(before[field])===JSON.stringify(after[field]));
+      const turnsChanged=before?.turns!==after?.turns||before?.upgradedTurns!==after?.upgradedTurns;
+      const stableLayout=before&&after&&!turnsChanged&&['id','name','cost','upgradedCost','type','rarity','cardPool','system','reservedAt','trashedAt','termIds','archetypeIds','keywords','partnerCardIds'].every(field=>JSON.stringify(before[field])===JSON.stringify(after[field]));
       const nodes=$('work-area').querySelectorAll('[data-card-face="'+CSS.escape(patch.uid)+'"]');
       if(stableLayout&&nodes.length){for(const node of nodes)node.outerHTML=cardEntryHTML(find('cards',node.dataset.cardOrigin),ui.tab==='trash');fitCards();}else renderWorkspace();
+      if(turnsChanged)renderSidebar();
     }else renderWorkspace();if(['styles','flows','fits','events','potions','relics','powers'].includes(ui.tab))renderSidebar();}catch(error){state.data=edit.before;renderAll();toast(error.message);}}
   function updateChrome(){$('workspace-title').textContent='少女歌剧工作台';document.title='少女歌剧工作台 · '+state.data.title;$('history-count').textContent=Math.max(state.historyTotal||0,state.history.length);$('undo').disabled=!state.undoStack.length||!!mcpStatus.resolving;$('redo').disabled=!state.redoStack.length||!!mcpStatus.resolving;$('editor-form').inert=!!mcpStatus.resolving;updateDiskState();}
   function rememberTabFilters(){ui.tabFilters??={};ui.tabFilters[ui.tab]=Object.fromEntries(Object.keys(TAB_FILTER_DEFAULTS).map(key=>[key,clone(ui[key]??TAB_FILTER_DEFAULTS[key])]));}
@@ -225,10 +227,12 @@
   function readHash(){const p=new URLSearchParams(location.hash.slice(1));if(p.has('handoff'))return;const requested=p.get('tab')||'cards',tab=requested==='cards'&&['reserve','trash'].includes(p.get('cardCategory'))?p.get('cardCategory'):requested==='fits'&&p.get('fitTheme')==='职业药水'?'potions':requested;selectTab(['initial','overview','flows','mechanisms','terms','models','cards','powers','relics','potions','events','fits','reserve','styles','trash'].includes(tab)?tab:'cards');if(['relics','events'].includes(ui.tab)){const key=ui.tab==='relics'?'relicCategory':'eventCategory',category=p.get(key);ui[key]=['reserve','trash'].includes(category)?category:ui.tab;}const linked=[...p.keys()].some(key=>key!=='preview');if(linked)Object.assign(ui,clone(TAB_FILTER_DEFAULTS),{cardPool:defaultCardPool(ui.tab)});for(const k of URL_FILTERS)if(p.has(k))ui[k]=['tab','search','sort'].includes(k)?p.get(k):JunnaFilters.decode(p.get(k));if(linked&&(ui.tab==='overview'||p.has('overviewScope')))ui.overviewScope=p.get('overviewScope')||'cards';if(!['cards','reserve','trash'].includes(ui.overviewScope))ui.overviewScope='cards';if(p.has('overviewBy'))ui.overviewBy=p.get('overviewBy').split(',');if(p.has('overviewBy')||p.has('overviewAll'))ui.overviewAll=p.get('overviewAll')==='1';if(linked&&ui.tab==='flows'){ui.flowScope=p.get('flowScope')||'cards';ui.flowRoute=JunnaFilters.decode(p.get('flowRoute')||'all');ui.flowOnlyRewards=p.get('flowRewards')==='1';if(!['cards','reserve','trash'].includes(ui.flowScope))ui.flowScope='cards';}const legacy=!p.has('positions')&&!p.has('excludePositions')&&ui.routePositions===null;ui.routePositions=JunnaRouteStatistics.normalizePositions(p.get('positions')||p.get('routePosition')||(legacy?ui.routePosition:ui.routePositions));ui.routeExcludedPositions=JunnaRouteStatistics.normalizePositions(p.get('excludePositions')||ui.routeExcludedPositions);const oldBreakthrough=p.get('breakthrough')||(legacy?ui.breakthrough:'all');if(oldBreakthrough==='only')ui.routePositions.push('breakthrough');if(oldBreakthrough==='ordinary')ui.routeExcludedPositions.push('breakthrough');ui.routePositions=JunnaRouteStatistics.normalizePositions(ui.routePositions);ui.routeExcludedPositions=JunnaRouteStatistics.normalizePositions(ui.routeExcludedPositions).filter(tag=>!ui.routePositions.includes(tag));ui.routePosition=ui.breakthrough='all';if(linked){ui.upgraded=p.get('upgraded')==='1';ui.descending=p.get('descending')==='1';}if(ui.term==='U_TERM_001'&&!state.data.terms.some(t=>t.id===ui.term))ui.term='KW_PARTNER';}
   function filteredCards(){const term=ui.search.trim().toLowerCase();let list=state.data.cards.filter(c=>{
     const cost=ui.upgraded?c.upgradedCost:c.cost,routes=state.data.archetypes.filter(route=>JunnaFilters.matches(ui.archetype,route.id));
+    const turns=ui.upgraded?c.upgradedTurns:c.turns;
     return cardTab(c)===ui.tab&&(
       JunnaFilters.matches(ui.type,c.type)&&JunnaFilters.matches(ui.rarity,c.rarity)&&
       JunnaFilters.matches(ui.cardPool,c.cardPool||'角色')&&
       JunnaFilters.matches(ui.cost,cost,(value,option)=>option==='3+'?value!=='X'&&Number(value)>=3:String(value)===option)&&
+      JunnaFilters.matches(ui.turns,turns??[])&&
       JunnaFilters.matches(ui.archetype,c.archetypeIds)&&JunnaFilters.matches(ui.term,c.termIds)&&
       JunnaRouteStatistics.matchesPosition(c,routes,flowDefaults,ui.routePositions,'all',ui.routeExcludedPositions)
     )&&(!term||[c.id,c.name,c.text,c.upgradedText,c.role,...c.partnerCardIds.map(id=>state.data.cards.find(x=>x.id===id)?.name||''),...c.termIds.map(id=>state.data.terms?.find(t=>t.id===id)?.name||'')].join(' ').toLowerCase().includes(term));
@@ -303,6 +307,15 @@
     });
     return '<fieldset class="field filter-group" data-filter-group="'+key+'"><legend class="field-label">'+label+'</legend><div class="filter-options">'+buttons.join('')+'</div></fieldset>';
   }
+  function arrowTurnOptions(){
+    const {included,excluded}=JunnaFilters.read(ui.turns),values=new Set([...included,...excluded]);
+    for(const card of state.data.cards){
+      if(cardTab(card)!==ui.tab||card.type!=='飞矢')continue;
+      values.add(String(card.turns));
+      values.add(String(card.upgradedTurns));
+    }
+    return [...values].sort((a,b)=>a.localeCompare(b,'zh-CN',{numeric:true})).map(value=>({value,label:value+'回合'}));
+  }
   function renderSidebar(){
     if(ui.tab==='initial'){$('sidebar').innerHTML='';return;}
     if(['cards','reserve','trash'].includes(ui.tab)){ui.archetype=JunnaFilters.prune(ui.archetype,state.data.archetypes.map(a=>a.id));if(typeof ui.term==='string'&&ui.term!=='all'&&!state.data.terms.some(t=>t.id===ui.term&&t.kind==='关键词')){const term=state.data.terms.find(t=>t.id===ui.term);if(term&&!ui.search)ui.search=term.name;}ui.term=JunnaFilters.prune(ui.term,state.data.terms.filter(t=>t.kind==='关键词').map(t=>t.id));}
@@ -321,7 +334,8 @@
       if(ui.tab==='terms')html+='<div class="sidebar-section"><p class="sidebar-title">条目</p><button class="side-item '+(ui.kind==='all'?'active':'')+'" data-kind="all" '+JunnaFilters.attributes(ui.kind,'all','全部条目')+'><span>全部条目</span><span>'+state.data.terms.length+'</span></button>'+[...new Set([...KINDS,...state.data.terms.map(t=>t.kind)])].map(kind=>'<button class="side-item '+(JunnaFilters.state(ui.kind,kind)==='include'?'active':'')+'" data-kind="'+escape(kind)+'" '+JunnaFilters.attributes(ui.kind,kind,kind)+'><span>'+escape(kind)+'</span><span>'+count('terms',t=>t.kind===kind)+'</span></button>').join('')+'</div>';
       else{
         const filter=(label,key,values)=>'<label class="field"><span class="field-label">'+label+'</span><select data-filter="'+key+'">'+options(values,ui[key],'全部')+'</select></label>';
-        html+=filterButtons('卡池','cardPool',CARD_POOLS)+filterButtons('类型','type',TYPES)+filterButtons('稀有度','rarity',RARITIES)+filterButtons('费用','cost',['0','1','2','3+','X'])+filterButtons('流派','archetype',state.data.archetypes.map(a=>({value:a.id,label:a.name})))+flowView.positionFilters()+filterButtons('关键词','term',state.data.terms.filter(t=>t.kind==='关键词').map(t=>({value:t.id,label:t.name})))+'<div class="sidebar-bottom"><button class="button" data-action="clear-filters">重置筛选</button><button class="button" data-action="archetypes">流派管理</button></div>';
+        const turnOptions=arrowTurnOptions();
+        html+=filterButtons('卡池','cardPool',CARD_POOLS)+filterButtons('类型','type',TYPES)+filterButtons('稀有度','rarity',RARITIES)+filterButtons('费用','cost',['0','1','2','3+','X'])+(turnOptions.length?filterButtons('飞矢回合数','turns',turnOptions):'')+filterButtons('流派','archetype',state.data.archetypes.map(a=>({value:a.id,label:a.name})))+flowView.positionFilters()+filterButtons('关键词','term',state.data.terms.filter(t=>t.kind==='关键词').map(t=>({value:t.id,label:t.name})))+'<div class="sidebar-bottom"><button class="button" data-action="clear-filters">重置筛选</button><button class="button" data-action="archetypes">流派管理</button></div>';
       }
     }if(['cards','reserve','trash'].includes(ui.tab))html='<fieldset class="field filter-group"><legend class="field-label">分类</legend><div class="filter-options">'+[['cards','卡池'],['reserve','备用'],['trash','垃圾桶']].map(([category,label])=>'<button type="button" class="filter-option" data-card-category="'+category+'" aria-pressed="'+(ui.tab===category)+'">'+label+'</button>').join('')+'</div></fieldset>'+html;$('sidebar').innerHTML=html;
   }
@@ -360,7 +374,7 @@
     fitCards();if(focus){const button=$('knowledge-fan').querySelector('[data-knowledge-focus="'+CSS.escape(knowledgeView.slot)+'"]');button?.focus({preventScroll:true});button?.scrollIntoView({block:'nearest',inline:'nearest'});}
   }
   function openKnowledge(key,slot,origin=key){const card=find('cards',key),source=find('cards',origin)||card,group=source&&groupsFor(source)[0];if(!group)return;flushEdit();knowledgeView={source:source.uid,card:card.uid,slot,origin,group:group.uid,upgraded:ui.upgraded};renderKnowledge();if(!$('knowledge-dialog').open)$('knowledge-dialog').showModal();fitCards();}
-  function openLinkedCard(key){flushEdit();const card=find('cards',key);if(!card)return;selectTab(cardTab(card));ui.search='';ui.cardPool=ui.type=ui.rarity=ui.cost=ui.archetype=ui.routePosition=ui.term=ui.breakthrough='all';ui.routePositions=[];ui.routeExcludedPositions=[];changeTab(ui.tab);openEditor('cards',card.uid);renderAll();document.querySelector('.card-button[data-uid="'+CSS.escape(card.uid)+'"]')?.closest('.card-entry')?.scrollIntoView({block:'nearest',inline:'nearest'});}
+  function openLinkedCard(key){flushEdit();const card=find('cards',key);if(!card)return;selectTab(cardTab(card));ui.search='';ui.cardPool=ui.type=ui.rarity=ui.cost=ui.turns=ui.archetype=ui.routePosition=ui.term=ui.breakthrough='all';ui.routePositions=[];ui.routeExcludedPositions=[];changeTab(ui.tab);openEditor('cards',card.uid);renderAll();document.querySelector('.card-button[data-uid="'+CSS.escape(card.uid)+'"]')?.closest('.card-entry')?.scrollIntoView({block:'nearest',inline:'nearest'});}
   function styleGroups(){
     const names=[...new Set([...STYLE_CATEGORIES,...state.data.styles.map(s=>s.category||'未分类')])];
     return names.map(name=>({name,entries:state.data.styles.filter(s=>(s.category||'未分类')===name)})).filter(g=>g.entries.length);
@@ -393,7 +407,7 @@
   }
   const TRASH_PAGE_SIZE=24;
   let trashPage=0,trashPageFilters='';
-  function trashPageFilterKey(){return JSON.stringify(['search','type','rarity','cardPool','cost','archetype','term','routePositions','routeExcludedPositions','sort','descending','upgraded'].map(key=>ui[key]));}
+  function trashPageFilterKey(){return JSON.stringify(['search','type','rarity','cardPool','cost','turns','archetype','term','routePositions','routeExcludedPositions','sort','descending','upgraded'].map(key=>ui[key]));}
   function trashPageCards(list){
     const filters=trashPageFilterKey();if(trashPageFilters!==filters){trashPage=0;trashPageFilters=filters;}
     trashPage=Math.max(0,Math.min(trashPage,Math.ceil(list.length/TRASH_PAGE_SIZE)-1));
@@ -552,7 +566,7 @@
     if(collection==='cards'){e=newCard();if(ui.tab==='reserve')e.reservedAt=new Date().toISOString();}else if(collection==='fitPool'&&ui.tab==='potions')e=JunnaPotions.newEntry({uid:uid(),id:nextId('FIT_POTION_',state.data.fitPool),potionId:nextId('JP',state.data.fitPool.map(entry=>entry.potionDesign).filter(Boolean))});else if(collection==='fitPool'&&ui.tab==='events')e=JunnaEvents.newEntry({uid:uid(),id:nextId('FIT_EVENT_',state.data.fitPool),eventId:nextId('JE',state.data.fitPool.map(entry=>entry.eventDesign).filter(Boolean))});else if(collection==='fitPool')e=JunnaFitPool.normalizeEntry({uid:uid(),id:nextId('FIT_',state.data.fitPool),name:'新契合',theme:JunnaFilters.read(ui.fitTheme).included[0]||'未分类'});else if(collection==='styles')e={uid:uid(),id:nextId('STYLE_',state.data.styles),name:'新条目',content:''};else if(collection==='terms')e={uid:uid(),id:nextId('U_TERM_',state.data.terms),kind:JunnaFilters.read(ui.kind).included[0]||'效果',name:'新条目',definition:'',template:'',systems:[],unit:'',notes:''};else e={uid:uid(),id:nextId('U_ME_',state.data.mechanisms),name:'新机制',level:'',definition:'',rules:[],templates:[],notes:'',system:''};
     const event=collection==='fitPool'&&JunnaEvents.isEvent(e);
     if(event&&ui.eventCategory==='reserve')e.reservedAt=new Date().toISOString();
-    transact('新增'+(event?'事件':LABELS[collection]),d=>{d[collection].push(e);ui.selected={collection,uid:e.uid};},'新增');if(collection==='fitPool'){ui.search='';ui.fitStatus='all';if(event)ui.eventAct=ui.eventCharacter='all';}if(collection==='cards'){ui.search='';ui.cardPool=ui.type=ui.rarity=ui.cost=ui.archetype=ui.routePosition=ui.term=ui.breakthrough='all';ui.routePositions=[];ui.routeExcludedPositions=[];}else if(collection==='mechanisms')ui.mechanismFilter='all';renderAll();$('editor-form').querySelector('[data-field="name"]')?.focus();}
+    transact('新增'+(event?'事件':LABELS[collection]),d=>{d[collection].push(e);ui.selected={collection,uid:e.uid};},'新增');if(collection==='fitPool'){ui.search='';ui.fitStatus='all';if(event)ui.eventAct=ui.eventCharacter='all';}if(collection==='cards'){ui.search='';ui.cardPool=ui.type=ui.rarity=ui.cost=ui.turns=ui.archetype=ui.routePosition=ui.term=ui.breakthrough='all';ui.routePositions=[];ui.routeExcludedPositions=[];}else if(collection==='mechanisms')ui.mechanismFilter='all';renderAll();$('editor-form').querySelector('[data-field="name"]')?.focus();}
   function duplicateEntity(){const e=current();if(!e)return;const collection=ui.selected.collection,copy={...clone(e),uid:uid(),id:nextId(collection==='cards'?'U_CARD_':collection==='terms'?'U_TERM_':collection==='styles'?'STYLE_':collection==='fitPool'?'FIT_':'U_ME_',state.data[collection]),name:e.name+'（副本）'};
     if(collection==='fitPool'&&JunnaEvents.isEvent(copy)){copy.eventDesign={...copy.eventDesign,uid:uid(),id:nextId('JE',state.data.fitPool.map(entry=>entry.eventDesign).filter(Boolean)),status:'draft'};copy.draftStatus='草稿';delete copy.implementation;JunnaEvents.sync(copy);}
     transact('复制'+LABELS[collection]+' · '+e.name,d=>{d[collection].push(copy);if(collection==='cards'){const group=d.partnerGroups.find(g=>g.mainCardId===e.id);if(group)d.partnerGroups.push({...clone(group),uid:uid(),id:'GROUP_'+copy.id,mainCardId:copy.id});}ui.selected={collection,uid:copy.uid};},'新增');}
@@ -697,7 +711,7 @@
     for(const batch of seed.seedBatches||[])if(!bundle?.appliedSeedBatches?.includes(batch.id)){if(batch.terminology)applyTerminology(next,batch.terminology);if(batch.wordingRules)applyWording(next,batch.wordingRules);if(batch.remove)for(const [collection,ids]of Object.entries(batch.remove))next[collection]=next[collection].filter(e=>!ids.includes(e.id));if(bundle&&batch.collection==='styles'){const ids=new Set(next.styles.map(s=>s.id));for(const entry of seed.data.styles.filter(s=>batch.ids.includes(s.id)))if(!ids.has(entry.id))next.styles.push(clone(entry));}if(batch.applyUpdatesOnImport&&batch.updates)for(const update of batch.updates)applySeedUpdate(next,update);}
     for(const batch of seed.seedBatches||[])if(!bundle?.appliedSeedBatches?.includes(batch.id)&&batch.entries){const ids=new Set(next[batch.collection].map(e=>e.id));for(const entry of batch.entries)if(!ids.has(entry.id)){next[batch.collection].push(clone(entry));ids.add(entry.id);}}
     if(bundle){if(mcp){for(const [id,value]of Object.entries(bundle.assets||{}))if(!Object.hasOwn(state.assets,id))state.assets[id]=value;}else mergeBundleHistory(bundle);}
-    const r=transact(label,()=>{state.data=next;ui.selected=null;ui.search='';ui.cardPool=ui.type=ui.rarity=ui.cost=ui.archetype=ui.routePosition=ui.term=ui.breakthrough='all';ui.routePositions=[];ui.routeExcludedPositions=[];},'导入');if(!r)persist();renderAll();toast('已导入');
+    const r=transact(label,()=>{state.data=next;ui.selected=null;ui.search='';ui.cardPool=ui.type=ui.rarity=ui.cost=ui.turns=ui.archetype=ui.routePosition=ui.term=ui.breakthrough='all';ui.routePositions=[];ui.routeExcludedPositions=[];},'导入');if(!r)persist();renderAll();toast('已导入');
   }
   async function completeExport(){
     await saveLocalFile();
@@ -762,7 +776,7 @@
     if(action.startsWith('event-')&&eventView.action(action))return;
     if(action==='center-arrow-focus'){const card=current();if(ui.selected?.collection==='cards'&&card)transact('箭头聚焦 · '+card.name,()=>{card.arrowFocus={x:.5,y:.5};});}
     else if(action==='add')addEntity();else if(action==='upgrade'){flushEdit();ui.upgraded=!ui.upgraded;renderWorkspace();renderInspector();saveUI();}
-    else if(action==='clear-filters'){flushEdit();ui.search='';ui.type=ui.rarity=ui.cost=ui.archetype=ui.routePosition=ui.term=ui.breakthrough='all';ui.routePositions=[];ui.routeExcludedPositions=[];ui.cardPool=defaultCardPool(ui.tab);if(ui.tab==='events')ui.eventAct=ui.eventCharacter='all';renderAll();}
+    else if(action==='clear-filters'){flushEdit();ui.search='';ui.type=ui.rarity=ui.cost=ui.turns=ui.archetype=ui.routePosition=ui.term=ui.breakthrough='all';ui.routePositions=[];ui.routeExcludedPositions=[];ui.cardPool=defaultCardPool(ui.tab);if(ui.tab==='events')ui.eventAct=ui.eventCharacter='all';renderAll();}
     else if(action==='archetypes')showArchetypes();else if(action==='meta')openEditor('root','meta');else if(action==='add-grant')newGrant();
     else if(action==='make-card-independent')makeCardIndependent();
     else if(action==='upload-art'){flushEdit();$('art-file').click();}else if(action==='reset-art'){const e=current();if(e)transact('恢复默认插画 · '+e.name,()=>{e.art=ui.selected.collection==='fitPool'?'':'defaultPortrait';});}
