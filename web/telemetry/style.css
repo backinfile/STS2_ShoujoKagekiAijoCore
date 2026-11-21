@@ -52,3 +52,20 @@
 .install-help{padding:24px;line-height:1.8}.offline{min-height:80dvh;display:grid;align-content:center;justify-items:center;gap:24px}.reconnect{padding:12px 24px;border:1px solid var(--line);background:var(--white);border-radius:4px}
 
 .language-summary{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin:0 0 24px}.language-summary h2{font-size:13px}.language-summary ul{display:flex;flex-wrap:wrap;gap:12px 24px;list-style:none;margin:0;padding:0}.language-summary li{display:flex;gap:8px;align-items:baseline}.language-summary li>span:last-child{color:var(--muted);font-variant-numeric:tabular-nums}.language-summary strong{font-weight:600;font-variant-numeric:tabular-nums}
+
+.character-stats{min-height:0;background:var(--white);border-block:1px solid var(--line)}
+.character-stats table{min-width:720px;font-variant-numeric:tabular-nums}
+.character-stats th,.character-stats td{text-align:right;white-space:nowrap}
+.character-stats th:first-child{text-align:left;position:sticky;left:0;background:var(--white);white-space:normal;overflow-wrap:anywhere;max-width:200px}
+.character-stats thead th:first-child{z-index:2}
+.character-win-rate{display:inline-flex;align-items:center;gap:10px}
+.character-win-rate meter{width:72px;height:12px}
+.character-win-rate meter::-webkit-meter-optimum-value{background:var(--green)}
+@media(max-width:800px){
+ .topbar nav{gap:2px}
+ .topbar nav button,.topbar nav .errors-nav{padding-inline:4px;font-size:12px}
+ .character-stats table{table-layout:fixed;min-width:550px}
+ .character-stats th,.character-stats td{padding:10px 8px}
+ .character-stats th:first-child{width:92px}
+ .character-win-rate meter{display:none}
+}

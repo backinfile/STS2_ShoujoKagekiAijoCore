@@ -17,7 +17,8 @@ python services/telemetry/app.py
 | POST | /api/upload | 原生 RunHistory JSON，8 MiB 上限 |
 | POST | /api/upload-session | 旧 r6 会话兼容 |
 | POST | /api/errors | v1/v2 报错 JSON，64 KiB 上限 |
-| GET | /api/runs、/api/stats | 对局、统计与过滤 |
+| GET | /api/runs、/api/stats | 对局、卡牌及语言统计与过滤 |
+| GET | /api/character-stats | 按角色聚合对局数、席位数、胜率、胜负结果与平均楼层 |
 | GET | /api/runs/{id}、/api/runs/{id}/raw | 历史及原始字节 |
 | GET | /api/errors、/api/errors/{id} | 报错聚合及调用栈 |
 
@@ -38,6 +39,8 @@ python services/telemetry/app.py --archive-raw
 ```
 
 对局支持原有筛选，以及 core_version、game_target、source_mod、language。`GET /api/stats` 的 `language_distribution` 返回 `language`、`runs`、`share`，`language_total_runs` 为分母；按当前服务端筛选与统计样本计算，每个上报对局计一次，多人席位不重复计数，旧数据计入 `unknown`。语言属于上传端；同一多人局沿用现有对局去重，统计首个成功接收载荷的语言。语言字段不参与对局身份与错误指纹。报错支持原有筛选，以及 core_version、game_target、source_mod。SQL 值使用参数绑定，页面动态字段转义，CSV 保留公式前缀防护。
+
+角色统计沿用对局和卡牌统计的公共筛选。默认排除第 5 层及以前放弃的对局，可用 `sample=all` 查看全部。每个角色的对局数按对局 ID 去重，胜率按胜利席位除以统计席位，平均楼层按同一批席位计算。多人局的胜负和到达楼层沿用该局结果。
 
 ## 游戏端
 

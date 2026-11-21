@@ -83,5 +83,49 @@ class WebDeliveryTests(unittest.TestCase):
         self.assertEqual(data['filters']['source_mods'], ['Example'])
         self.assertEqual(data['filters']['builds'], ['collector-test'])
 
+    def test_character_stats_counts_seats_and_distinct_runs(self):
+        for seed, roles, outcome, floor, language in (
+            ("mixed", ("KAREN", "KAREN", "JUNNA"), "win", 15, "zhs"),
+            ("death", ("KAREN",), "death", 2, None),
+            ("early", ("JUNNA",), "abandon", 5, "zhs"),
+            ("later", ("JUNNA", "OTHER_ROLE"), "abandon", 6, "zhs"),
+        ):
+            data = fixture() | {
+                "seed": seed, "ascension": 7, "win": outcome == "win", "was_abandoned": outcome == "abandon",
+                "players": [{"id": i + 1, "character": "CHARACTER." + role} for i, role in enumerate(roles)],
+                "map_point_history": [[{} for _ in range(floor)]],
+            }
+            if language:
+                data["core_telemetry"] = context() | {"language": language}
+            self.assertEqual(self.store.upload(data)[0], 201)
+
+        # The role endpoint reads derived seats separately from card aggregation.
+        self.store.stats = lambda query: self.fail("role stats must not aggregate cards")
+        path = "/api/character-stats?days=0&ascension=7"
+        self.assertEqual(self.request(path, authorized=False)[0], 404)
+
+        def get(suffix=""):
+            status, headers, raw = self.request(path + suffix)
+            self.assertEqual(status, 200)
+            self.assertEqual(headers["Cache-Control"], "no-store")
+            return json.loads(raw)
+
+        data = get()
+        self.assertEqual(data["filters"]["languages"], ["unknown", "zhs"])
+        self.assertEqual(data["rows"], [
+            {"character": "KAREN", "runs": 2, "seats": 3, "wins": 2, "deaths": 1, "abandons": 0,
+             "win_rate": 2 / 3, "avg_floor": 32 / 3},
+            {"character": "JUNNA", "runs": 2, "seats": 2, "wins": 1, "deaths": 0, "abandons": 1,
+             "win_rate": .5, "avg_floor": 10.5},
+            {"character": "OTHER_ROLE", "runs": 1, "seats": 1, "wins": 0, "deaths": 0, "abandons": 1,
+             "win_rate": 0, "avg_floor": 6},
+        ])
+        rows = get("&character=CHARACTER.JUNNA&players=3&language=zhs")["rows"]
+        self.assertEqual([(r["character"], r["seats"], r["win_rate"]) for r in rows], [("JUNNA", 1, 1)])
+        rows = get("&character=JUNNA&sample=all")["rows"]
+        self.assertEqual([(r["seats"], r["abandons"], r["win_rate"]) for r in rows], [(3, 2, 1 / 3)])
+        self.assertEqual(get("&language=jpn")["rows"], [])
+
+
 if __name__ == '__main__':
     unittest.main()

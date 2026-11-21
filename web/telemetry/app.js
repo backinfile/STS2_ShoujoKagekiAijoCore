@@ -7,17 +7,22 @@ const num = value => new Intl.NumberFormat('zh-CN').format(value ?? 0);
 const date = value => value ? new Date(value * 1000).toLocaleString('zh-CN', {hour12:false}) : '—';
 const LANGUAGES={eng:'英语',ara:'阿拉伯语',zhs:'简体中文',zht:'繁体中文',deu:'德语',esp:'西班牙语（拉美）',fra:'法语',ind:'印度尼西亚语',ita:'意大利语',jpn:'日语',kor:'韩语',pol:'波兰语',ptb:'葡萄牙语（巴西）',rus:'俄语',spa:'西班牙语（西班牙）',tha:'泰语',tur:'土耳其语',unknown:'未知'};
 const languageName=value=>LANGUAGES[value]??value;
+const VIEW_TITLES={cards:'卡牌统计',compare:'对比模式',characters:'角色统计',runs:'对局记录'};
+const STAT_ENDPOINTS={cards:'api/stats',characters:'api/character-stats',runs:'api/runs'};
+const EXPORT_LABELS={cards:'导出筛选卡牌 CSV ↓',characters:'导出角色统计 CSV ↓',runs:'导出当前页 CSV ↓'};
+const CHARACTER_SORTS=['seats','win_rate','wins','avg_floor'];
+const CHARACTER_COLUMNS=['角色','对局数','统计席位','胜率','胜利席位','死亡席位','放弃席位','平均楼层'];
 const OUTCOME = {win:'胜利',death:'死亡',abandon:'放弃'};
 const RUN_MODES = {standard:'标准',daily:'每日挑战',dread:'Dread',blitz:'Blitz',custom:'自定义',none:'未知'};
 const modeName = mode => Object.hasOwn(RUN_MODES,mode) ? RUN_MODES[mode] : mode || '未知';
-const CHARACTERS={KAREN:'爱城华恋',JUNNA:'星见纯那',IRONCLAD:'铁甲战士',SILENT:'静默猎手',DEFECT:'故障机器人',REGENT:'储君',NECROBINDER:'亡灵契约师',WATCHER:'观者'};
+const CHARACTERS={KAREN:'爱城华恋',JUNNA:'星见纯那',FOOL:'愚者',IRONCLAD:'铁甲战士',SILENT:'静默猎手',DEFECT:'故障机器人',REGENT:'储君',NECROBINDER:'亡灵契约师',WATCHER:'观者'};
 const RARITIES=['基础','普通','罕见','稀有','先古','衍生','诅咒','状态','特殊','事件','任务','未知'];
 const OWNERS=['karen','junna','ironclad','silent','defect','regent','necrobinder','colorless','curse','status','event','token','quest','unknown'];
 const STARTER_CURSES=new Set(['ASCENDERS_BANE','KAREN_SLEEPY']);
 const CARD_SORTS={name:'卡牌名称',cost:'基础费用',type:'卡牌类型',pick_rate:'记录选中率',win_rate:'曾持有胜率',hold_rate:'持有覆盖率',recorded_offers:'选牌记录',picked:'记录选中次数',offered:'已知结果记录数',held:'持有席位',wins:'胜利席位',unknown_picked:'结果缺失数'};
 const characterName=value=>CHARACTERS[model(value)]??model(value);
 const SERIES = [{key:'pick_rate',label:'记录选中率',color:'#375d4c'},{key:'win_rate',label:'曾持有胜率',color:'#71859b'},{key:'hold_rate',label:'持有覆盖率',color:'#ae884b'}];
-const state = {view:'cards',display:'table',sort:'held',order:-1,card:null,run:null,page:1,stats:null,runs:null,catalog:{},relics:{},history:null,seat:0,floor:1,loading:false,fresh:false,loadedQuery:null,catalogReady:false,historyId:null};
+const state = {view:'cards',display:'table',sort:'held',order:-1,card:null,run:null,page:1,stats:null,runs:null,characterStats:null,characterSort:'seats',catalog:{},relics:{},history:null,seat:0,floor:1,loading:false,fresh:false,loadedQuery:null,catalogReady:false,historyId:null};
 const primary={state,$,root:document};
 let historyVersion=0, toastTimer;
 const comparisons={};
@@ -44,7 +49,7 @@ function title(card){return esc(card.name)+(card.current_upgrade_level>0?' +'+ca
 function cardMetadata(card){return [card.owner_name,card.rarity,card.type,card.cost==null?'费用未知':card.cost<0?'特殊费用':card.cost+' 费'].filter(Boolean).join(' · ');}
 function identity(card){return '<span class="card-ident">'+image(card)+'<span><strong>'+title(card)+'</strong><small>'+esc(cardMetadata(card))+'</small></span></span>';}
 function metric(label,value,fraction){return '<div class="metric-row"><span>'+label+'</span><div><strong>'+value+'</strong>'+(fraction?'<small>'+fraction+'</small>':'')+'</div></div>';}
-function syncURL(scope=primary){const {state,$}=scope,p=params(scope);for(const key of ['search','owner','type','rarity','starters','group','character','outcome'])if($(key))p.set(key,$(key).value);for(const key of ['view','display','sort','order','page','card','run'])if(state[key]!=null)p.set(key,state[key]);if(state.historyId){p.set('history',state.historyId);p.set('seat',state.seat);p.set('floor',state.floor);}if(scope.onChange){scope.onChange(p.toString());return;}for(const side of ['left','right']){const saved=comparisons[side]?.saved??comparisonURL.get(side);if(saved)p.set(side,saved);}p.set('compareSide',$('comparison').dataset.side??'left');history.replaceState(null,'','#'+p);}
+function syncURL(scope=primary){const {state,$}=scope,p=params(scope);for(const key of ['search','owner','type','rarity','starters','group','character','outcome'])if($(key))p.set(key,$(key).value);for(const key of ['view','display','sort','order','page','card','run'])if(state[key]!=null)p.set(key,state[key]);if(state.historyId){p.set('history',state.historyId);p.set('seat',state.seat);p.set('floor',state.floor);}if(scope.onChange){scope.onChange(p.toString());return;}for(const side of ['left','right']){const saved=comparisons[side]?.saved??comparisonURL.get(side);if(saved)p.set(side,saved);}p.set('compareSide',$('comparison').dataset.side??'left');if(state.characterSort!=='seats')p.set('characterSort',state.characterSort);history.replaceState(null,'','#'+p);}
 function updateCharacters(characters=[],selected=$('character').value,scope=primary){
  const {$}=scope;
  const choices=[...new Set([...Object.keys(CHARACTERS),...characters,selected])].filter(c=>c&&c!=='all');
@@ -54,15 +59,15 @@ function exportState(scope=primary){
  const {state,$}=scope;
  const disabled=state.loading||!state.fresh;
  $('export').disabled=disabled;
- $('export').textContent=state.view==='cards'?'导出筛选卡牌 CSV ↓':'导出当前页 CSV ↓';
+ $('export').textContent=EXPORT_LABELS[state.view]??EXPORT_LABELS.cards;
  $('exportImage').disabled=disabled||!scope.shownGroups?.length||Boolean(scope.exportingImage);
 }
 async function load(scope=primary,{force=true}={}){
  const {state,$}=scope;
  if(!scope.cardsOnly&&state.view==='compare'){render();return;}
- const cards=scope.cardsOnly||state.view==='cards',query=params(scope);query.set('character',$('character').value);
- if(!cards){query.set('page',state.page);query.set('outcome',$('outcome').value);}
- const key=(cards?'api/stats?':'api/runs?')+query;
+ const view=scope.cardsOnly?'cards':state.view,cards=view==='cards',query=params(scope);query.set('character',$('character').value);
+ if(view==='runs'){query.set('page',state.page);query.set('outcome',$('outcome').value);}
+ const key=STAT_ENDPOINTS[view]+'?'+query;
  if(state.loading&&scope.pendingKey===key)return;
  scope.controller?.abort();scope.controller=new AbortController();scope.pendingKey=key;
  const version=scope.requestVersion=(scope.requestVersion??0)+1;
@@ -73,7 +78,9 @@ async function load(scope=primary,{force=true}={}){
   const cached=scope.cache.get(key),data=!force&&cached&&Date.now()-cached.time<30000?cached.data:await api(key,scope.controller.signal);
   if(version!==scope.requestVersion)return;
   scope.cache.set(key,{time:Date.now(),data});if(scope.cache.size>6)scope.cache.delete(scope.cache.keys().next().value);
-  if(cards)state.stats=data;else{state.runs=data;state.page=data.page;query.set('page',state.page);}
+  if(cards)state.stats=data;
+  else if(view==='characters')state.characterStats=data;
+  else{state.runs=data;state.page=data.page;query.set('page',state.page);}
   state.loadedQuery=new URLSearchParams(query);state.fresh=true;
   const filters=cards?data:data.filters??{};
   updateCharacters(filters.characters??[],$('character').value,scope);
@@ -112,10 +119,11 @@ function render(scope=primary){
  }
  if(scope.cardsOnly){renderCards(scope);exportState(scope);return;}
  document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.view===state.view));
- const compare=state.view==='compare';$('cardsView').hidden=state.view!=='cards';$('runsView').hidden=state.view!=='runs';$('compareView').hidden=!compare;$('filters').hidden=compare;const toggle=$('filters').previousElementSibling;if(toggle?.classList.contains('filter-toggle'))toggle.hidden=compare;$('summary').hidden=state.view!=='cards';$('languageSummary').hidden=state.view!=='cards'||!s?.language_distribution?.length;$('error').hidden=compare||state.fresh;$('export').hidden=compare;$('pageTitle').textContent=compare?'对比模式':state.view==='cards'?'卡牌统计':'对局记录';
+ const compare=state.view==='compare';$('cardsView').hidden=state.view!=='cards';$('runsView').hidden=state.view!=='runs';$('charactersView').hidden=state.view!=='characters';$('compareView').hidden=!compare;$('filters').hidden=compare;const toggle=$('filters').previousElementSibling;if(toggle?.classList.contains('filter-toggle'))toggle.hidden=compare;$('summary').hidden=state.view!=='cards';$('languageSummary').hidden=state.view!=='cards'||!s?.language_distribution?.length;$('error').hidden=compare||state.fresh;$('export').hidden=compare;$('pageTitle').textContent=VIEW_TITLES[state.view];
  if(compare)openComparison();
  if(state.view==='cards'){if(s)renderCards();else $('cards').innerHTML=empty('加载中','');}
  if(state.view==='runs'){if(state.runs)renderRuns();else $('runs').innerHTML=empty('加载中','');}
+ if(state.view==='characters')renderCharacterStats();
  exportState();
 }
 function renderLanguages(stats,scope=primary){
@@ -153,6 +161,24 @@ function selectCard(id,scope=primary){
  $('cards').querySelectorAll('[data-card]').forEach(node=>{const selected=node.dataset.card===id;if(node.tagName==='TR')node.classList.toggle('selected',selected);else node.setAttribute('aria-pressed',selected);});
  renderCardDetail(c,scope);syncURL(scope);
  if((scope.cardsOnly||mobile())&&!$('cardSheet').open)$('cardSheet').showModal();
+}
+function characterRows(){
+ const key=state.characterSort;
+ return [...listOf(state.characterStats?.rows)].sort((a,b)=>b[key]-a[key]||b.seats-a.seats||a.character.localeCompare(b.character));
+}
+function renderCharacterStats(){
+ const rows=characterRows(),panel=$('characterStats');
+ $('characterSort').disabled=!rows.length;
+ if(!rows.length){
+  panel.innerHTML=state.characterStats?empty('没有匹配的角色统计','扩大接收时间范围或调整筛选'):empty('加载中','');
+  return;
+ }
+ panel.innerHTML='<table><thead><tr>'+CHARACTER_COLUMNS.map(label=>'<th scope="col">'+label+'</th>').join('')+
+  '</tr></thead><tbody>'+rows.map(row=>'<tr><th scope="row">'+esc(characterName(row.character))+'</th><td>'+num(row.runs)+
+  '</td><td>'+num(row.seats)+'</td><td><span class="character-win-rate"><strong>'+pct(row.win_rate)+
+  '</strong><meter min="0" max="1" value="'+esc(row.win_rate)+'" aria-hidden="true"></meter></span></td><td>'+num(row.wins)+
+  '</td><td>'+num(row.deaths)+'</td><td>'+num(row.abandons)+'</td><td>'+row.avg_floor.toFixed(1)+'</td></tr>').join('')+
+  '</tbody></table>';
 }
 function renderRuns(){
  const r=state.runs;if(!r)return;
@@ -354,13 +380,15 @@ async function downloadStatisticsImage(scope=primary){
 }
 function csv(scope=primary){
  const {state,$}=scope;
- if(!state.stats||state.loading||!state.fresh||!state.loadedQuery){toast('请先刷新并成功加载当前筛选结果');return;}
- const rows=state.view==='cards'?[['模型ID','卡名','归属','类型','稀有度','基础费用','记录选中次数','已知结果记录数','记录选中率','曾持有胜利席位','曾持有席位','曾持有胜率','统计席位','持有覆盖率','选牌条目','明确选中','选牌结果缺失'],...filteredCards(scope).map(c=>[c.id,c.name,c.owner_name??'其他',c.type,c.rarity,c.cost,c.picked,c.offered,pct(c.pick_rate),c.wins,c.held,pct(c.win_rate),state.stats.seats,pct(c.hold_rate),c.recorded_offers,c.recorded_picked,c.unknown_picked])]:[['接收时间','开始时间','结果','楼层','进阶','人数','版本','对局ID','游戏模式'],...(state.runs?.items??[]).map(r=>[date(r.received_at),date(r.start_time),OUTCOME[r.outcome],r.floor,r.ascension,r.player_count,r.build,r.id,modeName(r.mode)])];
+ if(state.loading||!state.fresh||!state.loadedQuery){toast('请先刷新并成功加载当前筛选结果');return;}
+ const rows=state.view==='characters'?[['角色 ID',...CHARACTER_COLUMNS],...characterRows().map(r=>[r.character,characterName(r.character),r.runs,r.seats,pct(r.win_rate),r.wins,r.deaths,r.abandons,r.avg_floor.toFixed(1)])]:
+  state.view==='cards'?[['模型ID','卡名','归属','类型','稀有度','基础费用','记录选中次数','已知结果记录数','记录选中率','曾持有胜利席位','曾持有席位','曾持有胜率','统计席位','持有覆盖率','选牌条目','明确选中','选牌结果缺失'],...filteredCards(scope).map(c=>[c.id,c.name,c.owner_name??'其他',c.type,c.rarity,c.cost,c.picked,c.offered,pct(c.pick_rate),c.wins,c.held,pct(c.win_rate),state.stats.seats,pct(c.hold_rate),c.recorded_offers,c.recorded_picked,c.unknown_picked])]:[['接收时间','开始时间','结果','楼层','进阶','人数','版本','对局ID','游戏模式'],...(state.runs?.items??[]).map(r=>[date(r.received_at),date(r.start_time),OUTCOME[r.outcome],r.floor,r.ascension,r.player_count,r.build,r.id,modeName(r.mode)])];
  const cell=v=>{const text=String(v??'');return '"'+(/^[\u0000-\u0020]*[=+@\-]|^[\t\r\n]/.test(text)?"'"+text:text).replaceAll('"','""')+'"';};
  const filters=[...state.loadedQuery].filter(([key])=>state.view==='runs'||!['page','outcome'].includes(key));
  if(state.view==='cards')for(const key of ['search','owner','type','rarity','starters','group'])filters.push([key,$(key).value]);
- filters.push(['sort',state.sort],['order',state.order],['pick_policy','native_known_choices_all_sources']);
- save('core-'+state.view+'.csv',new Blob(['\ufeff'+[...filters,[],...rows].map(r=>r.map(cell).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'}));toast(state.view==='runs'?'已导出当前页对局':'已导出筛选后的卡牌');
+ if(state.view==='characters')filters.push(['sort',state.characterSort]);
+ else filters.push(['sort',state.sort],['order',state.order],['pick_policy','native_known_choices_all_sources']);
+ save('core-'+state.view+'.csv',new Blob(['\ufeff'+[...filters,[],...rows].map(r=>r.map(cell).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'}));toast(state.view==='characters'?'已导出角色统计':state.view==='runs'?'已导出当前页对局':'已导出筛选后的卡牌');
 }
 function comparisonSides(){return matchMedia('(max-width:900px)').matches?[$('comparison').dataset.side??'left']:['left','right'];}
 function comparisonStatus(){
@@ -428,6 +456,7 @@ document.addEventListener('click',event=>{
 });
 $('filters').addEventListener('submit',e=>e.preventDefault());
 $('filters').addEventListener('change',()=>{state.page=1;syncURL();load();});
+$('characterSort').addEventListener('change',event=>{state.characterSort=event.target.value;renderCharacterStats();syncURL();});
 $('outcome').addEventListener('change',()=>{state.page=1;syncURL();load();});
 document.addEventListener('change',event=>{if(event.target.id==='historySeat'){state.seat=Number(event.target.value);renderHistory();syncURL();}});
 let searchTimer;for(const id of ['search','owner','type','rarity','starters','group'])$(id).addEventListener(id==='search'?'input':'change',()=>{clearTimeout(searchTimer);const update=()=>{state.cardLimit=60;renderCards();syncURL();};if(id==='search')searchTimer=setTimeout(update,150);else update();});
@@ -442,13 +471,15 @@ $('history').addEventListener('close',()=>{historyVersion++;primary.historyContr
 for(let i=0;i<=10;i++){const option=document.createElement('option');option.value=i;option.textContent='进阶 '+i;$('filters').elements.ascension.append(option);}
 const urlState=comparisonURL;
 for(const [key,value] of urlState){const control=$('filters').elements.namedItem(key);if(['build','core_version','source_mod','language'].includes(key)&&value!=='all'&&value.length<=(key==='source_mod'?180:120)){const option=document.createElement('option');option.value=value;option.textContent=value;control.append(option);}if(control&&[...control.options].some(o=>o.value===value))control.value=value;}
-if(['cards','runs','compare'].includes(urlState.get('view')))state.view=urlState.get('view');
+if(Object.hasOwn(VIEW_TITLES,urlState.get('view')))state.view=urlState.get('view');
 if(urlState.get('compareSide')==='right'){$('comparison').dataset.side='right';document.querySelectorAll('[data-compare-side]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.compareSide==='right'));}
 if(['table','chart'].includes(urlState.get('display')))state.display=urlState.get('display');
 if(/^[A-Z0-9_:-]{1,180}$/.test(urlState.get('character')??''))updateCharacters([],urlState.get('character'));
 for(const key of ['owner','type','rarity','starters','group','character','outcome']){const control=$(key),value=urlState.get(key);if([...control.options].some(option=>option.value===value))control.value=value;}
 $('search').value=(urlState.get('search')??'').slice(0,180);
 if(Object.hasOwn(CARD_SORTS,urlState.get('sort')))state.sort=urlState.get('sort');
+if(CHARACTER_SORTS.includes(urlState.get('characterSort')))state.characterSort=urlState.get('characterSort');
+$('characterSort').value=state.characterSort;
 state.order=urlState.get('order')==='1'?1:-1;state.page=Math.min(1000000,Math.max(1,parseInt(urlState.get('page'),10)||1));
 state.card=urlState.get('card');state.run=urlState.get('run');state.seat=Math.min(15,Math.max(0,parseInt(urlState.get('seat'),10)||0));state.floor=Math.max(1,parseInt(urlState.get('floor'),10)||1);
 let catalogPromise;
@@ -459,7 +490,7 @@ async function historyCatalog(){
 }
 async function boot(){
  render();const loading=load();
- api('characters.json'+assetQuery).then(characters=>{Object.assign(CHARACTERS,characters);if(state.view==='runs')renderRuns();}).catch(()=>{});
+ api('characters.json'+assetQuery).then(characters=>{Object.assign(CHARACTERS,characters);if(state.view==='runs')renderRuns();if(state.view==='characters')renderCharacterStats();}).catch(()=>{});
  await loading;const historyId=urlState.get('history');if(/^[0-9a-f]{32}$/.test(historyId??''))await openHistory(historyId,true);
 }
 boot();

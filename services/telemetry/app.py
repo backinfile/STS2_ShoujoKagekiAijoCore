@@ -34,6 +34,7 @@ MODEL = re.compile(r"[A-Za-z0-9_.:\-]{1,180}\Z")
 CATALOG = json.loads((WEB / "catalog.json").read_text(encoding="utf-8"))
 LOG = logging.getLogger("karen-telemetry")
 FACTS_VERSION = 4
+EARLY_ABANDON_FLOOR = 5
 
 
 class Invalid(ValueError):
@@ -462,6 +463,30 @@ class Store:
         return {"builds": builds, "characters": sorted(characters),
                 "core_versions": sorted(core_versions), "source_mods": sorted(source_mods), "languages": sorted(languages)}
 
+    def character_stats(self, query):
+        where, values = self.where(query)
+        conditions = []
+        character = query.get("character", ["all"])[0]
+        if character != "all":
+            conditions.append("json_extract(seat.value, '$.character')=?")
+            values.append(model(character))
+        if query.get("sample", ["codex"])[0] != "all":
+            conditions.append("NOT (outcome='abandon' AND floor<=?)")
+            values.append(EARLY_ABANDON_FLOOR)
+        if conditions:
+            where += (" AND " if where else " WHERE ") + " AND ".join(conditions)
+        with self.connect() as db:
+            rows = db.execute("""
+                SELECT json_extract(seat.value, '$.character') AS character,
+                       COUNT(DISTINCT runs.id) AS runs, COUNT(*) AS seats,
+                       SUM(outcome='win') AS wins, SUM(outcome='death') AS deaths,
+                       SUM(outcome='abandon') AS abandons, AVG(floor) AS avg_floor,
+                       AVG(outcome='win') AS win_rate
+                FROM runs CROSS JOIN json_each(runs.facts, '$.seats') AS seat
+                """ + where + " GROUP BY character ORDER BY seats DESC, character", values)
+            result = [dict(row) for row in rows]
+        return {"rows": result, "filters": self.run_filters(query)}
+
     def stats(self, query):
         where, values = self.where(query)
         character = query.get("character", ["all"])[0]
@@ -494,7 +519,7 @@ class Store:
             count += 1
             latest = max(latest or 0, row["received"])
             raw_seats += len(seats)
-            if query.get("sample", ["codex"])[0] != "all" and run["outcome"] == "abandon" and run["floor"] <= 5:
+            if query.get("sample", ["codex"])[0] != "all" and run["outcome"] == "abandon" and run["floor"] <= EARLY_ABANDON_FLOOR:
                 excluded += len(seats)
                 continue
             language_counts[language] = language_counts.get(language, 0) + 1
@@ -752,6 +777,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.respond(200, self.server.store.runs(query))
         if path == "/api/stats":
             return self.respond(200, self.server.store.stats(query))
+        if path == "/api/character-stats":
+            return self.respond(200, self.server.store.character_stats(query))
         if path == "/api/errors":
             return self.respond(200, self.server.store.errors.listing(query))
         error_match = re.fullmatch(r"/api/errors/([0-9a-f]{64})", path)

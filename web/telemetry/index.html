@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="referrer" content="no-referrer"><title>Core · 对局观察</title>
-  <link rel="icon" href="assets/character_icon_karen.webp"><link rel="stylesheet" href="style.css">
+  <link rel="icon" href="assets/character_icon_karen.webp"><link rel="stylesheet" href="style.css?v=__ASSET_VERSION__">
   <meta name="theme-color" content="#375d4c"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials"><link rel="apple-touch-icon" href="assets/app_icon_192.png">
   <script src="client.js" defer></script>
   <script src="app.js?v=__ASSET_VERSION__" defer></script>
 </head>
 <body>
-<header class="topbar"><a class="brand" href="./"><img src="assets/character_icon_karen.webp" alt="">Core<span>对局观察</span></a><nav aria-label="主导航"><button data-view="cards" aria-pressed="true">卡牌统计</button><button data-view="compare" aria-pressed="false">对比模式</button><button data-view="runs" aria-pressed="false">对局记录</button><a href="errors.html" class="errors-nav">报错</a></nav><span class="connection" id="connection" role="status">连接中</span><button id="install" hidden>安装</button><button id="refresh">刷新</button></header>
+<header class="topbar"><a class="brand" href="./"><img src="assets/character_icon_karen.webp" alt="">Core<span>对局观察</span></a><nav aria-label="主导航"><button data-view="cards" aria-pressed="true">卡牌统计</button><button data-view="compare" aria-pressed="false">对比模式</button><button data-view="characters" aria-pressed="false">角色统计</button><button data-view="runs" aria-pressed="false">对局记录</button><a href="errors.html" class="errors-nav">报错</a></nav><span class="connection" id="connection" role="status">连接中</span><button id="install" hidden>安装</button><button id="refresh">刷新</button></header>
 <main>
   <div class="page-heading"><div><span class="eyebrow">CORE / RUN OBSERVATORY</span><h1 id="pageTitle">卡牌统计</h1></div><button id="export" disabled>导出筛选卡牌 CSV ↓</button></div>
   <form id="filters" class="filters">
@@ -39,6 +39,13 @@
     </div>
     <div class="workbench"><div id="cards" class="data-panel"></div><aside id="cardDetail" class="inspector"><div class="empty">选择卡牌查看数据</div></aside></div>
     <div id="cohort" class="footnote"></div>
+  </section>
+  <section id="charactersView" hidden>
+    <div class="section-tools">
+      <label>排序<select id="characterSort"><option value="seats">统计席位</option><option value="win_rate">胜率</option><option value="wins">胜利席位</option><option value="avg_floor">平均楼层</option></select></label>
+    </div>
+    <div id="characterStats" class="data-panel character-stats" role="region" aria-label="角色胜率及对局结果" tabindex="0"></div>
+    <p class="footnote">胜率为胜利席位 ÷ 统计席位。多人局按角色的玩家席位计入胜率，同一角色在同局出现多次时，对局数计一次。</p>
   </section>
   <section id="runsView" hidden><div class="section-tools"><h2>收到的对局</h2><span class="spacer"></span><label>结果<select id="outcome"><option value="all">全部结果</option><option value="win">胜利</option><option value="death">死亡</option><option value="abandon">放弃</option></select></label></div><div class="workbench"><div id="runs" class="data-panel"></div><aside id="runDetail" class="inspector"><div class="empty">选择对局查看数据</div></aside></div><div id="pagination" class="pagination"></div></section>
   <section id="compareView" hidden aria-label="卡牌统计对比"><div class="segments compare-sides" aria-label="对比侧"><button data-compare-side="left" aria-pressed="true">左侧</button><button data-compare-side="right" aria-pressed="false">右侧</button></div><div id="comparison" class="comparison-grid" data-side="left"></div></section>

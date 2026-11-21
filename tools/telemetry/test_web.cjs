@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const source = fs.readFileSync(__dirname + '/../../web/telemetry/app.js', 'utf8').split("document.addEventListener('click',event=>{")[0];
 const browserSource = fs.readFileSync(__dirname + '/../../web/telemetry/app.js', 'utf8');
-const restoreCode = browserSource.slice(browserSource.indexOf('const urlState=comparisonURL;'), browserSource.indexOf("if(['cards','runs','compare'].includes(urlState.get('view')))"));
+const restoreCode = browserSource.slice(browserSource.indexOf('const urlState=comparisonURL;'), browserSource.indexOf("if(Object.hasOwn(VIEW_TITLES"));
 const restoredControls = Object.fromEntries(['build', 'core_version', 'source_mod', 'language'].map(key => [key, {
   value: 'all', options: [{value: 'all'}], append(option) { this.options.push(option); }
 }]));
@@ -103,6 +103,7 @@ console.log('PASS language distribution labels, counts, percentages, escaping an
   assert.ok(node('character').innerHTML.includes('value="CUSTOM_CLASS"'),'selected profession stays available with no matching samples');
   node('character').value='all';
   console.log('PASS shared character query, custom professions and card CSV stay in sync');
+
 
   context.groupSample={...context.sample,seats:10,cards:[cards[0],
     {...cards[1],id:'COMMON_LOW',name:'普通低',cost:0,pick_rate:0,held:1},
@@ -208,4 +209,27 @@ console.log('PASS language distribution labels, counts, percentages, escaping an
     history:{players:[{id:1,character:'KAREN',deck:[],relics:[null]}],map_point_history:[[{map_point_type:'event',rooms:[null],player_stats:[{player_id:1,rest_site_choices:'rest'}]}]]}};
   run('state.history=legacy;renderHistory()');
   console.log('PASS legacy display fields degrade without crashing');
+
+  context.roleResponse={rows:[
+    {character:'KAREN',runs:4,seats:5,wins:2,deaths:3,abandons:0,avg_floor:12.2,win_rate:.4},
+    {character:'JUNNA',runs:1,seats:1,wins:1,deaths:0,abandons:0,avg_floor:43,win_rate:1},
+  ],filters:{characters:['KAREN','JUNNA'],languages:['zhs']}};
+  run(`state.view='characters';api=async path=>{requests.push(path);return roleResponse;}`);
+  await run('load()');
+  const roles=node('characterStats');
+  assert.ok(context.requests.some(path=>path.startsWith('api/character-stats?')&&!path.includes('outcome=')&&!path.includes('page=')));
+  assert.equal(node('charactersView').hidden,false);
+  assert.ok(roles.innerHTML.indexOf('爱城华恋')<roles.innerHTML.indexOf('星见纯那'));
+  assert.ok(roles.innerHTML.includes('40.0%')&&roles.innerHTML.includes('12.2'));
+  run("state.characterSort='win_rate';renderCharacterStats();syncURL();csv()");
+  assert.ok(roles.innerHTML.indexOf('星见纯那')<roles.innerHTML.indexOf('爱城华恋'));
+  assert.ok(context.savedHash.includes('characterSort=win_rate'));
+  const roleCsv=await context.saved.text();
+  assert.ok(roleCsv.indexOf('星见纯那')<roleCsv.indexOf('爱城华恋'));
+  run('state.characterStats={rows:[]};renderCharacterStats()');
+  assert.match(roles.innerHTML,/没有匹配的角色统计/);
+  assert.equal(node('characterSort').disabled,true);
+  console.log('PASS role view, numerical sorting, CSV and empty state');
+  run("state.view='cards'");
+
 })().catch(error=>{console.error(error);process.exitCode=1});
