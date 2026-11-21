@@ -83,6 +83,7 @@
       inspectorButton.disabled = !dom('editor-form').children.length && !dom('preview').children.length;
       if (!narrowScreen.matches) return;
       if (!dom('close-inspector').hidden) openInspector();
+      else if (inspector.hidden && inspectorDialog.open) inspectorDialog.close();
       const selectedTab = document.querySelector('.tabs [aria-selected="true"]');
       if (selectedTab !== activeTab) {
         activeTab = selectedTab;
