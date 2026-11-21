@@ -2,16 +2,18 @@ extends SceneTree
 
 func _initialize():
     var args = OS.get_cmdline_user_args()
-    if args.size() != 1:
+    if args.size() != 1 and not (args.size() == 2 and args[1] == "--legacy"):
         push_error("A pack output path is required")
         quit(1)
         return
     var packer = PCKPacker.new()
     var error = packer.pck_start(args[0])
-    if error == OK:
+    if error == OK and args.size() == 2:
+        error = packer.add_file("res://ShoujoKagekiCore/legacy-marker.txt", "res://project.godot")
+    elif error == OK:
         error = add_directory(packer, "res://resources/ShoujoKagekiCore", "res://ShoujoKagekiCore")
-    if error == OK:
-        error = add_directory(packer, "res://src/Modules", "res://src/Modules", true)
+        if error == OK:
+            error = add_directory(packer, "res://src/Modules", "res://src/Modules", true)
     if error == OK:
         error = packer.flush()
     print("Core resource pack result ", error)

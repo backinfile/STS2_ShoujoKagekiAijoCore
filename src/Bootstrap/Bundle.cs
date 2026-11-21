@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace ShoujoKageki.Core.Bootstrap;
 
@@ -23,6 +24,8 @@ public sealed record CoreBundle
     public int ApiMajor { get; init; }
     public string ApiVersion { get; init; } = "";
     public string ApiAssembly { get; init; } = "";
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? LegacyApiAssembly { get; init; }
     public string BaseLibMinimumVersion { get; init; } = "";
     public string ResourceVersion { get; init; } = "";
     public string ResourcePack { get; init; } = "";
@@ -92,6 +95,13 @@ public static class BundleSelection
         var api = AssemblyName.GetAssemblyName(ResolvePath(root, bundle.ApiAssembly));
         if (api.Name != "ShoujoKagekiCore.Api.V1" || api.Version != new Version(1, 0, 0, 0))
             throw new InvalidDataException("Unexpected Core API assembly identity.");
+        if (bundle.LegacyApiAssembly is { } legacyApi)
+        {
+            if (!bundle.Files.ContainsKey(legacyApi)) throw new InvalidDataException("Missing legacy API digest.");
+            var legacy = AssemblyName.GetAssemblyName(ResolvePath(root, legacyApi));
+            if (legacy.Name != "ShoujoKagekiAijoCore.Api.V1" || legacy.Version != api.Version)
+                throw new InvalidDataException("Unexpected legacy Core API assembly identity.");
+        }
         foreach (var (name, target) in bundle.Targets)
         {
             var variant = name switch

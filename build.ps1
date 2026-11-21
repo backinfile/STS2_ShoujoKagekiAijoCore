@@ -4,7 +4,7 @@ param(
     [string]$Godot = $env:GODOT_BIN,
     [string]$TelemetryEndpointPath = $env:SHOUJO_TELEMETRY_ENDPOINT_PATH,
     [string]$OutputDirectory = '',
-    [string]$Version = '2.0.0',
+    [string]$Version = '2.0.1',
     [string]$MainGameDir = $env:SHOUJO_MAIN_GAME
 )
 $ErrorActionPreference = 'Stop'
@@ -20,9 +20,10 @@ $output = [IO.Path]::GetFullPath($OutputDirectory)
 $staging = Join-Path $root ('artifacts/package-' + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Force -Path $staging | Out-Null
 New-Item -ItemType File -Force -Path (Join-Path $root 'artifacts/.gdignore') | Out-Null
-function Build-Core([string]$project, [string]$game, [string]$api) {
+function Build-Core([string]$project, [string]$game, [string]$api, [string]$legacyAssemblyName = '') {
     $arguments = @('build', (Join-Path $root $project), '-c', 'ExportRelease', '--nologo', '-v:q', "-p:GameDir=$game", "-p:Sts2Api=$api", "-p:CoreVersion=$Version", "-p:GodotProjectDir=$root/")
     if ($TelemetryEndpointPath) { $arguments += "-p:TelemetryEndpointPath=$TelemetryEndpointPath" }
+    if ($legacyAssemblyName) { $arguments += "-p:LegacyAssemblyName=$legacyAssemblyName" }
     & dotnet @arguments
     if ($LASTEXITCODE) { throw "Core $api build failed." }
 }
@@ -51,13 +52,17 @@ if ($import.ExitCode) { throw 'Godot resource import failed. See artifacts/impor
 $pack = Join-Path $staging "resources/$Version/Core.Resources.pck"
 & $Godot --headless --path $root --script tools/pack.gd -- $pack
 if ($LASTEXITCODE -or -not (Test-Path -LiteralPath $pack)) { throw 'Core resource packing failed.' }
-$files = [ordered]@{}
-Get-ChildItem -LiteralPath $staging -Recurse -File | Sort-Object FullName | ForEach-Object {
-    $relative = [IO.Path]::GetRelativePath($staging, $_.FullName).Replace('\','/')
-    $files[$relative] = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+function Get-PackageDigests([string]$directory) {
+    $files = [ordered]@{}
+    Get-ChildItem -LiteralPath $directory -Recurse -File | Sort-Object FullName | ForEach-Object {
+        $relative = [IO.Path]::GetRelativePath($directory, $_.FullName).Replace('\','/')
+        $files[$relative] = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+    }
+    return $files
 }
 $bundle = [ordered]@{
     format=1; bootstrapProtocol=1; releaseVersion=$Version; apiMajor=1; apiVersion='1.9.0'; apiAssembly="lib/$Version/api/ShoujoKagekiCore.Api.V1.dll"
+    legacyApiAssembly='compat/legacy/ShoujoKagekiAijoCore.Api.V1.dll'
     baseLibMinimumVersion='3.4.8'; resourceVersion=$Version; resourcePack="resources/$Version/Core.Resources.pck"; saveProtocol=2; networkProtocol=2
     features=@('player-state-events@1','card-clone-events@1','model-method-scopes@1','shine-reward-pools@1','shine-rewards@1','card-staging@1','card-payloads@1','player-choices@1','card-picking@1','card-upgrades@1','music-overrides@1','shine@1','diagnostics@1','music@1','configuration@1','card-play-routing@1','card-effects@1','card-execution@1','card-options@1','effect-registration@1','movement-pipeline@1','model-execution@1','card-copies@1','card-snapshots@1','card-selection@1','presentation@1','temporary-music@1') + @(if (Test-Path (Join-Path $root 'src/Modules/Telemetry')) { 'telemetry@1' }) + @(if (Test-Path (Join-Path $root 'src/Modules/Exports')) { 'card-export@1' })
     targets=[ordered]@{
@@ -65,8 +70,54 @@ $bundle = [ordered]@{
         main=[ordered]@{ minimumGameVersion='0.111.0'; maximumGameVersion='0.111.1'; assembly="lib/$Version/main/ShoujoKagekiCore.Runtime.Main.dll" }
         beta=[ordered]@{ minimumGameVersion='0.113.0'; maximumGameVersion='0.113.0'; assembly="lib/$Version/beta/ShoujoKagekiCore.Runtime.Beta.dll" }
     }
-    files=$files
 }
+Build-Core 'src/LegacyApi.V1/ShoujoKagekiAijoCore.Api.V1.csproj' $StableGameDir 'stable'
+$legacyAssemblyRoot = Join-Path $root 'src/LegacyBootstrap/bin/ExportRelease/net9.0'
+$legacyOutputs = Join-Path (Split-Path -Parent $staging) ('legacy-bootstrap-' + [Guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Path $legacyOutputs | Out-Null
+$legacyApi = Join-Path $root 'src/LegacyApi.V1/bin/ExportRelease/net9.0/ShoujoKagekiAijoCore.Api.V1.dll'
+$legacyId = 'ShoujoKagekiAijoCore'
+$legacyProject = 'src/LegacyBootstrap/LegacyBootstrap.csproj'
+Build-Core $legacyProject $StableGameDir 'stable' $legacyId
+Copy-Item -LiteralPath (Join-Path $legacyAssemblyRoot "$legacyId.dll") -Destination $legacyOutputs
+foreach ($api in $games.Keys) {
+    $assemblyName = "$legacyId.Runtime.$((Get-Culture).TextInfo.ToTitleCase($api))"
+    Build-Core $legacyProject $StableGameDir 'stable' $assemblyName
+    Copy-Item -LiteralPath (Join-Path $legacyAssemblyRoot "$assemblyName.dll") -Destination $legacyOutputs
+}
+$legacyPack = Join-Path $staging 'compat/legacy/CoreCompatibility.pck'
+New-Item -ItemType Directory -Path (Split-Path -Parent $legacyPack) -Force | Out-Null
+& $Godot --headless --path $root --script tools/pack.gd -- $legacyPack --legacy
+if ($LASTEXITCODE -or -not (Test-Path -LiteralPath $legacyPack)) { throw 'Legacy Core dispatch pack failed.' }
+function Write-LegacyBundle([string]$directory, [string[]]$targets) {
+    New-Item -ItemType Directory -Path $directory -Force | Out-Null
+    Copy-Item -LiteralPath (Join-Path $legacyOutputs "$legacyId.dll"), $legacyApi -Destination $directory
+    $resources = Join-Path $directory 'CoreCompatibility.pck'
+    if ($resources -ne $legacyPack) { Copy-Item -LiteralPath $legacyPack -Destination $resources }
+    [ordered]@{
+        id=$legacyId; name='少女歌剧ShoujoKageki（旧版兼容）'; version=$Version
+        has_dll=$true; has_pck=$false; affects_gameplay=$false
+        dependencies=@(@{id='ShoujoKagekiCore'; min_version=$Version})
+    } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $directory "$legacyId.json") -Encoding UTF8
+    $legacy = [ordered]@{}
+    foreach ($key in $bundle.Keys) { $legacy[$key] = $bundle[$key] }
+    $legacy.Remove('legacyApiAssembly')
+    $legacy.apiAssembly = "$legacyId.Api.V1.dll"
+    $legacy.resourcePack = 'CoreCompatibility.pck'
+    $legacy.targets = [ordered]@{}
+    foreach ($api in $targets) {
+        $file = "$legacyId.Runtime.$((Get-Culture).TextInfo.ToTitleCase($api)).dll"
+        Copy-Item -LiteralPath (Join-Path $legacyOutputs $file) -Destination $directory
+        $target = $bundle.targets[$api]
+        $legacy.targets[$api] = [ordered]@{ minimumGameVersion=$target.minimumGameVersion; maximumGameVersion=$target.maximumGameVersion; assembly=$file }
+    }
+    $legacy.files = Get-PackageDigests $directory
+    $legacy | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath (Join-Path $directory 'core.bundle') -Encoding UTF8
+}
+# Earlier 1.x validators reject a bundle if it contains an unknown main target.
+Write-LegacyBundle (Join-Path $staging 'compat/legacy') @('stable','beta')
+Write-LegacyBundle (Join-Path $staging 'compat/legacy-main') @('main')
+$bundle.files = Get-PackageDigests $staging
 $bundle | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath (Join-Path $staging 'core.bundle') -Encoding UTF8
 $null = & (Join-Path $root 'sdk/validate-package.ps1') -CorePackage $staging
 if (Test-Path -LiteralPath $output) { throw 'Output directory already exists. Select a fresh OutputDirectory.' }

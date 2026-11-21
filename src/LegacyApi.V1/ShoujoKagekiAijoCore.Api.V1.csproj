@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>ShoujoKagekiAijoCore.Api.V1</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Api.V1/ShoujoKagekiCore.Api.V1.csproj" />
+  </ItemGroup>
+  <Import Project="../../build/GameReferences.props" />
+</Project>

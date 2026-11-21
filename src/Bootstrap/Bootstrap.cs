@@ -21,7 +21,7 @@ public static class Bootstrap
 {
     public const int BootstrapProtocol = 1;
     public const string ModId = "ShoujoKagekiCore";
-    private const string LegacyModId = "ShoujoKagekiAijoCore";
+    internal const string LegacyModId = "ShoujoKagekiAijoCore";
     internal const string CoordinationKey = "ShoujoKagekiAijoCore.BootstrapProtocol1";
     private const string IdentityKey = CoordinationKey + ".ModId";
     private static readonly MegaCrit.Sts2.Core.Logging.Logger Log = new(ModId, LogType.Generic);
@@ -44,7 +44,11 @@ public static class Bootstrap
             $"stage={Stage}, game={Game}, core={Release}, target={Target}, baseline={Baseline}, fingerprint={Fingerprint}";
     }
 
-    public static void Initialize()
+    public static void Initialize() => InitializeCore(false);
+
+    public static void InitializeFromLegacy() => InitializeCore(true);
+
+    private static void InitializeCore(bool fromLegacy)
     {
         lock (AppDomain.CurrentDomain)
         {
@@ -54,9 +58,7 @@ public static class Bootstrap
             var bridges = new Harmony(BridgeId);
             try
             {
-                if (prior == "ready" || ModManager.Mods.Any(x => x.manifest?.id == LegacyModId && (Eligible(x) || x.state == ModLoadState.Loaded)))
-                    throw new InvalidOperationException($"旧版 {LegacyModId} 仍在加载列表中。请移除旧 Core 和旧角色包，再安装新版 Core 与角色包。");
-                if (prior != null)
+                if (prior != null && !(fromLegacy && prior == "initializing"))
                     throw new InvalidOperationException($"Core bootstrap is {prior}. Restart after correcting the reported error.");
                 AppDomain.CurrentDomain.SetData(CoordinationKey, "initializing");
                 InitializeOnce(startup, bridges);
@@ -131,14 +133,22 @@ public static class Bootstrap
             throw new InvalidOperationException("Core 在模型反射缓存初始化后加载，请按 BaseLib → Core → 角色 Mod 排列。");
         var requirements = new List<CoreRequirements>();
         var minimumRelease = "1.0.0";
-        foreach (var role in ModManager.Mods.Where(x => x.state == ModLoadState.None && DependsOnCore(x)))
+        var legacy = ModManager.Mods.FirstOrDefault(x => x.manifest?.id == LegacyModId && x.state == ModLoadState.None);
+        var needsLegacyApi = false;
+        foreach (var role in ModManager.Mods.Where(x => x.state == ModLoadState.None))
         {
-            var dependency = role.manifest!.dependencies!.First(x => x.id == ModId);
-            if (dependency.minVersion != null && SemVersion.Parse(dependency.minVersion).CompareTo(SemVersion.Parse(minimumRelease)) > 0) minimumRelease = dependency.minVersion;
+            var manifest = role.manifest;
+            if (manifest?.dependencies == null || manifest.id is ModId or LegacyModId) continue;
+            var dependencies = manifest.dependencies
+                .Where(d => d.id == ModId || (legacy != null && d.id == LegacyModId)).ToArray();
+            if (dependencies.Length == 0) continue;
+            needsLegacyApi |= dependencies.Any(d => d.id == LegacyModId);
+            foreach (var dependency in dependencies)
+                if (dependency.minVersion != null && SemVersion.Parse(dependency.minVersion).CompareTo(SemVersion.Parse(minimumRelease)) > 0) minimumRelease = dependency.minVersion;
             var path = Path.Combine(role.path, "core.requirements");
-            if (!File.Exists(path)) throw new InvalidDataException($"{role.manifest.id} 缺少 core.requirements，请重新安装完整角色包。");
+            if (!File.Exists(path)) throw new InvalidDataException($"{manifest.id} 缺少 core.requirements，请重新安装完整角色包。");
             var requirement = BundleSelection.Read<CoreRequirements>(path);
-            if (requirement.ModId != role.manifest.id) throw new InvalidDataException($"{role.manifest.id} 的 Core 需求身份不一致。");
+            if (requirement.ModId != manifest.id) throw new InvalidDataException($"{manifest.id} 的 Core 需求身份不一致。");
             requirements.Add(requirement);
         }
         startup.Stage = "bundle selection";
@@ -155,7 +165,8 @@ public static class Bootstrap
         if (!candidates.Any(candidate => BundleSelection.SelectTarget(candidate.Bundle, startup.Game, compatibleTarget) != null))
             throw new InvalidOperationException($"No Core bundle provides the {compatibleTarget} runtime for game {startup.Game}. " +
                 $"Checked {string.Join(", ", candidates.Select(candidate => $"{candidate.Bundle.ReleaseVersion}/{candidate.Fingerprint}"))}. 请更新 Core 工坊订阅或 Karen 包。");
-        var selected = BundleSelection.Select(candidates, requirements, startup.Game, baseLib.manifest!.version ?? "0.0.0", minimumRelease, compatibleTarget);
+        var selected = BundleSelection.Select(candidates.Where(candidate => !needsLegacyApi || candidate.Bundle.LegacyApiAssembly != null),
+            requirements, startup.Game, baseLib.manifest!.version ?? "0.0.0", minimumRelease, compatibleTarget);
         var target = BundleSelection.SelectTarget(selected.Bundle, startup.Game, compatibleTarget)!;
         startup.Release = selected.Bundle.ReleaseVersion;
         startup.Baseline = target.Target.MinimumGameVersion;
@@ -166,6 +177,8 @@ public static class Bootstrap
         startup.Stage = "assembly preflight";
         var context = AssemblyLoadContext.GetLoadContext(typeof(Bootstrap).Assembly) ?? AssemblyLoadContext.Default;
         startup.Api = LoadExact(context, BundleSelection.ResolvePath(selected.Root, selected.Bundle.ApiAssembly));
+        if (needsLegacyApi)
+            LoadExact(context, BundleSelection.ResolvePath(selected.Root, selected.Bundle.LegacyApiAssembly!), allowIdenticalCopy: true);
         startup.Runtime = LoadExact(context, BundleSelection.ResolvePath(selected.Root, target.Target.Assembly));
         _ = startup.Api.GetTypes();
         var types = startup.Runtime.GetTypes();
@@ -196,6 +209,16 @@ public static class Bootstrap
         startup.Stage = "runtime initialization";
         initialize.Invoke(null, [startup.Release, startup.Game, startup.Fingerprint]);
         RuntimeTypes = types;
+        if (legacy != null)
+        {
+            legacy.version = _logicalMod.version;
+            legacy.manifest!.version = startup.Release;
+            legacy.manifest.affectsGameplay = false;
+            legacy.state = ModLoadState.Loaded;
+            foreach (var duplicate in ModManager.Mods.Where(x => x != legacy && x.manifest?.id == LegacyModId && Eligible(x)))
+                duplicate.state = ModLoadState.DisabledDuplicate;
+            Log.Info($"[Core startup] Using {LegacyModId} as an alias for Core {startup.Release}; legacy runtime skipped.");
+        }
         Log.Info($"[Core startup] ready {startup}, candidates={candidates.Count}.");
     }
 
@@ -224,13 +247,14 @@ public static class Bootstrap
         return action != null ? "beta" : owner != null ? "main" : "stable";
     }
 
-    private static Assembly LoadExact(AssemblyLoadContext context, string path)
+    private static Assembly LoadExact(AssemblyLoadContext context, string path, bool allowIdenticalCopy = false)
     {
         var identity = AssemblyName.GetAssemblyName(path);
         var existing = context.Assemblies.FirstOrDefault(x => x.GetName().Name == identity.Name);
         if (existing != null)
         {
-            if (!Path.GetFullPath(existing.Location).Equals(path, StringComparison.OrdinalIgnoreCase))
+            if (!Path.GetFullPath(existing.Location).Equals(path, StringComparison.OrdinalIgnoreCase)
+                && !(allowIdenticalCopy && File.ReadAllBytes(existing.Location).AsSpan().SequenceEqual(File.ReadAllBytes(path))))
                 throw new InvalidOperationException($"Core assembly {identity.Name} was loaded before bundle selection.");
             return existing;
         }

@@ -8,14 +8,14 @@ Core 作为独立创意工坊 Mod 发布，仅 Karen 内嵌完整 Core；Junna �
 
 ```powershell
 ./build.ps1 -StableGameDir $StableGame -MainGameDir $MainGame -BetaGameDir $BetaGame -Godot $MegaDot `
-  -TelemetryEndpointPath $LocalEndpointConfig -Version 2.0.0 `
-  -OutputDirectory dist/ShoujoKagekiCore-2.0.0
+  -TelemetryEndpointPath $LocalEndpointConfig -Version 2.0.1 `
+  -OutputDirectory dist/ShoujoKagekiCore-2.0.1
 ```
 
 输出目录包含 Mod 清单、引导 DLL、API、三个目标的 Runtime、资源 PCK、`core.bundle` 和 SDK，可作为完整 Mod 安装到游戏 mods 目录。每次构建使用新输出目录。独立发布与 Karen 内嵌包应同时更新为同一份构建，旧引导器的目标清单只识别 stable 和 beta。
 
 ```powershell
-./sdk/validate-package.ps1 -CorePackage dist/ShoujoKagekiCore-2.0.0 -Strict
+./sdk/validate-package.ps1 -CorePackage dist/ShoujoKagekiCore-2.0.1 -Strict
 ```
 
 严格校验核对发行身份、API 身份、必需文件和 SHA256，并拒绝未列入 `core.bundle` 的额外文件及链接。
@@ -27,16 +27,16 @@ Core 作为独立创意工坊 Mod 发布，仅 Karen 内嵌完整 Core；Junna �
 首次发布：
 
 ```powershell
-./prepare-release.ps1 -CorePackage dist/ShoujoKagekiCore-2.0.0 `
-  -PreviewImage $PreviewPng -OutputDirectory out/releases/2.0.0 `
+./prepare-release.ps1 -CorePackage dist/ShoujoKagekiCore-2.0.1 `
+  -PreviewImage $PreviewPng -OutputDirectory out/releases/2.0.1 `
   -ChangeNote '首次发布'
 ```
 
 更新现有条目时传入已有 Core 工坊 ID，脚本将其写入新工作区的 `mod_id.txt`：
 
 ```powershell
-./prepare-release.ps1 -CorePackage dist/ShoujoKagekiCore-2.0.0 `
-  -PreviewImage $PreviewPng -OutputDirectory out/releases/2.0.0-update `
+./prepare-release.ps1 -CorePackage dist/ShoujoKagekiCore-2.0.1 `
+  -PreviewImage $PreviewPng -OutputDirectory out/releases/2.0.1-update `
   -WorkshopId $CoreWorkshopId -ChangeNote $ReleaseNotes
 ```
 
@@ -64,7 +64,7 @@ ZIP 内以 `ShoujoKagekiCore/` 为顶层目录，可用于手动安装和 Karen 
 首次创建条目：
 
 ```powershell
-./publish-workshop.ps1 -Workspace out/releases/2.0.0/workshop `
+./publish-workshop.ps1 -Workspace out/releases/2.0.1/workshop `
   -Uploader $ModUploader -CreateNew
 ```
 
@@ -73,7 +73,7 @@ ZIP 内以 `ShoujoKagekiCore/` 为顶层目录，可用于手动安装和 Karen 
 更新已有条目：
 
 ```powershell
-./publish-workshop.ps1 -Workspace out/releases/2.0.0-update/workshop `
+./publish-workshop.ps1 -Workspace out/releases/2.0.1-update/workshop `
   -Uploader $ModUploader
 ```
 
@@ -86,7 +86,7 @@ Core 的工坊必需物品为 [BaseLib](https://steamcommunity.com/sharedfiles/f
 Karen 构建使用本次完整 Core 包中的 SDK：
 
 ```powershell
-$CorePackage = 'dist/ShoujoKagekiCore-2.0.0'
+$CorePackage = 'dist/ShoujoKagekiCore-2.0.1'
 & "$CorePackage/sdk/pack-character.ps1" -CorePackage $CorePackage `
   -CharacterDirectory $KarenModDirectory -OutputDirectory $KarenUploadContent `
   -ModId ShoujoKagekiAijoKaren

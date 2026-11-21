@@ -1,8 +1,10 @@
 # ShoujoKagekiCore 使用说明
 
-本文面向使用 Core 的玩家和 Mod 作者，说明 Core 2.0.0 的能力、配置与 API V1 接入方式。SDK 随完整 Core 构建产物提供。
+本文面向使用 Core 的玩家和 Mod 作者，说明 Core 2.0.1 的能力、配置与 API V1 接入方式。SDK 随完整 Core 构建产物提供。
 
-从 1.x 升级时，请移除旧 `ShoujoKagekiAijoCore` 包，并同步更新依赖 Core 的角色包。首次启动会在新配置缺失时继承旧配置，保留已有对局的 Core 存档字段。角色作者需要用 `ShoujoKagekiCore.Api.V1.dll` 重新编译，并将游戏清单的 Core 依赖改为 `ShoujoKagekiCore` 2.0.0 或更新版本。
+Core 2.0.1 支持与已启用的 `ShoujoKagekiAijoCore` 1.x 一起安装。兼容入口允许旧引导将启动交给新版，已发布的 V1 角色 DLL 通过类型转发使用同一份 Runtime。首次启动会在新配置缺失时继承旧配置，保留已有对局的 Core 存档字段。新构建的角色使用 `ShoujoKagekiCore.Api.V1.dll`，游戏清单依赖 `ShoujoKagekiCore`。
+
+升级时用 2.0.1 替换 2.0.0 过渡包。需要单独运行 1.x 时，将 2.x 整包移出游戏加载目录。
 
 引导、服务端、存档与发布方面的实现约定见 [Core 实现文档](docs/IMPLEMENTATION.md)。[GitHub 仓库](https://github.com/backinfile/STS2_ShoujoKagekiCore)
 
