@@ -7,9 +7,9 @@ const num = value => new Intl.NumberFormat('zh-CN').format(value ?? 0);
 const date = value => value ? new Date(value * 1000).toLocaleString('zh-CN', {hour12:false}) : '—';
 const LANGUAGES={eng:'英语',ara:'阿拉伯语',zhs:'简体中文',zht:'繁体中文',deu:'德语',esp:'西班牙语（拉美）',fra:'法语',ind:'印度尼西亚语',ita:'意大利语',jpn:'日语',kor:'韩语',pol:'波兰语',ptb:'葡萄牙语（巴西）',rus:'俄语',spa:'西班牙语（西班牙）',tha:'泰语',tur:'土耳其语',unknown:'未知'};
 const languageName=value=>LANGUAGES[value]??value;
-const VIEW_TITLES={cards:'卡牌统计',compare:'对比模式',characters:'角色统计',runs:'对局记录'};
-const STAT_ENDPOINTS={cards:'api/stats',characters:'api/character-stats',runs:'api/runs'};
-const EXPORT_LABELS={cards:'导出筛选卡牌 CSV ↓',characters:'导出角色统计 CSV ↓',runs:'导出当前页 CSV ↓'};
+const VIEW_TITLES={cards:'卡牌统计',compare:'卡牌统计',characters:'角色统计',languages:'语言统计',runs:'对局记录'};
+const STAT_ENDPOINTS={cards:'api/stats',characters:'api/character-stats',languages:'api/language-stats',runs:'api/runs'};
+const EXPORT_LABELS={cards:'导出筛选卡牌 CSV ↓',characters:'导出角色统计 CSV ↓',languages:'导出语言统计 CSV ↓',runs:'导出当前页 CSV ↓'};
 const CHARACTER_SORTS=['seats','win_rate','wins','avg_floor'];
 const CHARACTER_COLUMNS=['角色','对局数','统计席位','胜率','胜利席位','死亡席位','放弃席位','平均楼层'];
 const OUTCOME = {win:'胜利',death:'死亡',abandon:'放弃'};
@@ -22,10 +22,11 @@ const STARTER_CURSES=new Set(['ASCENDERS_BANE','KAREN_SLEEPY']);
 const CARD_SORTS={name:'卡牌名称',cost:'基础费用',type:'卡牌类型',pick_rate:'记录选中率',win_rate:'曾持有胜率',hold_rate:'持有覆盖率',recorded_offers:'选牌记录',picked:'记录选中次数',offered:'已知结果记录数',held:'持有席位',wins:'胜利席位',unknown_picked:'结果缺失数'};
 const characterName=value=>CHARACTERS[model(value)]??model(value);
 const SERIES = [{key:'pick_rate',label:'记录选中率',color:'#375d4c'},{key:'win_rate',label:'曾持有胜率',color:'#71859b'},{key:'hold_rate',label:'持有覆盖率',color:'#ae884b'}];
-const state = {view:'cards',display:'table',sort:'held',order:-1,card:null,run:null,page:1,stats:null,runs:null,characterStats:null,characterSort:'seats',catalog:{},relics:{},history:null,seat:0,floor:1,loading:false,fresh:false,loadedQuery:null,catalogReady:false,historyId:null};
+const state = {view:'cards',display:'table',sort:'held',order:-1,card:null,run:null,page:1,stats:null,runs:null,characterStats:null,languageStats:null,characterSort:'seats',catalog:{},relics:{},history:null,seat:0,floor:1,loading:false,fresh:false,loadedQuery:null,catalogReady:false,historyId:null};
 const primary={state,$,root:document};
 let historyVersion=0, toastTimer;
 const comparisons={};
+const statisticsCache=new Map(), statisticsRequests=new Map();
 const comparisonURL=new URLSearchParams(location.hash.slice(1));
 const mobile = () => matchMedia('(max-width:800px)').matches;
 const listOf = value => Array.isArray(value) ? value : [];
@@ -62,24 +63,70 @@ function exportState(scope=primary){
  $('export').textContent=EXPORT_LABELS[state.view]??EXPORT_LABELS.cards;
  $('exportImage').disabled=disabled||!scope.shownGroups?.length||Boolean(scope.exportingImage);
 }
+function stopLoad(scope){
+ clearTimeout(scope.filterTimer);
+ scope.controller?.abort();
+ scope.requestVersion=(scope.requestVersion??0)+1;
+ scope.pendingKey=null;
+ scope.state.loading=false;
+ scope.state.fresh=false;
+}
+function showLoading(scope){
+ const {state,$}=scope;
+ state.loading=true;state.fresh=false;exportState(scope);
+ $('connection').textContent='更新中…';$('connection').className='connection';
+ $('refresh').disabled=true;
+ if(scope.cardsOnly)comparisonStatus();
+}
+function scheduleLoad(scope=primary){
+ stopLoad(scope);showLoading(scope);
+ scope.filterTimer=setTimeout(()=>load(scope,{force:false}),180);
+}
+async function statisticsData(key,signal,force){
+ let request=statisticsRequests.get(key);
+ if(!request){
+  const cached=statisticsCache.get(key);
+  if(!force&&cached&&Date.now()-cached.time<30000)return cached.data;
+  request={controller:new AbortController(),readers:0};
+  request.promise=api(key,request.controller.signal).then(data=>{
+   if(request.controller.signal.aborted)throw request.controller.signal.reason;
+   statisticsCache.delete(key);
+   statisticsCache.set(key,{time:Date.now(),data});
+   if(statisticsCache.size>12)statisticsCache.delete(statisticsCache.keys().next().value);
+   return data;
+  }).finally(()=>{if(statisticsRequests.get(key)===request)statisticsRequests.delete(key);});
+  statisticsRequests.set(key,request);
+ }
+ request.readers++;
+ const release=()=>{
+  if(--request.readers===0&&statisticsRequests.get(key)===request){
+   statisticsRequests.delete(key);
+   request.controller.abort();
+  }
+ };
+ signal.addEventListener('abort',release,{once:true});
+ try{return await request.promise;}
+ finally{signal.removeEventListener('abort',release);if(!signal.aborted)release();}
+}
 async function load(scope=primary,{force=true}={}){
  const {state,$}=scope;
- if(!scope.cardsOnly&&state.view==='compare'){render();return;}
+ clearTimeout(scope.filterTimer);
+ if(!scope.cardsOnly&&state.view==='compare'){openComparison();return;}
  const view=scope.cardsOnly?'cards':state.view,cards=view==='cards',query=params(scope);query.set('character',$('character').value);
  if(view==='runs'){query.set('page',state.page);query.set('outcome',$('outcome').value);}
+ query.sort();
  const key=STAT_ENDPOINTS[view]+'?'+query;
  if(state.loading&&scope.pendingKey===key)return;
  scope.controller?.abort();scope.controller=new AbortController();scope.pendingKey=key;
  const version=scope.requestVersion=(scope.requestVersion??0)+1;
- scope.cache??=new Map();if(force)scope.cache.clear();
- state.loading=true;state.fresh=false;state.cardLimit=60;exportState(scope);$('connection').textContent='更新中…';$('connection').className='connection';$('refresh').disabled=true;
- render(scope);if(scope.cardsOnly)comparisonStatus();
+ const signal=scope.controller.signal;
+ state.cardLimit=60;showLoading(scope);
  try{
-  const cached=scope.cache.get(key),data=!force&&cached&&Date.now()-cached.time<30000?cached.data:await api(key,scope.controller.signal);
-  if(version!==scope.requestVersion)return;
-  scope.cache.set(key,{time:Date.now(),data});if(scope.cache.size>6)scope.cache.delete(scope.cache.keys().next().value);
+  const data=await statisticsData(key,signal,force);
+  if(signal.aborted||version!==scope.requestVersion)return;
   if(cards)state.stats=data;
   else if(view==='characters')state.characterStats=data;
+  else if(view==='languages')state.languageStats=data;
   else{state.runs=data;state.page=data.page;query.set('page',state.page);}
   state.loadedQuery=new URLSearchParams(query);state.fresh=true;
   const filters=cards?data:data.filters??{};
@@ -90,7 +137,7 @@ async function load(scope=primary,{force=true}={}){
   if(cards){const owner=$('owner');for(const card of data.cards)if(card.owner&&owner?.options&&!Array.from(owner.options).some(option=>option.value===card.owner))owner.add(new Option(card.owner_name??card.owner,card.owner));}
   $('error').hidden=true;$('connection').textContent='已更新';$('connection').className='connection ok';$('updated').textContent='更新于 '+new Date().toLocaleTimeString('zh-CN',{hour12:false});
   render(scope);syncURL(scope);
- }catch(error){if(version!==scope.requestVersion||error.name==='AbortError')return;$('connection').textContent='更新失败';$('error').hidden=false;$('error').textContent=(error.name==='TimeoutError'?'连接超时，请重试':error.message)+'。当前保留上次结果，刷新成功后可导出。';}
+ }catch(error){if(signal.aborted||version!==scope.requestVersion||error.name==='AbortError')return;$('connection').textContent='更新失败';$('error').hidden=false;$('error').textContent=(error.name==='TimeoutError'?'连接超时，请重试':error.message)+'。当前保留上次结果，刷新成功后可导出。';}
  finally{if(version===scope.requestVersion){state.loading=false;scope.pendingKey=null;$('refresh').disabled=false;exportState(scope);if(scope.cardsOnly)comparisonStatus();}}
 }
 function filteredCards(scope=primary){
@@ -112,24 +159,35 @@ function cardGroups(rows,scope=primary){
 function render(scope=primary){
  const {state,$}=scope;
  const s=state.stats;if(s){
- renderLanguages(s,scope);
  const cohort=s.character&&s.character!=='all'?characterName(s.character):'全部角色';
  $('summary').innerHTML=[['已收对局',num(s.runs)],['统计席位',num(s.seats)],['胜利 / 未胜',num(s.wins)+' / '+num(s.seats-s.wins)],['有记录卡牌',num(s.cards.length)]].map(([label,value])=>'<div><span>'+label+'</span><strong>'+value+'</strong></div>').join('')+'<div class="latest"><span>最近接收</span><strong>'+date(s.latest_received)+'</strong></div>';
  $('cohort').innerHTML='<span>'+esc(cohort)+' · '+num(s.seats)+' 个席位 · 排除 '+num(s.excluded)+' 个早期放弃席位'+(s.seats<20?' · 当前样本较少，请结合分母阅读':'')+'</span><span>'+(s.card_limit_reached?'已达到 4,096 种卡牌显示上限 · ':'')+'选牌结果缺失 '+num(s.missing_picked)+' 项</span>';
  }
  if(scope.cardsOnly){renderCards(scope);exportState(scope);return;}
- document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.view===state.view));
- const compare=state.view==='compare';$('cardsView').hidden=state.view!=='cards';$('runsView').hidden=state.view!=='runs';$('charactersView').hidden=state.view!=='characters';$('compareView').hidden=!compare;$('filters').hidden=compare;const toggle=$('filters').previousElementSibling;if(toggle?.classList.contains('filter-toggle'))toggle.hidden=compare;$('summary').hidden=state.view!=='cards';$('languageSummary').hidden=state.view!=='cards'||!s?.language_distribution?.length;$('error').hidden=compare||state.fresh;$('export').hidden=compare;$('pageTitle').textContent=VIEW_TITLES[state.view];
- if(compare)openComparison();
+ const compare=state.view==='compare',page=compare?'cards':state.view;
+ document.querySelectorAll('.topbar [data-view]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.view===page));
+ $('cardViews').hidden=page!=='cards';
+ $('cardViews').querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.view===state.view));
+ $('cardsView').hidden=state.view!=='cards';$('runsView').hidden=state.view!=='runs';
+ $('charactersView').hidden=state.view!=='characters';$('languagesView').hidden=state.view!=='languages';
+ $('compareView').hidden=!compare;$('filters').hidden=compare;
+ const toggle=$('filters').previousElementSibling;if(toggle?.classList.contains('filter-toggle'))toggle.hidden=compare;
+ $('summary').hidden=state.view!=='cards';$('error').hidden=compare||state.fresh;
+ $('export').hidden=compare;$('pageTitle').textContent=VIEW_TITLES[state.view];
  if(state.view==='cards'){if(s)renderCards();else $('cards').innerHTML=empty('加载中','');}
  if(state.view==='runs'){if(state.runs)renderRuns();else $('runs').innerHTML=empty('加载中','');}
  if(state.view==='characters')renderCharacterStats();
+ if(state.view==='languages')renderLanguages();
  exportState();
 }
-function renderLanguages(stats,scope=primary){
- const panel=scope.$('languageSummary'),rows=listOf(stats.language_distribution);
- panel.hidden=!rows.length;
- panel.innerHTML=rows.length?'<h2>对局语言</h2><ul>'+rows.map(row=>'<li><span>'+esc(languageName(row.language))+'</span><strong>'+num(row.runs)+' 局</strong><span>'+pct(row.share)+'</span></li>').join('')+'</ul>':'';
+function renderLanguages(){
+ const stats=state.languageStats,rows=listOf(stats?.language_distribution);
+ $('languageStats').innerHTML=rows.length?'<table><caption>共 '+num(stats.language_total_runs)+
+  ' 局</caption><thead><tr><th scope="col">游戏语言</th><th scope="col">对局数</th><th scope="col">占比</th></tr></thead><tbody>'+
+  rows.map(row=>'<tr><th scope="row">'+esc(languageName(row.language))+'</th><td>'+num(row.runs)+
+   '</td><td><span class="language-share"><strong>'+pct(row.share)+'</strong><meter min="0" max="1" value="'+
+   esc(row.share)+'" aria-hidden="true"></meter></span></td></tr>').join('')+'</tbody></table>':
+  stats?empty('没有匹配的语言统计','扩大接收时间范围或调整筛选'):empty('加载中','');
 }
 function empty(text='暂无收到的对局',sub='新对局上传后会出现在这里'){return '<div class="empty"><strong>'+text+'</strong><p>'+sub+'</p></div>';}
 function renderCards(scope=primary){
@@ -381,14 +439,15 @@ async function downloadStatisticsImage(scope=primary){
 function csv(scope=primary){
  const {state,$}=scope;
  if(state.loading||!state.fresh||!state.loadedQuery){toast('请先刷新并成功加载当前筛选结果');return;}
- const rows=state.view==='characters'?[['角色 ID',...CHARACTER_COLUMNS],...characterRows().map(r=>[r.character,characterName(r.character),r.runs,r.seats,pct(r.win_rate),r.wins,r.deaths,r.abandons,r.avg_floor.toFixed(1)])]:
+ const rows=state.view==='languages'?[['语言代码','游戏语言','对局数','占比'],...state.languageStats.language_distribution.map(row=>[row.language,languageName(row.language),row.runs,pct(row.share)])]:
+  state.view==='characters'?[['角色 ID',...CHARACTER_COLUMNS],...characterRows().map(r=>[r.character,characterName(r.character),r.runs,r.seats,pct(r.win_rate),r.wins,r.deaths,r.abandons,r.avg_floor.toFixed(1)])]:
   state.view==='cards'?[['模型ID','卡名','归属','类型','稀有度','基础费用','记录选中次数','已知结果记录数','记录选中率','曾持有胜利席位','曾持有席位','曾持有胜率','统计席位','持有覆盖率','选牌条目','明确选中','选牌结果缺失'],...filteredCards(scope).map(c=>[c.id,c.name,c.owner_name??'其他',c.type,c.rarity,c.cost,c.picked,c.offered,pct(c.pick_rate),c.wins,c.held,pct(c.win_rate),state.stats.seats,pct(c.hold_rate),c.recorded_offers,c.recorded_picked,c.unknown_picked])]:[['接收时间','开始时间','结果','楼层','进阶','人数','版本','对局ID','游戏模式'],...(state.runs?.items??[]).map(r=>[date(r.received_at),date(r.start_time),OUTCOME[r.outcome],r.floor,r.ascension,r.player_count,r.build,r.id,modeName(r.mode)])];
  const cell=v=>{const text=String(v??'');return '"'+(/^[\u0000-\u0020]*[=+@\-]|^[\t\r\n]/.test(text)?"'"+text:text).replaceAll('"','""')+'"';};
  const filters=[...state.loadedQuery].filter(([key])=>state.view==='runs'||!['page','outcome'].includes(key));
  if(state.view==='cards')for(const key of ['search','owner','type','rarity','starters','group'])filters.push([key,$(key).value]);
  if(state.view==='characters')filters.push(['sort',state.characterSort]);
- else filters.push(['sort',state.sort],['order',state.order],['pick_policy','native_known_choices_all_sources']);
- save('core-'+state.view+'.csv',new Blob(['\ufeff'+[...filters,[],...rows].map(r=>r.map(cell).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'}));toast(state.view==='characters'?'已导出角色统计':state.view==='runs'?'已导出当前页对局':'已导出筛选后的卡牌');
+ else if(state.view!=='languages')filters.push(['sort',state.sort],['order',state.order],['pick_policy','native_known_choices_all_sources']);
+ save('core-'+state.view+'.csv',new Blob(['\ufeff'+[...filters,[],...rows].map(r=>r.map(cell).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'}));toast(state.view==='languages'?'已导出语言统计':state.view==='characters'?'已导出角色统计':state.view==='runs'?'已导出当前页对局':'已导出筛选后的卡牌');
 }
 function comparisonSides(){return matchMedia('(max-width:900px)').matches?[$('comparison').dataset.side??'left']:['left','right'];}
 function comparisonStatus(){
@@ -397,7 +456,7 @@ function comparisonStatus(){
  $('refresh').disabled=loading;$('connection').textContent=loading?'更新中…':fresh?'已更新':'等待更新';$('connection').className='connection'+(fresh&&!loading?' ok':'');
 }
 function openComparison(){
- const sides=comparisonSides();for(const [side,scope] of Object.entries(comparisons))if(!sides.includes(side))scope.controller?.abort();
+ const sides=comparisonSides();for(const [side,scope] of Object.entries(comparisons))if(!sides.includes(side))stopLoad(scope);
  for(const side of sides){
   if(comparisons[side]){load(comparisons[side],{force:false});continue;}
   const seed=params();for(const key of ['search','owner','type','rarity','starters','group'])seed.set(key,$(key).value);
@@ -405,7 +464,7 @@ function openComparison(){
   const saved=comparisonURL.get(side),initial=new URLSearchParams(saved&&saved.length<=8000?saved:seed);
   const root=document.createElement('section');root.className='comparison-pane';root.setAttribute('aria-label',side==='left'?'左侧卡牌统计':'右侧卡牌统计');
   root.innerHTML='<header class="comparison-header"><h2>'+(side==='left'?'左侧':'右侧')+'</h2><span id="connection" class="connection" role="status">连接中</span><button id="refresh">刷新</button><button id="export" disabled>导出筛选卡牌 CSV ↓</button></header>';
-  for(const id of ['filters','summary','languageSummary','error','cardsView','cardSheet']){const clone=$(id).cloneNode(true);clone.hidden=id==='error';clone.removeAttribute('open');root.append(clone);}
+  for(const id of ['filters','summary','error','cardsView','cardSheet']){const clone=$(id).cloneNode(true);clone.hidden=id==='error';clone.removeAttribute('open');root.append(clone);}
   const updated=document.createElement('div');updated.id='updated';updated.className='comparison-updated';root.append(updated);
   const controls=new Map();root.querySelectorAll('[id]').forEach(node=>{const id=node.id;controls.set(id,node);node.dataset.control=id;node.id='compare-'+side+'-'+id;});
   root.querySelectorAll('[aria-labelledby]').forEach(node=>node.setAttribute('aria-labelledby',node.getAttribute('aria-labelledby').split(' ').map(id=>controls.get(id)?.id??id).join(' ')));
@@ -426,20 +485,26 @@ function openComparison(){
    if(b?.dataset.sort){scope.state.order=scope.state.sort===b.dataset.sort?-scope.state.order:-1;scope.state.sort=b.dataset.sort;renderCards(scope);syncURL(scope);return;}
    const card=event.target.closest('[data-card]');if(card)selectCard(card.dataset.card,scope);
   });
-  const changed=event=>{event.stopPropagation();const id=event.target.dataset.control;if(scope.$('filters').contains(event.target)){syncURL(scope);load(scope);}else if(['search','owner','type','rarity','starters','group','sort'].includes(id)){if(id==='sort')scope.state.sort=event.target.value;renderCards(scope);syncURL(scope);}};
+  const changed=event=>{event.stopPropagation();const id=event.target.dataset.control;if(scope.$('filters').contains(event.target)){syncURL(scope);scheduleLoad(scope);}else if(['search','owner','type','rarity','starters','group','sort'].includes(id)){if(id==='sort')scope.state.sort=event.target.value;renderCards(scope);syncURL(scope);}};
   root.addEventListener('change',changed);scope.$('search').addEventListener('input',changed);scope.$('filters').addEventListener('submit',event=>event.preventDefault());
   $('comparison').append(root);window.enhanceFilters?.(scope.$('filters'));syncURL(scope);load(scope,{force:false});
  }
 }
 async function refreshComparison(){
- $('refresh').disabled=true;await Promise.all(comparisonSides().map(side=>load(comparisons[side])));$('refresh').disabled=false;
+ $('refresh').disabled=true;await Promise.all(comparisonSides().map(side=>load(comparisons[side])));
+ if(state.view!=='compare')return;
+ $('refresh').disabled=false;
  const fresh=comparisonSides().every(side=>comparisons[side]?.state.fresh);$('connection').textContent=fresh?'已更新':'更新失败';$('connection').className='connection'+(fresh?' ok':'');
 }
 document.addEventListener('click',event=>{
  if(event.target.closest('.comparison-pane'))return;
  const b=event.target.closest('button');
  if(b?.dataset.close){$(b.dataset.close).close();return;}
- if(b?.dataset.view){primary.controller?.abort();for(const scope of Object.values(comparisons))scope.controller?.abort();state.view=b.dataset.view;render();syncURL();if(state.view!=='compare')load(primary,{force:false});return;}
+ if(b?.dataset.view){
+  if(state.view===b.dataset.view)return;
+  stopLoad(primary);for(const scope of Object.values(comparisons))stopLoad(scope);
+  state.view=b.dataset.view;render();syncURL();load(primary,{force:false});return;
+ }
  if(b?.dataset.compareSide){$('comparison').dataset.side=b.dataset.compareSide;document.querySelectorAll('[data-compare-side]').forEach(button=>button.setAttribute('aria-pressed',button===b));openComparison();syncURL();return;}
  if(b?.dataset.display){state.display=b.dataset.display;renderCards();syncURL();return;}
  if(b?.id==='sortOrder'){state.order=-state.order;renderCards();syncURL();return;}
@@ -447,7 +512,7 @@ document.addEventListener('click',event=>{
  if(b?.dataset.history){openHistory(b.dataset.history);return;}
  if(b?.dataset.raw){raw(b.dataset.raw);return;}
  if(b?.hasAttribute('data-more')){state.cardLimit=(state.cardLimit??60)+60;renderCards();return;}
- if(b?.dataset.page){state.page=Number(b.dataset.page);load();return;}
+ if(b?.dataset.page){state.page=Number(b.dataset.page);load(primary,{force:false});return;}
  if(b?.dataset.floor){state.floor=Number(b.dataset.floor);renderFloor();syncURL();if(mobile())$('floorDetail').scrollIntoView({block:'nearest'});return;}
  if(b?.dataset.inspect){const c=meta(b.dataset.inspect);$('floorDetail').innerHTML=image(c,'hero')+'<h3>'+esc(c.name)+'</h3><p>'+esc(c.id)+'</p><p>'+esc([c.type,c.rarity].filter(Boolean).join(' · '))+'</p><button id="backFloor">返回楼层</button>';if(mobile())$('floorDetail').scrollIntoView({block:'nearest'});return;}
  if(b?.id==='backFloor'){renderFloor();return;}
@@ -455,16 +520,16 @@ document.addEventListener('click',event=>{
  const run=event.target.closest('[data-run]');if(run){state.run=run.dataset.run;$('runs').querySelectorAll('[data-run]').forEach(row=>row.classList.toggle('selected',row.dataset.run===state.run));renderRunDetail();syncURL();if(mobile())openHistory(state.run);}
 });
 $('filters').addEventListener('submit',e=>e.preventDefault());
-$('filters').addEventListener('change',()=>{state.page=1;syncURL();load();});
+$('filters').addEventListener('change',()=>{state.page=1;syncURL();scheduleLoad();});
 $('characterSort').addEventListener('change',event=>{state.characterSort=event.target.value;renderCharacterStats();syncURL();});
-$('outcome').addEventListener('change',()=>{state.page=1;syncURL();load();});
+$('outcome').addEventListener('change',()=>{state.page=1;syncURL();scheduleLoad();});
 document.addEventListener('change',event=>{if(event.target.id==='historySeat'){state.seat=Number(event.target.value);renderHistory();syncURL();}});
 let searchTimer;for(const id of ['search','owner','type','rarity','starters','group'])$(id).addEventListener(id==='search'?'input':'change',()=>{clearTimeout(searchTimer);const update=()=>{state.cardLimit=60;renderCards();syncURL();};if(id==='search')searchTimer=setTimeout(update,150);else update();});
 $('sort').innerHTML=Object.entries(CARD_SORTS).map(([key,label])=>'<option value="'+key+'">'+label+'</option>').join('');
 $('sort').addEventListener('change',()=>{state.sort=$('sort').value;renderCards();syncURL();});
 function refreshActive(){return state.view==='compare'?refreshComparison():load();}
 $('refresh').addEventListener('click',refreshActive);
-window.addEventListener('observatory:refresh',refreshActive);
+window.addEventListener('observatory:refresh',()=>state.view==='compare'?openComparison():load(primary,{force:false}));
 matchMedia('(max-width:900px)').addEventListener('change',()=>{if(state.view==='compare')openComparison();});$('rules').addEventListener('click',rules);$('export').addEventListener('click',()=>csv());
 $('exportImage').addEventListener('click',()=>downloadStatisticsImage());
 $('history').addEventListener('close',()=>{historyVersion++;primary.historyController?.abort();state.historyId=null;syncURL();});

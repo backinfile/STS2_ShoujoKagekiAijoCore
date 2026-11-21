@@ -127,5 +127,46 @@ class WebDeliveryTests(unittest.TestCase):
         self.assertEqual(get("&language=jpn")["rows"], [])
 
 
+    def test_language_stats_backfills_and_tracks_windows_without_loading_cards(self):
+        data = fixture() | {"seed": "mixed-language", "core_telemetry": context() | {"language": "zhs"}}
+        data["players"].extend([{"id": 2, "character": "CHARACTER.KAREN"},
+                                {"id": 3, "character": "CHARACTER.JUNNA"}])
+        status, result = self.store.upload(data)
+        self.assertEqual(status, 201)
+        early = fixture() | {"seed": "early-language", "win": False, "was_abandoned": True,
+                             "core_telemetry": context() | {"language": "eng"}}
+        self.assertEqual(self.store.upload(early)[0], 201)
+        expected = self.store.stats({"days": ["0"], "character": ["KAREN"]})["language_distribution"]
+
+        # An existing collector database may predate the projection.
+        with self.store.connect() as db:
+            for table in ("stats_characters", "stats_sources", "stats_runs"):
+                db.execute("DELETE FROM " + table)
+        self.server.store = self.store = Store(self.store.path)
+        self.store.stats = lambda query: self.fail("language stats must not aggregate cards")
+        path = "/api/language-stats?days=0&character=KAREN"
+        self.assertEqual(self.request(path, authorized=False)[0], 404)
+
+        def get(suffix=""):
+            status, headers, raw = self.request(path + suffix)
+            self.assertEqual(status, 200)
+            self.assertEqual(headers["Cache-Control"], "no-store")
+            return json.loads(raw)
+
+        self.assertEqual(get()["language_distribution"], expected)
+        self.assertEqual(get("&players=3&source_mod=Example")["language_distribution"],
+                         [{"language": "zhs", "runs": 1, "share": 1}])
+        self.assertEqual(get("&sample=all")["language_total_runs"], 3)
+        self.assertEqual(get("&language=jpn")["language_distribution"], [])
+
+        # Maintenance commands update facts in-place, including when using an older collector.
+        with self.store.connect() as db:
+            db.execute("UPDATE runs SET facts=json_set(facts, '$.core_telemetry.language', 'jpn') WHERE id=?",
+                       (result["run_id"],))
+        self.assertEqual(get("&language=jpn")["language_distribution"],
+                         [{"language": "jpn", "runs": 1, "share": 1}])
+        self.assertEqual(get("&language=zhs")["language_total_runs"], 0)
+
+
 if __name__ == '__main__':
     unittest.main()

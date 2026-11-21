@@ -39,17 +39,16 @@ const cards = [
   {id:'COORDINATE',name:'协作',owner:'colorless',owner_name:'无色',rarity:'普通',type:'技能',cost:1,held:1,wins:0,picked:1,offered:2,pick_rate:.5,win_rate:0,hold_rate:1,recorded_offers:3,recorded_picked:1,unknown_picked:1},
 ];
 context.sample = {cards,seats:1,runs:1,wins:1,excluded:0,missing_picked:1,builds:[],latest_received:null};
-run(`renderLanguages({language_distribution:[{language:'zhs',runs:2,share:.5},{language:'eng',runs:1,share:.25},{language:'unknown',runs:1,share:.25}]})`);
-assert.equal(node('languageSummary').hidden,false);
-assert.ok(node('languageSummary').innerHTML.includes('简体中文'));
-assert.ok(node('languageSummary').innerHTML.includes('2 局'));
-assert.ok(node('languageSummary').innerHTML.includes('50.0%'));
-assert.ok(node('languageSummary').innerHTML.includes('未知'));
-run(`renderLanguages({language_distribution:[{language:'<img src=x>',runs:1,share:1}]})`);
-assert.ok(!node('languageSummary').innerHTML.includes('<img'));
-assert.ok(node('languageSummary').innerHTML.includes('&lt;img'));
-run('renderLanguages({})');
-assert.equal(node('languageSummary').hidden,true);
+run(`state.languageStats={language_total_runs:4,language_distribution:[{language:'zhs',runs:2,share:.5},{language:'eng',runs:1,share:.25},{language:'unknown',runs:1,share:.25}]};renderLanguages()`);
+assert.ok(node('languageStats').innerHTML.includes('简体中文'));
+assert.ok(node('languageStats').innerHTML.includes('4 局'));
+assert.ok(node('languageStats').innerHTML.includes('50.0%'));
+assert.ok(node('languageStats').innerHTML.includes('未知'));
+run(`state.languageStats={language_total_runs:1,language_distribution:[{language:'<img src=x>',runs:1,share:1}]};renderLanguages()`);
+assert.ok(!node('languageStats').innerHTML.includes('<img'));
+assert.ok(node('languageStats').innerHTML.includes('&lt;img'));
+run('state.languageStats={};renderLanguages()');
+assert.match(node('languageStats').innerHTML,/没有匹配的语言统计/);
 console.log('PASS language distribution labels, counts, percentages, escaping and empty state');
 (async()=>{
   run(`state.stats=sample;state.runs={items:[],page:1,total:0,page_size:20};
@@ -230,6 +229,52 @@ console.log('PASS language distribution labels, counts, percentages, escaping an
   assert.match(roles.innerHTML,/没有匹配的角色统计/);
   assert.equal(node('characterSort').disabled,true);
   console.log('PASS role view, numerical sorting, CSV and empty state');
+  context.languageResponse={language_total_runs:2,language_distribution:[{language:'zhs',runs:1,share:.5},{language:'unknown',runs:1,share:.5}],filters:{languages:['unknown','zhs']}};
+  run(`state.view='languages';api=async path=>{requests.push(path);return languageResponse;}`);
+  await run('load()');
+  assert.ok(context.requests.some(path=>path.startsWith('api/language-stats?')));
+  assert.equal(node('languagesView').hidden,false);
+  assert.equal(node('cardViews').hidden,true);
+  run('csv()');
+  const languageCsv=await context.saved.text();
+  assert.ok(languageCsv.includes('"zhs","简体中文","1","50.0%"'));
+  console.log('PASS dedicated language view and CSV');
+
+  context.pending=[];
+  run("api=(path,signal)=>new Promise(resolve=>pending.push({path,signal,resolve}));");
+  const first=new AbortController(),second=new AbortController();
+  context.firstSignal=first.signal;
+  context.secondSignal=second.signal;
+  const left=run("statisticsData('same-query',firstSignal,false)");
+  const right=run("statisticsData('same-query',secondSignal,false)");
+  assert.equal(context.pending.length,1,'comparison panes with the same query share one fetch');
+  first.abort();
+  assert.equal(context.pending[0].signal.aborted,false,'an active pane keeps the shared fetch alive');
+  context.pending[0].resolve(context.sample);
+  await Promise.all([left,right]);
+  assert.equal(await run("statisticsData('same-query',secondSignal,false)"),context.sample);
+  assert.equal(context.pending.length,1,'reselecting recent filters is served from cache');
+  const refreshed=run("statisticsData('same-query',secondSignal,true)");
+  assert.equal(context.pending.length,2,'explicit refresh bypasses cache');
+  context.pending[1].resolve(context.sample);
+  await refreshed;
+
+  const timers=new Map();
+  let timerId=0;
+  context.setTimeout=(callback,delay)=>{if(delay===180){timers.set(++timerId,callback);return timerId;}return 0;};
+  context.clearTimeout=id=>{timers.delete(id);};
+  run("params=()=>new URLSearchParams({build:'debounce-before'});scheduleLoad()");
+  run("params=()=>new URLSearchParams({build:'debounce-after'});scheduleLoad()");
+  assert.equal(node('export').disabled,true,'pending filters disable export immediately');
+  assert.equal(context.pending.length,2);
+  assert.equal(timers.size,1,'consecutive changes reschedule the same pending load');
+  const filteredLoad=[...timers.values()][0]();
+  assert.equal(context.pending.length,3);
+  assert.ok(context.pending[2].path.includes('build=debounce-after'));
+  context.pending[2].resolve(context.languageResponse);
+  await filteredLoad;
+  console.log('PASS shared in-flight requests, recent cache, explicit refresh and coalesced filters');
+
   run("state.view='cards'");
 
 })().catch(error=>{console.error(error);process.exitCode=1});

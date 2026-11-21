@@ -25,7 +25,7 @@ def build(output):
     if output.exists():
         raise ValueError("Release output already exists")
     output.mkdir(parents=True)
-    for name in ("app.py", "error_reports.py", "error_retention.py", "protocol.py", "raw_archive.py"):
+    for name in ("app.py", "error_reports.py", "error_retention.py", "protocol.py", "raw_archive.py", "read_index.py"):
         shutil.copy2(root / "services/telemetry" / name, output / name)
     shutil.copytree(root / "web/telemetry", output / "web")
     stamp_web_assets(output / "web")

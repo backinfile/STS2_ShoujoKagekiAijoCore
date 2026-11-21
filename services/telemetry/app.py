@@ -22,6 +22,7 @@ from urllib.parse import parse_qs, urlsplit
 
 from protocol import core_context, language_code
 from raw_archive import RawArchive, utc_day
+import read_index
 from error_reports import ErrorStore, ErrorLimiter, InvalidError, MAX_BODY as MAX_ERROR_BODY
 
 ROOT = Path(__file__).resolve().parent
@@ -295,6 +296,13 @@ def derive(data, strict_display=True):
             "core_telemetry": context}
 
 
+def language_distribution(counts):
+    total = sum(counts.values())
+    rows = [{"language": language, "runs": runs, "share": runs / total}
+            for language, runs in sorted(counts.items(), key=lambda pair: (pair[0] == "unknown", -pair[1], pair[0]))]
+    return {"language_distribution": rows, "language_total_runs": total}
+
+
 class Store:
     def __init__(self, path, raw_root=None, raw_limit=None):
         self.path = Path(path)
@@ -317,6 +325,7 @@ class Store:
             if "source" not in {row[1] for row in db.execute("PRAGMA table_info(submissions)")}:
                 db.execute("ALTER TABLE submissions ADD COLUMN source TEXT NOT NULL DEFAULT 'request'")
             db.execute("CREATE INDEX IF NOT EXISTS submissions_run ON submissions(run_id,status,received)")
+            read_index.initialize(db)
         self.errors = ErrorStore(self)
 
     @contextmanager
@@ -374,7 +383,7 @@ class Store:
         return 201, {"status": "ok", "run_id": rid,
                      "quality": {"missing_was_picked": facts["missing_picked"]}}
 
-    def where(self, query, include_outcome=False):
+    def where(self, query, *, include_outcome=False, include_character=False, include_sample=False):
         clauses, values = [], []
         try:
             days = int(query.get("days", ["7"])[0])
@@ -396,17 +405,18 @@ class Store:
         if include_outcome and query.get("outcome", ["all"])[0] != "all":
             clauses.append("outcome=?")
             values.append(query["outcome"][0])
-        if include_outcome and query.get("character", ["all"])[0] != "all":
-            character = model(query["character"][0])
-            clauses.append("EXISTS (SELECT 1 FROM json_each(runs.facts, '$.seats') AS seat "
-                           "WHERE json_extract(seat.value, '$.character')=?)")
-            values.append(character)
+        if include_character and query.get("character", ["all"])[0] != "all":
+            clauses.append("runs.id IN (SELECT run_id FROM stats_characters WHERE character=?)")
+            values.append(model(query["character"][0]))
+        if include_sample and query.get("sample", ["codex"])[0] != "all":
+            clauses.append("NOT (outcome='abandon' AND floor<=?)")
+            values.append(EARLY_ABANDON_FLOOR)
         for key in ("core_version", "game_target"):
             value = query.get(key, ["all"])[0]
             if len(value) > 120:
                 raise Invalid("invalid_filter")
             if value != "all":
-                clauses.append("json_extract(facts, '$.core_telemetry." + key + "')=?")
+                clauses.append(f"runs.id IN (SELECT run_id FROM stats_runs WHERE {key}=?)")
                 values.append(value)
         language = query.get("language", ["all"])[0]
         if language != "all":
@@ -414,13 +424,13 @@ class Store:
                 language_code(language)
             except ValueError as exc:
                 raise Invalid(str(exc)) from exc
-            clauses.append("COALESCE(json_extract(facts, '$.core_telemetry.language'), 'unknown')=?")
+            clauses.append("runs.id IN (SELECT run_id FROM stats_runs WHERE language=?)")
             values.append(language)
         source = query.get("source_mod", ["all"])[0]
         if len(source) > 180:
             raise Invalid("invalid_filter")
         if source != "all":
-            clauses.append("EXISTS (SELECT 1 FROM json_each(runs.facts, '$.core_telemetry.source_mods') AS mod WHERE json_extract(mod.value, '$.id')=?)")
+            clauses.append("runs.id IN (SELECT run_id FROM stats_sources WHERE source_mod=?)")
             values.append(source)
         return (" WHERE " + " AND ".join(clauses) if clauses else ""), values
 
@@ -432,7 +442,7 @@ class Store:
             "players": [{"id": s["id"], "character": s["character"]} for s in facts["seats"]]}
 
     def runs(self, query):
-        where, values = self.where(query, include_outcome=True)
+        where, values = self.where(query, include_outcome=True, include_character=True)
         try:
             page = max(1, min(1000000, int(query.get("page", ["1"])[0])))
         except ValueError as exc:
@@ -446,114 +456,103 @@ class Store:
 
     def run_filters(self, query):
         where, values = self.where(query)
+        cohort = "SELECT id FROM runs" + where
         with self.connect() as db:
             builds = [r[0] for r in db.execute("SELECT DISTINCT build FROM runs ORDER BY build DESC")]
-            # Read only filter fields; card aggregation is exclusive to the statistics view.
-            rows = db.execute("SELECT json_extract(facts, '$.core_telemetry') AS context, "
-                              "(SELECT json_group_array(json_extract(value, '$.character')) "
-                              "FROM json_each(runs.facts, '$.seats')) AS characters FROM runs" + where, values)
-            characters, core_versions, source_mods, languages = set(), set(), set(), set()
-            for row in rows:
-                context = json.loads(row["context"]) if row["context"] else {}
-                languages.add(context.get("language", "unknown"))
-                characters.update(json.loads(row["characters"]))
-                if context.get("core_version"):
-                    core_versions.add(context["core_version"])
-                source_mods.update(mod["id"] for mod in context.get("source_mods", []))
-        return {"builds": builds, "characters": sorted(characters),
-                "core_versions": sorted(core_versions), "source_mods": sorted(source_mods), "languages": sorted(languages)}
+            characters = db.execute("SELECT DISTINCT character FROM stats_characters WHERE run_id IN (" + cohort + ")", values)
+            sources = db.execute("SELECT DISTINCT source_mod FROM stats_sources WHERE run_id IN (" + cohort + ")", values)
+            meta = db.execute("SELECT DISTINCT language,core_version,game_target FROM stats_runs WHERE run_id IN (" + cohort + ")", values).fetchall()
+            return {"builds": builds, "characters": sorted(r[0] for r in characters),
+                    "source_mods": sorted(r[0] for r in sources),
+                    "languages": sorted({r["language"] for r in meta}),
+                    "core_versions": sorted({r["core_version"] for r in meta if r["core_version"] is not None}),
+                    "game_targets": sorted({r["game_target"] for r in meta if r["game_target"] is not None})}
 
     def character_stats(self, query):
-        where, values = self.where(query)
-        conditions = []
+        where, values = self.where(query, include_sample=True)
         character = query.get("character", ["all"])[0]
         if character != "all":
-            conditions.append("json_extract(seat.value, '$.character')=?")
+            where += (" AND " if where else " WHERE ") + "role.character=?"
             values.append(model(character))
-        if query.get("sample", ["codex"])[0] != "all":
-            conditions.append("NOT (outcome='abandon' AND floor<=?)")
-            values.append(EARLY_ABANDON_FLOOR)
-        if conditions:
-            where += (" AND " if where else " WHERE ") + " AND ".join(conditions)
         with self.connect() as db:
             rows = db.execute("""
-                SELECT json_extract(seat.value, '$.character') AS character,
-                       COUNT(DISTINCT runs.id) AS runs, COUNT(*) AS seats,
-                       SUM(outcome='win') AS wins, SUM(outcome='death') AS deaths,
-                       SUM(outcome='abandon') AS abandons, AVG(floor) AS avg_floor,
-                       AVG(outcome='win') AS win_rate
-                FROM runs CROSS JOIN json_each(runs.facts, '$.seats') AS seat
-                """ + where + " GROUP BY character ORDER BY seats DESC, character", values)
+                SELECT role.character, COUNT(*) AS runs, SUM(role.seats) AS seats,
+                       SUM(role.seats * (outcome='win')) AS wins,
+                       SUM(role.seats * (outcome='death')) AS deaths,
+                       SUM(role.seats * (outcome='abandon')) AS abandons,
+                       SUM(role.seats * floor) * 1.0 / SUM(role.seats) AS avg_floor,
+                       SUM(role.seats * (outcome='win')) * 1.0 / SUM(role.seats) AS win_rate
+                FROM runs JOIN stats_characters AS role ON role.run_id=runs.id
+                """ + where + " GROUP BY role.character ORDER BY seats DESC, role.character", values)
             result = [dict(row) for row in rows]
         return {"rows": result, "filters": self.run_filters(query)}
 
+    def language_stats(self, query):
+        where, values = self.where(query, include_character=True, include_sample=True)
+        with self.connect() as db:
+            rows = db.execute("SELECT indexed.language,COUNT(*) FROM runs "
+                              "JOIN stats_runs AS indexed ON indexed.run_id=runs.id" + where
+                              + " GROUP BY indexed.language", values)
+            distribution = language_distribution(dict(rows))
+        return distribution | {"filters": self.run_filters(query)}
+
     def stats(self, query):
-        where, values = self.where(query)
+        where, values = self.where(query, include_character=True)
         character = query.get("character", ["all"])[0]
         if character != "all":
             character = model(character)
-        with self.connect() as db:
-            builds = [r[0] for r in db.execute("SELECT DISTINCT build FROM runs ORDER BY build DESC")]
         def rows():
+            # Keep the existing traversal order for capped card catalogues.
+            order = "runs.received DESC,runs.id" if "received>=?" in where else "runs.rowid"
             with self.connect() as db:
-                yield from db.execute("SELECT facts,received FROM runs" + where, values)
+                yield from db.execute("SELECT runs.received,runs.outcome,runs.floor,indexed.language,indexed.card_seats "
+                                      "FROM runs JOIN stats_runs AS indexed ON indexed.run_id=runs.id"
+                                      + where + " ORDER BY " + order, values)
         cards, total, wins, excluded, missing = {}, 0, 0, 0, 0
-        count, latest = 0, None
-        characters = set()
-        core_versions, source_mods, game_targets = set(), set(), set()
-        raw_seats = 0
-        languages, language_counts = set(), {}
+        count, latest, raw_seats = 0, None, 0
+        language_counts = {}
         limited = False
+        include_early_abandons = query.get("sample", ["codex"])[0] == "all"
         for row in rows():
-            run = json.loads(row["facts"])
-            context = run.get("core_telemetry") or {}
-            language = context.get("language", "unknown")
-            languages.add(language)
-            core_versions.update([context["core_version"]] if context else [])
-            game_targets.update([context["game_target"]] if context else [])
-            source_mods.update(mod["id"] for mod in context.get("source_mods", []))
-            characters.update(s["character"] for s in run["seats"])
-            seats = [s for s in run["seats"] if character == "all" or s["character"] == character]
-            if not seats:
-                continue
+            seats = json.loads(row["card_seats"])
+            if character != "all":
+                seats = [seat for seat in seats if seat[0] == character]
             count += 1
             latest = max(latest or 0, row["received"])
             raw_seats += len(seats)
-            if query.get("sample", ["codex"])[0] != "all" and run["outcome"] == "abandon" and run["floor"] <= EARLY_ABANDON_FLOOR:
+            if not include_early_abandons and row["outcome"] == "abandon" and row["floor"] <= EARLY_ABANDON_FLOOR:
                 excluded += len(seats)
                 continue
+            language = row["language"]
             language_counts[language] = language_counts.get(language, 0) + 1
-            for seat in seats:
+            won = row["outcome"] == "win"
+            for _, held, missing_picked, observed in seats:
                 total += 1
-                won = run["outcome"] == "win"
                 wins += won
-                missing += seat["missing_picked"]
-                ids = set(seat["held"]) | {x["card"] for x in seat["observed"]}
-                for cid in ids:
-                    if cid not in cards and len(cards) >= 4096:
+                missing += missing_picked
+                for cid in set(held) | {card_id for card_id, _ in observed}:
+                    if cid in cards:
+                        continue
+                    if len(cards) >= 4096:
                         limited = True
                         continue
-                    cards.setdefault(cid, {"id": cid, "held": 0, "wins": 0, "offered": 0, "picked": 0,
-                                           "recorded_offers": 0, "recorded_picked": 0, "unknown_picked": 0})
-                for cid in seat["held"]:
-                    if cid not in cards:
+                    cards[cid] = {"id": cid, "held": 0, "wins": 0, "offered": 0, "picked": 0,
+                                  "recorded_offers": 0, "recorded_picked": 0, "unknown_picked": 0}
+                for cid in held:
+                    if cid in cards:
+                        cards[cid]["held"] += 1
+                        cards[cid]["wins"] += won
+                for cid, picked in observed:
+                    item = cards.get(cid)
+                    if item is None:
                         continue
-                    cards[cid]["held"] += 1
-                    cards[cid]["wins"] += won
-                for choice in seat["observed"]:
-                    if choice["card"] not in cards:
-                        continue
-                    item = cards[choice["card"]]
                     item["recorded_offers"] += 1
-                    item["recorded_picked"] += choice["picked"] is True
-                    item["unknown_picked"] += choice["picked"] is None
-                for choice in seat["observed"]:
-                    if type(choice["picked"]) is not bool:
-                        continue
-                    if choice["card"] not in cards:
-                        continue
-                    cards[choice["card"]]["offered"] += 1
-                    cards[choice["card"]]["picked"] += choice["picked"]
+                    if picked is None:
+                        item["unknown_picked"] += 1
+                    else:
+                        item["offered"] += 1
+                        item["picked"] += picked
+                        item["recorded_picked"] += picked
         result = []
         for cid, item in cards.items():
             item.update(CATALOG.get(cid, {"name": cid, "type": "未知", "rarity": "未知", "cost": None}))
@@ -561,16 +560,11 @@ class Store:
                          "win_rate": item["wins"] / item["held"] if item["held"] else None,
                          "hold_rate": item["held"] / total if total else None})
             result.append(item)
-        language_total = sum(language_counts.values())
-        distribution = [{"language": language, "runs": runs, "share": runs / language_total}
-                        for language, runs in sorted(language_counts.items(), key=lambda pair: (pair[0] == "unknown", -pair[1], pair[0]))]
-        return {"language_distribution": distribution, "language_total_runs": language_total, "languages": sorted(languages),
+        return self.run_filters(query) | language_distribution(language_counts) | {
                 "runs": count, "raw_seats": raw_seats, "seats": total, "wins": wins,
-                "excluded": excluded, "missing_picked": missing,
-                "latest_received": latest, "builds": builds, "card_limit_reached": limited,
-                "cards": result, "character": character, "characters": sorted(characters),
-                "pick_policy": "native_known_choices_all_sources",
-                "core_versions": sorted(core_versions), "source_mods": sorted(source_mods), "game_targets": sorted(game_targets)}
+                "excluded": excluded, "missing_picked": missing, "latest_received": latest,
+                "card_limit_reached": limited, "cards": result, "character": character,
+                "pick_policy": "native_known_choices_all_sources"}
 
     def original(self, rid):
         with self.connect() as db:
@@ -779,6 +773,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.respond(200, self.server.store.stats(query))
         if path == "/api/character-stats":
             return self.respond(200, self.server.store.character_stats(query))
+        if path == "/api/language-stats":
+            return self.respond(200, self.server.store.language_stats(query))
         if path == "/api/errors":
             return self.respond(200, self.server.store.errors.listing(query))
         error_match = re.fullmatch(r"/api/errors/([0-9a-f]{64})", path)

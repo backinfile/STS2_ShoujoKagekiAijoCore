@@ -6,7 +6,7 @@
 python deploy/telemetry/build_release.py --output <new-release-directory>
 ```
 
-输出含 app.py、error_reports.py、protocol.py、raw_archive.py、web 和 install.py。输出目录必须尚不存在。
+输出含 app.py、error_reports.py、protocol.py、raw_archive.py、read_index.py、web 和 install.py。输出目录必须尚不存在。
 
 发布方将目录作为既有服务的一个新 release 保存，在部署主机运行 install.py。已有 access.json 中的页面路径、上传路径、读取凭据、数据库与服务身份继续使用。首次安装通过 --public-origin 或 TELEMETRY_PUBLIC_ORIGIN 提供 HTTPS 域名，之后从既有 upload_url 恢复。安装脚本保留反向代理路径映射、页面控制、限流、SQLite 备份、原始归档及监控服务。
 
@@ -37,6 +37,8 @@ python tools/telemetry/build_assets.py --export <author-export-directory>
 ## 页面加载与 PWA
 
 页面按当前视图请求统计或分页对局，完整卡牌和遗物资料在打开对局详情时加载。卡牌按 60 张分批显示，CSV 仍导出全部筛选结果。手机端支持收起筛选、底部导航和独立详情面板。
+
+对比模式从「卡牌统计」进入，原有对比深链接继续生效。语言统计有独立入口。连续改筛选项会合并请求，近期相同条件共享缓存，同条件的对比两侧共享在途请求。「刷新」直接重新查询。
 
 PWA 清单及 Worker 使用相对作用域，沿用现有页面访问路径。支持安装提示的浏览器显示“安装”；iOS 使用 Safari 的“添加到主屏幕”。发行构建按 Web 文件摘要生成缓存版本，新版就绪后显示“更新”。静态缓存最多保留 80 项，按使用加载；API 与受保护页面始终请求服务端，断网导航显示重新连接入口。
 
