@@ -36,7 +36,7 @@ internal sealed class KarenMusicPlayback : IDisposable
     internal readonly List<string> Tracks = new();
     private readonly Dictionary<string, string> _titles = new();
     internal bool UsesBuiltin => string.IsNullOrWhiteSpace(CoreModConfig.MusicDirectory);
-    private const string BuiltinRoot = "res://ShoujoKagekiAijoCore/audio/music_player/";
+    private const string BuiltinRoot = "res://ShoujoKagekiCore/audio/music_player/";
     internal int Index { get; private set; } = -1;
     internal bool IsPlaying => !_disposed && _player.Playing && !_player.StreamPaused;
     internal bool IsPaused => !_disposed && _player.StreamPaused && _player.Stream != null;

@@ -72,7 +72,7 @@ public sealed class ShineIssuesCommand : AbstractConsoleCmd
             else if (mode == "archive")
             {
                 var card = Fresh("JK131"); card.UpgradeInternal(); Shine.SetState(card, 0, 9);
-                var runtime = AppDomain.CurrentDomain.GetAssemblies().Single(a => a.GetName().Name?.StartsWith("ShoujoKagekiAijoCore.Runtime.") == true);
+                var runtime = AppDomain.CurrentDomain.GetAssemblies().Single(a => a.GetName().Name?.StartsWith("ShoujoKagekiCore.Runtime.") == true);
                 var archive = runtime.GetType("ShoujoKageki.Core.Runtime.Modules.Shine.ShineArchive")!;
                 archive.GetMethod("Restore")!.Invoke(null, [player, new[] { card.ToSerializable() }]);
                 var model = Shine.GetDepletedModels(player).Last();

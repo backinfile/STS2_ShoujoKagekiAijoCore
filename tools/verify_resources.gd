@@ -5,7 +5,7 @@ func _initialize():
     if args.size() != 1 or not ProjectSettings.load_resource_pack(args[0]):
         quit(1)
         return
-    var root = "res://ShoujoKagekiAijoCore/"
+    var root = "res://ShoujoKagekiCore/"
     var texture = load(root + "images/ui/giraffe.png") as Texture2D
     var portrait = load(root + "images/cards/empty_shell.png") as Texture2D
     var audio = load(root + "audio/karen_revue.ogg") as AudioStream

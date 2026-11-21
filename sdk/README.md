@@ -2,7 +2,7 @@
 
 引用发行目录中 core.bundle 的 apiAssembly，关闭引用的复制本地选项。程序集版本固定为 1.0.0.0，命名空间为 ShoujoKageki.Core.V1。
 
-角色清单声明 BaseLib 3.4.7 和 ShoujoKagekiAijoCore 1.0.0 依赖。角色构建完成后调用发行目录的 sdk/pack-character.ps1。
+角色清单声明 BaseLib 3.4.8 和 ShoujoKagekiCore 2.0.0 依赖。角色构建完成后调用发行目录的 sdk/pack-character.ps1。
 
 ```powershell
 & "$CorePackage/sdk/pack-character.ps1" -CorePackage $CorePackage `
@@ -18,7 +18,7 @@
 
 只有 ModId 为 ShoujoKagekiAijoKaren 时复制 Core。其他 Mod 的上传目录已存在 Core 时，脚本要求使用新的上传目录。Karen 上传目录已存在不同 Core 时同样要求使用新目录。
 
-游戏清单声明的依赖使用 BaseLib、ShoujoKagekiAijoCore 等 Mod ID。工坊依赖使用条目的数字 ID，写入角色自身的 workshop.json。例如：
+游戏清单声明的依赖使用 BaseLib、ShoujoKagekiCore 等 Mod ID。工坊依赖使用条目的数字 ID，写入角色自身的 workshop.json。例如：
 
 ```powershell
 $workshop.dependencies = @([ulong]3737335127, [ulong]$CoreWorkshopId)

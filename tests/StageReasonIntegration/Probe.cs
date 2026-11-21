@@ -51,7 +51,7 @@ public sealed class StageReasonCheckCommand : AbstractConsoleCmd
             var id = new ModelId("CARD", "KAREN_STAGE_REASON");
             var model = ModelDb.GetById<CardModel>(id);
             Check("legacy ID resolves to the shared Core model", model.GetType().Name == "CoreStageReason"
-                && model.GetType().Assembly.GetName().Name!.StartsWith("ShoujoKagekiAijoCore.Runtime."));
+                && model.GetType().Assembly.GetName().Name!.StartsWith("ShoujoKagekiCore.Runtime."));
             Check("model discovery attributes the card to Core", CoreApi.Get<ICoreDiscovery>().Models
                 .Single(entry => entry.ModelType == model.GetType()).ModId == CoreApi.ModId);
             Check("Karen no longer defines the migrated model", AppDomain.CurrentDomain.GetAssemblies()

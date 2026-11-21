@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><AssemblyName>CoreStageReasonProbe</AssemblyName></PropertyGroup>
   <Import Project="../../build/GameReferences.props" />
-  <ItemGroup><ProjectReference Include="../../src/Api.V1/ShoujoKagekiAijoCore.Api.V1.csproj" /></ItemGroup>
+  <ItemGroup><ProjectReference Include="../../src/Api.V1/ShoujoKagekiCore.Api.V1.csproj" /></ItemGroup>
 </Project>

@@ -3,13 +3,13 @@
   <GodotProjectDir>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../../'))</GodotProjectDir>
   <GodotProjectDirBase64>$([MSBuild]::ConvertToBase64('$(GodotProjectDir)'))</GodotProjectDirBase64>
   <EnableDynamicLoading>true</EnableDynamicLoading>
-  <AssemblyName Condition="'$(Sts2Api)' == 'stable'">ShoujoKagekiAijoCore.Runtime.Stable</AssemblyName>
-  <AssemblyName Condition="'$(Sts2Api)' == 'main'">ShoujoKagekiAijoCore.Runtime.Main</AssemblyName>
-  <AssemblyName Condition="'$(Sts2Api)' == 'beta'">ShoujoKagekiAijoCore.Runtime.Beta</AssemblyName>
+  <AssemblyName Condition="'$(Sts2Api)' == 'stable'">ShoujoKagekiCore.Runtime.Stable</AssemblyName>
+  <AssemblyName Condition="'$(Sts2Api)' == 'main'">ShoujoKagekiCore.Runtime.Main</AssemblyName>
+  <AssemblyName Condition="'$(Sts2Api)' == 'beta'">ShoujoKagekiCore.Runtime.Beta</AssemblyName>
  </PropertyGroup>
  <Import Project="../../build/GameReferences.props" />
  <ItemGroup>
-  <ProjectReference Include="../Api.V1/ShoujoKagekiAijoCore.Api.V1.csproj" />
+  <ProjectReference Include="../Api.V1/ShoujoKagekiCore.Api.V1.csproj" />
   <Reference Include="BaseLib"><HintPath>$(BaseLibPath)</HintPath><Private>false</Private></Reference>
   <Compile Include="../Modules/**/*.cs" Exclude="../Modules/**/obj/**;../Modules/**/bin/**" />
   <Compile Include="../Patches/**/*.cs" />

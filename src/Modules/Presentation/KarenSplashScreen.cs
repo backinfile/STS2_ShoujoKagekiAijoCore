@@ -13,7 +13,7 @@ namespace ShoujoKageki.Core.Runtime.Modules.Presentation;
 /// </summary>
 public partial class KarenSplashScreen : Control
 {
-    private const string ImagePath = "res://ShoujoKagekiAijoCore/images/ui/giraffe.png";
+    private const string ImagePath = "res://ShoujoKagekiCore/images/ui/giraffe.png";
     private const string SoundFile = "karen_revue.ogg";
     private const float Duration = 10f;
     private const float RotationSpeed = 360f / 60f * 4f; // 每秒旋转角度，与 STS1 一致
@@ -66,7 +66,7 @@ public partial class KarenSplashScreen : Control
         _sprite.Position = screenSize / 2;
 
         // 播放 Revue 音效
-        _audioPlayer = new AudioStreamPlayer { Stream = CoreResources.LoadAudioStream("res://ShoujoKagekiAijoCore/audio/" + SoundFile, SoundFile, nameof(KarenSplashScreen)), Bus = "Master" };
+        _audioPlayer = new AudioStreamPlayer { Stream = CoreResources.LoadAudioStream("res://ShoujoKagekiCore/audio/" + SoundFile, SoundFile, nameof(KarenSplashScreen)), Bus = "Master" };
         AddChild(_audioPlayer);
         _audioPlayer.Play();
     }

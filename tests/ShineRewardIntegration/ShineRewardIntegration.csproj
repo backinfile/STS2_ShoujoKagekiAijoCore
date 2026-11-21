@@ -3,6 +3,6 @@
   <Import Project="../../build/GameReferences.props" />
   <ItemGroup>
     <Reference Include="BaseLib" HintPath="$(GameDir)/mods/BaseLib/BaseLib.dll" Private="false" />
-    <Reference Include="ShoujoKagekiAijoCore.Api.V1" HintPath="$(CoreApiPath)" Private="false" />
+    <Reference Include="ShoujoKagekiCore.Api.V1" HintPath="$(CoreApiPath)" Private="false" />
   </ItemGroup>
 </Project>

@@ -7,7 +7,7 @@
   "affects_gameplay": true,
   "dependencies": [
     {
-      "id": "ShoujoKagekiAijoCore",
+      "id": "ShoujoKagekiCore",
       "min_version": "1.0.0"
     }
   ]

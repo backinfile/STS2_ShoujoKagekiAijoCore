@@ -52,7 +52,7 @@ public sealed class ShineRewardProbe : AbstractConsoleCmd
         {
             var reproduction = ShineRewards.Reproduction;
             Check("reproduction preserves old model ID", reproduction.Id.Entry == "KAREN_SHINE_REPRODUCE");
-            Check("reproduction belongs to Core", reproduction.GetType().Assembly.GetName().Name!.StartsWith("ShoujoKagekiAijoCore.Runtime"));
+            Check("reproduction belongs to Core", reproduction.GetType().Assembly.GetName().Name!.StartsWith("ShoujoKagekiCore.Runtime"));
             Check("reproduction is a one-use token", reproduction.Rarity == CardRarity.Token && Shine.GetState(reproduction)?.Maximum == 1);
             var mutable = player.RunState.CreateCard(reproduction, player);
             var restored = CardModel.FromSerializable(mutable.ToSerializable());

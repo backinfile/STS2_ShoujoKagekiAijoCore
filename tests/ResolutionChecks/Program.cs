@@ -88,9 +88,9 @@ if (args.Contains("--configuration-only"))
     configuration.Update(new CoreSettings { CombatCardGainRelicMode = CombatCardGainRelicMode.Enabled, BookOfFiveRingsPatch = CombatCardGainRelicMode.Disabled, LuckyFyshPatch = CombatCardGainRelicMode.ShoujoOnly });
     configuration.Update(configuration.Current with { EnableShineEffects = false });
     CheckSetting(configuration.Current.BookOfFiveRingsPatch == CombatCardGainRelicMode.Disabled && configuration.Current.LuckyFyshPatch == CombatCardGainRelicMode.ShoujoOnly, "Independent relic settings survive unrelated updates");
-    ShoujoKagekiAijoCore.CoreModConfig.ShowDerivedCardLabel = false;
+    ShoujoKagekiCore.CoreModConfig.ShowDerivedCardLabel = false;
     CheckSetting(configuration.Current.DerivedCardLabel == DerivedCardLabelMode.Hidden, "Legacy hidden labels stay hidden");
-    ShoujoKagekiAijoCore.CoreModConfig.ShowDerivedCardLabel = true;
+    ShoujoKagekiCore.CoreModConfig.ShowDerivedCardLabel = true;
     CheckSetting(configuration.Current.DerivedCardLabel == DerivedCardLabelMode.ShoujoOnly, "Legacy visible labels migrate to the default scope");
     foreach (var mode in Enum.GetValues<DerivedCardLabelMode>())
     {

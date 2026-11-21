@@ -34,7 +34,7 @@
 
 ## 项目概况
 
-- `ShoujoKagekiAijoCore` 是少女歌剧系列 Mod 共用的基础 Mod，逻辑 Mod ID 固定为 `ShoujoKagekiAijoCore`。
+- `ShoujoKagekiCore` 是少女歌剧系列 Mod 共用的基础 Mod，逻辑 Mod ID 固定为 `ShoujoKagekiCore`。
 - 仓库地址为 https://github.com/backinfile/STS2_ShoujoKagekiCore 。文档中的项目入口使用 GitHub 地址，工作路径使用仓库相对路径。
 - 技术栈为 C# / .NET 9、Godot 4.5.1（MegaDot）、Harmony、BaseLib 3.4.8。当前适配正式版 v0.111.1、旧正式版 v0.107.1 和测试版 v0.113.0。
 - Core 独立维护并作为创意工坊 Mod 发布。仅 Karen 内嵌完整 Core；Junna 及其他 Mod 通过创意工坊依赖独立 Core 条目。
@@ -53,7 +53,7 @@
 | `src/Runtime/` | 业务入口、模块生命周期、来源发现与公共服务 |
 | `src/Modules/` | 闪耀、公共配置、表现、音乐、遥测和导出 |
 | `src/Patches/` | 五轮书等公共兼容补丁 |
-| `resources/ShoujoKagekiAijoCore/` | 公共资源与各语言本地化 |
+| `resources/ShoujoKagekiCore/` | 公共资源与各语言本地化 |
 | `sdk/` | 包校验、角色接入与 Karen 内嵌打包工具 |
 | `services/telemetry/` | Python / SQLite 对局与报错服务 |
 | `web/telemetry/`、`deploy/telemetry/` | Web 页面及部署文件 |
@@ -64,7 +64,7 @@
 
 ## 公开接口与双版本
 
-- 公开程序集为 `ShoujoKagekiAijoCore.Api.V1`，命名空间为 `ShoujoKageki.Core.V1`，当前 `AssemblyVersion` 固定为 `1.0.0.0`。
+- 公开程序集为 `ShoujoKagekiCore.Api.V1`，命名空间为 `ShoujoKageki.Core.V1`，当前 `AssemblyVersion` 固定为 `1.0.0.0`。
 - 发布优先保持源代码与二进制兼容。V1 中已发布的类型、签名、默认行为和序列化含义保持稳定，通过兼容的增量能力扩展。确需破坏兼容时建立新的 API 主版本，并保留原主版本所需的业务适配。
 - 角色引用 API，具体规则与服务通过 Core 提供的公共入口调用。角色接入所需的能力声明由官方 SDK 生成。
 - 引导 DLL 保持小而稳定，业务更新集中在按发行版本组织的 Runtime、资源与 SDK 中。择版校验所有已安装角色的要求，最终只初始化一份 Runtime 和一份公共配置。
@@ -99,9 +99,9 @@
 ./build.ps1 -StableGameDir <stable-game> -MainGameDir <main-game> -BetaGameDir <beta-game> -Godot <megadot-console> -TelemetryEndpointPath <local-endpoint-config>
 ```
 
-也可使用 `SHOUJO_STABLE_GAME`、`SHOUJO_MAIN_GAME`、`SHOUJO_BETA_GAME`、`GODOT_BIN` 提供环境路径。完整产物默认位于 `dist/ShoujoKagekiAijoCore/`，包括引导、API、三个目标的 Runtime、PCK、校验清单和 SDK。
+也可使用 `SHOUJO_STABLE_GAME`、`SHOUJO_MAIN_GAME`、`SHOUJO_BETA_GAME`、`GODOT_BIN` 提供环境路径。完整产物默认位于 `dist/ShoujoKagekiCore/`，包括引导、API、三个目标的 Runtime、PCK、校验清单和 SDK。
 
-- 根目录 `ShoujoKagekiAijoCore.json` 为正式 Mod 清单，`workshop.json` 为独立 Core 工坊配置。发布流程见 `docs/RELEASING.md`。
+- 根目录 `ShoujoKagekiCore.json` 为正式 Mod 清单，`workshop.json` 为独立 Core 工坊配置。发布流程见 `docs/RELEASING.md`。
 - 使用 `sdk/validate-package.ps1` 校验完整发行目录，发布时加 `-Strict` 排除未列入校验清单的文件。`prepare-release.ps1` 生成 ZIP、哈希与独立工坊工作区，`publish-workshop.ps1` 调用官方 ModUploader 上传。
 - 角色通过 `sdk/pack-character.ps1` 生成需求声明和构建锁文件；仅 `ShoujoKagekiAijoKaren` 将完整 Core 并列复制到上传目录，其他 Mod 在工坊配置中声明独立 Core 条目的依赖。
 - 检查清单中的 BaseLib → Core → 角色依赖顺序。Karen 内嵌包与独立工坊包使用同一官方发行产物，核对 Core 文件哈希及并存时的择版结果。

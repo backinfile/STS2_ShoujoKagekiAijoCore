@@ -9,7 +9,7 @@ func _initialize():
     var packer = PCKPacker.new()
     var error = packer.pck_start(args[0])
     if error == OK:
-        error = add_directory(packer, "res://resources/ShoujoKagekiAijoCore", "res://ShoujoKagekiAijoCore")
+        error = add_directory(packer, "res://resources/ShoujoKagekiCore", "res://ShoujoKagekiCore")
     if error == OK:
         error = add_directory(packer, "res://src/Modules", "res://src/Modules", true)
     if error == OK:

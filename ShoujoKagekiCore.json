@@ -1,9 +1,9 @@
 {
-  "id": "ShoujoKagekiAijoCore",
-  "name": "ShoujoKagekiAijoCore",
+  "id": "ShoujoKagekiCore",
+  "name": "ShoujoKagekiCore",
   "author": "ShoujoKageki Mod Team",
   "description": "少女歌剧系列 Mod 共用的基础 Mod",
-  "version": "1.9.8",
+  "version": "2.0.0",
   "has_dll": true,
   "has_pck": false,
   "affects_gameplay": true,

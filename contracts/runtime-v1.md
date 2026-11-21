@@ -1,10 +1,10 @@
 # Core V1 协作契约
 
-程序集 ShoujoKagekiAijoCore.Api.V1，命名空间 ShoujoKageki.Core.V1，AssemblyVersion 固定 1.0.0.0。API 源码在 src/Api.V1，模块运行契约在 src/Runtime/Modules.cs。
+程序集 ShoujoKagekiCore.Api.V1，命名空间 ShoujoKageki.Core.V1，AssemblyVersion 固定 1.0.0.0。Core 2.0.0 更改了程序集标识，角色需重新编译。API 源码在 src/Api.V1，模块运行契约在 src/Runtime/Modules.cs。
 
 ## 工程与模块
 
-src/Runtime/ShoujoKagekiAijoCore.Runtime.csproj 自动编入 src/Modules/**/*.cs、src/Patches/**/*.cs 和 src/Compatibility/**/*.cs。模块只新增自身子目录。Telemetry 与 Exports 由数据任务拥有，其余游戏客户端由客户端任务拥有。
+src/Runtime/ShoujoKagekiCore.Runtime.csproj 自动编入 src/Modules/**/*.cs、src/Patches/**/*.cs 和 src/Compatibility/**/*.cs。模块只新增自身子目录。Telemetry 与 Exports 由数据任务拥有，其余游戏客户端由客户端任务拥有。
 
 无参具体类实现 ShoujoKageki.Core.Runtime.ICoreModule，提供 Id、Order、Initialize(CoreContext)。按 Order、Id 排序单次初始化。配置服务在所有模块前建立，Shine 为 -500，表现与公共补丁为 0，Telemetry 为 100，Exports 为 200。模块返回时只完成挂钩，依赖原生模型的工作订阅 context.ModelsReady。退出订阅 context.ShuttingDown，模块亦可实现 IDisposable。
 
@@ -12,7 +12,7 @@ context.Services.Add<T>(instance) 注册唯一服务，Get<T>() 获取。配置�
 
 ## 配置与诊断
 
-CoreApi.Configuration.Current 或 context.Configuration.Current 返回 CoreSettings 不可变快照。Update(settings with { ... }) 持久化后发 Changed(old,new)，Reset 恢复 Core 默认。配置只读取 Core 自身文件并升级 FormatVersion，不读取角色旧配置。
+CoreApi.Configuration.Current 或 context.Configuration.Current 返回 CoreSettings 不可变快照。Update(settings with { ... }) 持久化后发 Changed(old,new)，Reset 恢复 Core 默认。`ShoujoKagekiCore.cfg` 缺失时，从旧 Core 的 `ShoujoKagekiAijoCore.cfg` 继承设置，再按 FormatVersion 升级。
 
 CoreSettings 提供 EnableInformationCollection 总开关与 EnableDataUpload、EnableErrorUpload 子开关，均默认 true。总开关关闭时暂停上传和报错采集，保留子开关值。TelemetryBaseUrl 保持不变。地址为空时由 Telemetry 使用随发行携带的默认接收地址，数据任务拥有该默认地址来源。音乐、衍生牌标记、闪耀表现和补丁配置在 src/Api.V1/Configuration.cs。DerivedCardLabel 使用 Always／ShoujoOnly／Hidden，默认 ShoujoOnly；旧 ShowDerivedCardLabel 属性保留。ShinePileButton 的 Auto 保存值对应仅少歌角色显示。EnableShineEffects 默认开启，统一控制闪耀常驻光效、临界提示和耗尽动画；旧 EnableShineDepletionAnimation 属性保留为同一开关的兼容别名，读取配置时显式新字段优先；VfxLevel 统一供 Core、Karen 与 Junna 使用。BookOfFiveRingsPatch 与 LuckyFyshPatch 各自使用三档 CombatCardGainRelicMode，默认 ShoujoOnly；旧统一属性保留，设置时同时更新两项，新分项可分别覆盖。
 
@@ -26,7 +26,7 @@ DataDirectory 是 Core 独立用户数据目录，可在其下建立模块队列
 
 ## 资源与本地化
 
-唯一公共资源根为 res://ShoujoKagekiAijoCore/。仓库资源置 resources/ShoujoKagekiAijoCore/，语言表置该目录 localization/<language>/<table>.json。选中发行包的 PCK 在 Runtime 初始化前挂载。模块使用 CoreApi.ResourceRoot 或 context.ResourceRoot。业务和资源随同一 core.bundle 校验，资源不沿角色路径读取。
+唯一公共资源根为 res://ShoujoKagekiCore/。仓库资源置 resources/ShoujoKagekiCore/，语言表置该目录 localization/<language>/<table>.json。选中发行包的 PCK 在 Runtime 初始化前挂载。模块使用 CoreApi.ResourceRoot 或 context.ResourceRoot。业务和资源随同一 core.bundle 校验，资源不沿角色路径读取。
 
 ## 闪耀与实际结算
 

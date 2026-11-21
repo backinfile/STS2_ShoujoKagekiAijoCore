@@ -49,7 +49,7 @@ public sealed class ObservationCommand : AbstractConsoleCmd
  public override bool IsNetworked => false;
  public override CmdResult Process(Player? player, string[] args)
  {
-  var runtime = AppDomain.CurrentDomain.GetAssemblies().Single(a => a.GetName().Name?.StartsWith("ShoujoKagekiAijoCore.Runtime.") == true);
+  var runtime = AppDomain.CurrentDomain.GetAssemblies().Single(a => a.GetName().Name?.StartsWith("ShoujoKagekiCore.Runtime.") == true);
   var type = runtime.GetType("ShoujoKageki.Core.Runtime.Modules.Presentation.ShineCardBorder", true)!;
   var prepare = type.GetMethod("Prepare", BindingFlags.NonPublic | BindingFlags.Static, new[] { typeof(Texture2D) })!;
   var contour = type.GetMethod("GetContour", BindingFlags.NonPublic | BindingFlags.Static)!;

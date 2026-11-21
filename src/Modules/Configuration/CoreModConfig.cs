@@ -7,7 +7,7 @@ using ShoujoKageki.Core.V1;
 using ShoujoKageki.Core.Runtime;
 using ShoujoKageki.Core.Runtime.Modules.Configuration;
 
-namespace ShoujoKagekiAijoCore;
+namespace ShoujoKagekiCore;
 
 public sealed class CoreModConfig : SimpleModConfig
 {
@@ -88,24 +88,24 @@ public sealed class CoreModConfig : SimpleModConfig
     }
     private static void UnlockAll(NConfigButton button)
     {
-        var title = new LocString("settings_ui", "SHOUJOKAGEKIAIJOCORE-UNLOCK_ALL_BUTTON.title").GetFormattedText();
+        var title = new LocString("settings_ui", "SHOUJOKAGEKICORE-UNLOCK_ALL_BUTTON.title").GetFormattedText();
         if (GodotObject.IsInstanceValid(NRun.Instance))
         {
-            ShowMessage(title, new LocString("settings_ui", "SHOUJOKAGEKIAIJOCORE-UNLOCK_ALL.inRun").GetFormattedText());
+            ShowMessage(title, new LocString("settings_ui", "SHOUJOKAGEKICORE-UNLOCK_ALL.inRun").GetFormattedText());
             return;
         }
         button.Disable();
         try
         {
             var backup = CoreUnlockAll.Apply();
-            var message = new LocString("settings_ui", "SHOUJOKAGEKIAIJOCORE-UNLOCK_ALL.complete");
+            var message = new LocString("settings_ui", "SHOUJOKAGEKICORE-UNLOCK_ALL.complete");
             message.AddObj("Backup", backup);
             ShowMessage(title, message.GetFormattedText());
         }
         catch (Exception error)
         {
             CoreLog.Logger.Error($"Unlock all failed: {error}");
-            var message = new LocString("settings_ui", "SHOUJOKAGEKIAIJOCORE-UNLOCK_ALL.failed");
+            var message = new LocString("settings_ui", "SHOUJOKAGEKICORE-UNLOCK_ALL.failed");
             message.AddObj("Error", error.Message);
             ShowMessage(title, message.GetFormattedText());
         }

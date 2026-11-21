@@ -77,7 +77,7 @@ public sealed class MatrixFixture : AbstractConsoleCmd
         Report = JsonSerializer.Serialize(new { status = "running", actor = player.NetId });
         try
         {
-            Check("one Core runtime", AppDomain.CurrentDomain.GetAssemblies().Count(a => a.GetName().Name?.StartsWith("ShoujoKagekiAijoCore.Runtime.") == true) == 1);
+            Check("one Core runtime", AppDomain.CurrentDomain.GetAssemblies().Count(a => a.GetName().Name?.StartsWith("ShoujoKagekiCore.Runtime.") == true) == 1);
             Check("no None custom pile", !CustomPiles.CustomPileProviders.ContainsKey(PileType.None));
             Check("one promise pile in first native collection", player.PlayerCombatState!.AllPiles.Count(p => p.Type == PromisePileManager.GetPromisePile(player).Type) == 1);
             await CoreRoleCommand.Run(player);

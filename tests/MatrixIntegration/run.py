@@ -86,7 +86,7 @@ class Session:
                 if not stale.resolve().is_relative_to(self.game.resolve()):
                     raise RuntimeError('Unexpected fixture path')
                 shutil.rmtree(stale)
-        for src, name in [(Path(cfg['core']), 'ShoujoKagekiAijoCore'), (Path(cfg['karen']), 'ShoujoKagekiAijoKaren'), (Path(cfg['junna']), 'ShoujoKagekiJunna'), (source / 'mods/BaseLib', 'BaseLib')]:
+        for src, name in [(Path(cfg['core']), 'ShoujoKagekiCore'), (Path(cfg['karen']), 'ShoujoKagekiAijoKaren'), (Path(cfg['junna']), 'ShoujoKagekiJunna'), (source / 'mods/BaseLib', 'BaseLib')]:
             shutil.copytree(src, mods / name, dirs_exist_ok=True)
         shutil.copy2(cfg['mcp'][self.branch], mods / 'KarenSTS2MCP.dll')
         shutil.copy2(cfg['mcp_manifest'], mods / 'KarenSTS2MCP.json')
@@ -94,7 +94,7 @@ class Session:
             target = mods / name
             target.mkdir(exist_ok=True)
             shutil.copy2(binary, target / (name + '.dll'))
-            atomic(target / (name + '.json'), dict(id=name, name=name, version='1.0.0', has_dll=True, has_pck=False, affects_gameplay=True, dependencies=[dict(id='BaseLib'), dict(id='ShoujoKagekiAijoCore', min_version='1.1.0'), dict(id='ShoujoKagekiAijoKaren'), dict(id='ShoujoKagekiJunna'), dict(id='KarenSTS2MCP')]))
+            atomic(target / (name + '.json'), dict(id=name, name=name, version='1.0.0', has_dll=True, has_pck=False, affects_gameplay=True, dependencies=[dict(id='BaseLib'), dict(id='ShoujoKagekiCore', min_version='1.1.0'), dict(id='ShoujoKagekiAijoKaren'), dict(id='ShoujoKagekiJunna'), dict(id='KarenSTS2MCP')]))
             package = self.out / 'fixture-packages'
             stage = package / name
             stage.mkdir(parents=True, exist_ok=True)
@@ -125,7 +125,7 @@ class Session:
         core.mkdir(exist_ok=True)
         settings = json.loads(Path(cfg['core_config']).read_text(encoding='utf-8-sig'))
         settings.update(EnableInformationCollection='False', EnableDataUpload='False', EnableErrorUpload='False', TelemetryBaseUrl='http://127.0.0.1:9', VfxLevel='Full')
-        atomic(core / 'ShoujoKagekiAijoCore.cfg', settings)
+        atomic(core / 'ShoujoKagekiCore.cfg', settings)
 
     def start(self, mode=None):
         self.prepare()

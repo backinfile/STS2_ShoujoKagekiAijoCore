@@ -4,9 +4,9 @@ $ErrorActionPreference = 'Stop'
 $workspacePath = [IO.Path]::GetFullPath($Workspace)
 $content = Join-Path $workspacePath 'content'
 $entries = @(Get-ChildItem -LiteralPath $content -Force)
-if ($entries.Count -ne 1 -or -not $entries[0].PSIsContainer -or $entries[0].Name -ne 'ShoujoKagekiAijoCore' -or
+if ($entries.Count -ne 1 -or -not $entries[0].PSIsContainer -or $entries[0].Name -ne 'ShoujoKagekiCore' -or
     ($entries[0].Attributes -band [IO.FileAttributes]::ReparsePoint)) {
-    throw 'Core Workshop content must contain exactly one ShoujoKagekiAijoCore mod directory.'
+    throw 'Core Workshop content must contain exactly one ShoujoKagekiCore mod directory.'
 }
 $package = & (Join-Path $PSScriptRoot '../../sdk/validate-package.ps1') -CorePackage $entries[0].FullName -Strict
 $preview = Get-Item -LiteralPath (Join-Path $workspacePath 'image.png')

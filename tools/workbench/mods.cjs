@@ -1,7 +1,7 @@
 'use strict';
 const mods=Object.freeze([
   {id:'sts2',name:'游戏本体',modId:'SlayTheSpire2',workspaceId:'sts2-native-reference-v1',readOnly:true},
-  {id:'core',name:'Core',modId:'ShoujoKagekiAijoCore',workspaceId:'shoujo-core-workbench-v1'},
+  {id:'core',name:'Core',modId:'ShoujoKagekiCore',workspaceId:'shoujo-core-workbench-v1'},
   {id:'karen',name:'华恋',modId:'ShoujoKagekiAijoKaren',workspaceId:'shoujo-karen-workbench-v1'},
   {id:'junna',name:'纯那',modId:'ShoujoKagekiJunna',workspaceId:'junna-mod-workbench-20261101-v1'}
 ]);

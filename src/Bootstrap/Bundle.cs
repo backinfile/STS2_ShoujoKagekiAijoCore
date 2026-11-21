@@ -75,7 +75,7 @@ public static class BundleSelection
         _ = SemVersion.Parse(bundle.BaseLibMinimumVersion);
         if (bundle.ResourceVersion != bundle.ReleaseVersion || bundle.Targets.Count == 0)
             throw new InvalidDataException("Core resource release or game targets are missing.");
-        var required = new[] { bundle.ApiAssembly, bundle.ResourcePack, "ShoujoKagekiAijoCore.dll", "ShoujoKagekiAijoCore.json" }.Concat(bundle.Targets.Values.Select(x => x.Assembly));
+        var required = new[] { bundle.ApiAssembly, bundle.ResourcePack, "ShoujoKagekiCore.dll", "ShoujoKagekiCore.json" }.Concat(bundle.Targets.Values.Select(x => x.Assembly));
         foreach (var path in required)
             if (!bundle.Files.ContainsKey(path)) throw new InvalidDataException($"Missing bundle digest for {path}.");
         foreach (var entry in bundle.Files)
@@ -85,12 +85,12 @@ public static class BundleSelection
             var actual = Convert.ToHexString(SHA256.HashData(stream));
             if (!actual.Equals(entry.Value, StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException($"Core file checksum failed: {entry.Key}.");
         }
-        using var manifest = JsonDocument.Parse(File.ReadAllText(ResolvePath(root, "ShoujoKagekiAijoCore.json")));
-        if (manifest.RootElement.GetProperty("id").GetString() != "ShoujoKagekiAijoCore"
+        using var manifest = JsonDocument.Parse(File.ReadAllText(ResolvePath(root, "ShoujoKagekiCore.json")));
+        if (manifest.RootElement.GetProperty("id").GetString() != "ShoujoKagekiCore"
             || manifest.RootElement.GetProperty("version").GetString() != bundle.ReleaseVersion)
             throw new InvalidDataException("Core manifest and bundle release identity differ.");
         var api = AssemblyName.GetAssemblyName(ResolvePath(root, bundle.ApiAssembly));
-        if (api.Name != "ShoujoKagekiAijoCore.Api.V1" || api.Version != new Version(1, 0, 0, 0))
+        if (api.Name != "ShoujoKagekiCore.Api.V1" || api.Version != new Version(1, 0, 0, 0))
             throw new InvalidDataException("Unexpected Core API assembly identity.");
         foreach (var (name, target) in bundle.Targets)
         {
@@ -102,7 +102,7 @@ public static class BundleSelection
                 _ => throw new InvalidDataException($"Unknown game target {name}.")
             };
             var asm = AssemblyName.GetAssemblyName(ResolvePath(root, target.Assembly));
-            var expected = $"ShoujoKagekiAijoCore.Runtime.{variant}";
+            var expected = $"ShoujoKagekiCore.Runtime.{variant}";
             if (asm.Name != expected) throw new InvalidDataException($"Unexpected runtime identity for {name}.");
             if (SemVersion.Parse(target.MinimumGameVersion).CompareTo(SemVersion.Parse(target.MaximumGameVersion)) > 0)
                 throw new InvalidDataException($"Inverted game range for {name}.");

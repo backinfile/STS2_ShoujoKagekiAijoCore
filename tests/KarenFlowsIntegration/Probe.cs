@@ -37,7 +37,7 @@ public sealed class KarenOnlyFixture : AbstractConsoleCmd
             Check("Karen-only installation has no Junna assembly",
                 !AppDomain.CurrentDomain.GetAssemblies().Any(assembly => assembly.GetName().Name!.StartsWith("ShoujoKagekiJunna")));
             Check("Karen models discovered without Junna", ReflectionHelper.ModTypes.Contains(typeof(KarenFall)));
-            Check("one active embedded Core", ModManager.Mods.Count(mod => mod.manifest?.id == "ShoujoKagekiAijoCore" && mod.state == ModLoadState.Loaded) == 1);
+            Check("one active embedded Core", ModManager.Mods.Count(mod => mod.manifest?.id == "ShoujoKagekiCore" && mod.state == ModLoadState.Loaded) == 1);
             foreach (var card in player.PlayerCombatState!.AllCards.ToArray())
                 await CardPileCmd.RemoveFromCombat(card);
             await KarenFlowChecks.Run(player, Check);

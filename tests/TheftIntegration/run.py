@@ -180,7 +180,7 @@ try:
             shutil.copytree(source, mods / name)
     for source in (args.game / 'mods').glob('BaseLibCompatibilityHelper.*'):
         shutil.copy2(source, mods / source.name)
-    shutil.copytree(args.core, mods / 'ShoujoKagekiAijoCore')
+    shutil.copytree(args.core, mods / 'ShoujoKagekiCore')
     for extra in args.mod:
         shutil.copytree(extra, mods / extra.name)
     for name in ['KarenSTS2MCP.dll', 'KarenSTS2MCP.json']:
@@ -195,7 +195,7 @@ try:
     write(user / 'AppData/Roaming/SlayTheSpire2/default/1/settings.save', dict(schema_version=8,
           mod_settings=dict(mods_enabled=True, mod_list=[]), fullscreen=False, seen_ea_disclaimer=True,
           skip_intro_logo=True, language='eng', limit_fps_in_background=False, volume_master=0.5))
-    write(user / 'AppData/Roaming/SlayTheSpire2/mod_configs/ShoujoKagekiAijoCore.cfg',
+    write(user / 'AppData/Roaming/SlayTheSpire2/mod_configs/ShoujoKagekiCore.cfg',
           dict(EnableInformationCollection='False', EnableDataUpload='False', EnableErrorUpload='False'))
     write(root / 'versions.json', dict(game=json.loads((args.game / 'release_info.json').read_text(encoding='utf-8-sig')), core=json.loads((args.core / 'core.bundle').read_text(encoding='utf-8-sig'))['releaseVersion'], character=args.character))
     phase = 'theft'

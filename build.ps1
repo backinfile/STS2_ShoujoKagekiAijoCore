@@ -4,7 +4,7 @@ param(
     [string]$Godot = $env:GODOT_BIN,
     [string]$TelemetryEndpointPath = $env:SHOUJO_TELEMETRY_ENDPOINT_PATH,
     [string]$OutputDirectory = '',
-    [string]$Version = '1.9.8',
+    [string]$Version = '2.0.0',
     [string]$MainGameDir = $env:SHOUJO_MAIN_GAME
 )
 $ErrorActionPreference = 'Stop'
@@ -15,7 +15,7 @@ if (-not $TelemetryEndpointPath) {
 }
 if ($TelemetryEndpointPath -and -not (Test-Path -LiteralPath $TelemetryEndpointPath -PathType Leaf)) { throw 'TelemetryEndpointPath must identify an existing endpoint configuration.' }
 if (-not $StableGameDir -or -not $MainGameDir -or -not $BetaGameDir -or -not $Godot) { throw 'Provide StableGameDir, MainGameDir, BetaGameDir and Godot, or their documented environment variables.' }
-if (-not $OutputDirectory) { $OutputDirectory = Join-Path $root 'dist/ShoujoKagekiAijoCore' }
+if (-not $OutputDirectory) { $OutputDirectory = Join-Path $root 'dist/ShoujoKagekiCore' }
 $output = [IO.Path]::GetFullPath($OutputDirectory)
 $staging = Join-Path $root ('artifacts/package-' + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Force -Path $staging | Out-Null
@@ -29,20 +29,20 @@ function Build-Core([string]$project, [string]$game, [string]$api) {
 $lib = Join-Path $staging "lib/$Version"
 $games = [ordered]@{ stable = $StableGameDir; main = $MainGameDir; beta = $BetaGameDir }
 foreach ($api in $games.Keys) {
-    Build-Core 'src/Runtime/ShoujoKagekiAijoCore.Runtime.csproj' $games[$api] $api
+    Build-Core 'src/Runtime/ShoujoKagekiCore.Runtime.csproj' $games[$api] $api
     $name = (Get-Culture).TextInfo.ToTitleCase($api)
     New-Item -ItemType Directory -Force -Path (Join-Path $lib $api) | Out-Null
-    Copy-Item -LiteralPath (Join-Path $root ".godot/mono/temp/bin/ExportRelease/ShoujoKagekiAijoCore.Runtime.$name.dll") -Destination (Join-Path $lib $api)
+    Copy-Item -LiteralPath (Join-Path $root ".godot/mono/temp/bin/ExportRelease/ShoujoKagekiCore.Runtime.$name.dll") -Destination (Join-Path $lib $api)
     if ($api -eq 'stable') {
         New-Item -ItemType Directory -Force -Path (Join-Path $lib 'api') | Out-Null
-        Copy-Item -LiteralPath (Join-Path $root 'src/Api.V1/bin/ExportRelease/net9.0/ShoujoKagekiAijoCore.Api.V1.dll') -Destination (Join-Path $lib 'api')
+        Copy-Item -LiteralPath (Join-Path $root 'src/Api.V1/bin/ExportRelease/net9.0/ShoujoKagekiCore.Api.V1.dll') -Destination (Join-Path $lib 'api')
     }
 }
-Build-Core 'src/Bootstrap/ShoujoKagekiAijoCore.Bootstrap.csproj' $StableGameDir 'stable'
-Copy-Item -LiteralPath (Join-Path $root 'src/Bootstrap/bin/ExportRelease/net9.0/ShoujoKagekiAijoCore.dll') -Destination $staging
-$manifest = Get-Content -LiteralPath (Join-Path $root 'ShoujoKagekiAijoCore.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+Build-Core 'src/Bootstrap/ShoujoKagekiCore.Bootstrap.csproj' $StableGameDir 'stable'
+Copy-Item -LiteralPath (Join-Path $root 'src/Bootstrap/bin/ExportRelease/net9.0/ShoujoKagekiCore.dll') -Destination $staging
+$manifest = Get-Content -LiteralPath (Join-Path $root 'ShoujoKagekiCore.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 $manifest.version = $Version
-$manifest | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $staging 'ShoujoKagekiAijoCore.json') -Encoding UTF8
+$manifest | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $staging 'ShoujoKagekiCore.json') -Encoding UTF8
 New-Item -ItemType Directory -Force -Path (Join-Path $staging "resources/$Version"), (Join-Path $staging 'sdk') | Out-Null
 Copy-Item -LiteralPath (Join-Path $root 'sdk/pack-character.ps1'), (Join-Path $root 'sdk/validate-package.ps1'), (Join-Path $root 'sdk/CharacterLoader.cs') -Destination (Join-Path $staging 'sdk')
 Copy-Item -LiteralPath (Join-Path $root 'src/Bootstrap/Bundle.cs') -Destination (Join-Path $staging 'sdk/BundleValidation.cs')
@@ -57,13 +57,13 @@ Get-ChildItem -LiteralPath $staging -Recurse -File | Sort-Object FullName | ForE
     $files[$relative] = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 $bundle = [ordered]@{
-    format=1; bootstrapProtocol=1; releaseVersion=$Version; apiMajor=1; apiVersion='1.9.0'; apiAssembly="lib/$Version/api/ShoujoKagekiAijoCore.Api.V1.dll"
+    format=1; bootstrapProtocol=1; releaseVersion=$Version; apiMajor=1; apiVersion='1.9.0'; apiAssembly="lib/$Version/api/ShoujoKagekiCore.Api.V1.dll"
     baseLibMinimumVersion='3.4.8'; resourceVersion=$Version; resourcePack="resources/$Version/Core.Resources.pck"; saveProtocol=2; networkProtocol=2
     features=@('player-state-events@1','card-clone-events@1','model-method-scopes@1','shine-reward-pools@1','shine-rewards@1','card-staging@1','card-payloads@1','player-choices@1','card-picking@1','card-upgrades@1','music-overrides@1','shine@1','diagnostics@1','music@1','configuration@1','card-play-routing@1','card-effects@1','card-execution@1','card-options@1','effect-registration@1','movement-pipeline@1','model-execution@1','card-copies@1','card-snapshots@1','card-selection@1','presentation@1','temporary-music@1') + @(if (Test-Path (Join-Path $root 'src/Modules/Telemetry')) { 'telemetry@1' }) + @(if (Test-Path (Join-Path $root 'src/Modules/Exports')) { 'card-export@1' })
     targets=[ordered]@{
-        stable=[ordered]@{ minimumGameVersion='0.107.1'; maximumGameVersion='0.107.1'; assembly="lib/$Version/stable/ShoujoKagekiAijoCore.Runtime.Stable.dll" }
-        main=[ordered]@{ minimumGameVersion='0.111.0'; maximumGameVersion='0.111.1'; assembly="lib/$Version/main/ShoujoKagekiAijoCore.Runtime.Main.dll" }
-        beta=[ordered]@{ minimumGameVersion='0.113.0'; maximumGameVersion='0.113.0'; assembly="lib/$Version/beta/ShoujoKagekiAijoCore.Runtime.Beta.dll" }
+        stable=[ordered]@{ minimumGameVersion='0.107.1'; maximumGameVersion='0.107.1'; assembly="lib/$Version/stable/ShoujoKagekiCore.Runtime.Stable.dll" }
+        main=[ordered]@{ minimumGameVersion='0.111.0'; maximumGameVersion='0.111.1'; assembly="lib/$Version/main/ShoujoKagekiCore.Runtime.Main.dll" }
+        beta=[ordered]@{ minimumGameVersion='0.113.0'; maximumGameVersion='0.113.0'; assembly="lib/$Version/beta/ShoujoKagekiCore.Runtime.Beta.dll" }
     }
     files=$files
 }

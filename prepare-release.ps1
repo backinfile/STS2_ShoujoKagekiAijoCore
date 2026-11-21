@@ -27,17 +27,17 @@ if ($WorkshopId) { $null = [ulong]::Parse($WorkshopId) }
 $workspace = Join-Path $output 'workshop'
 $content = Join-Path $workspace 'content'
 New-Item -ItemType Directory -Path $content -Force | Out-Null
-Copy-Item -LiteralPath $checked.Root -Destination (Join-Path $content 'ShoujoKagekiAijoCore') -Recurse
+Copy-Item -LiteralPath $checked.Root -Destination (Join-Path $content 'ShoujoKagekiCore') -Recurse
 Copy-Item -LiteralPath $preview.FullName -Destination (Join-Path $workspace 'image.png')
 $config | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $workspace 'workshop.json') -Encoding UTF8
 if ($WorkshopId) { Set-Content -LiteralPath (Join-Path $workspace 'mod_id.txt') -Value $WorkshopId -Encoding UTF8 }
 $prepared = & (Join-Path $PSScriptRoot 'tools/release/validate-workspace.ps1') -Workspace $workspace
-$archiveName = "ShoujoKagekiAijoCore-$($checked.Bundle.releaseVersion).zip"
+$archiveName = "ShoujoKagekiCore-$($checked.Bundle.releaseVersion).zip"
 $archive = Join-Path $output $archiveName
 Compress-Archive -LiteralPath $prepared.Package.Root -DestinationPath $archive -CompressionLevel Optimal
 $bundleHash = (Get-FileHash -LiteralPath (Join-Path $prepared.Package.Root 'core.bundle') -Algorithm SHA256).Hash.ToLowerInvariant()
 $archiveHash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
-@("$archiveHash  $archiveName", "$bundleHash  workshop/content/ShoujoKagekiAijoCore/core.bundle") |
+@("$archiveHash  $archiveName", "$bundleHash  workshop/content/ShoujoKagekiCore/core.bundle") |
     Set-Content -LiteralPath (Join-Path $output 'checksums.sha256') -Encoding UTF8
 [ordered]@{
     releaseVersion = $checked.Bundle.releaseVersion

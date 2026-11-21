@@ -4,18 +4,18 @@ Core 作为独立创意工坊 Mod 发布，仅 Karen 内嵌完整 Core；Junna �
 
 ## 1. 构建完整 Mod
 
-使用 PowerShell 7、.NET 9、MegaDot 4.5.1，以及v0.107.1、v0.111.1 和测试版的真实游戏目录。版本由 `build.ps1 -Version` 指定，根目录 `ShoujoKagekiAijoCore.json` 是 Mod 清单来源，构建时将清单版本同步为发行版本。
+使用 PowerShell 7、.NET 9、MegaDot 4.5.1，以及v0.107.1、v0.111.1 和测试版的真实游戏目录。版本由 `build.ps1 -Version` 指定，根目录 `ShoujoKagekiCore.json` 是 Mod 清单来源，构建时将清单版本同步为发行版本。
 
 ```powershell
 ./build.ps1 -StableGameDir $StableGame -MainGameDir $MainGame -BetaGameDir $BetaGame -Godot $MegaDot `
-  -TelemetryEndpointPath $LocalEndpointConfig -Version 1.0.1 `
-  -OutputDirectory dist/ShoujoKagekiAijoCore-1.0.1
+  -TelemetryEndpointPath $LocalEndpointConfig -Version 2.0.0 `
+  -OutputDirectory dist/ShoujoKagekiCore-2.0.0
 ```
 
 输出目录包含 Mod 清单、引导 DLL、API、三个目标的 Runtime、资源 PCK、`core.bundle` 和 SDK，可作为完整 Mod 安装到游戏 mods 目录。每次构建使用新输出目录。独立发布与 Karen 内嵌包应同时更新为同一份构建，旧引导器的目标清单只识别 stable 和 beta。
 
 ```powershell
-./sdk/validate-package.ps1 -CorePackage dist/ShoujoKagekiAijoCore-1.0.1 -Strict
+./sdk/validate-package.ps1 -CorePackage dist/ShoujoKagekiCore-2.0.0 -Strict
 ```
 
 严格校验核对发行身份、API 身份、必需文件和 SHA256，并拒绝未列入 `core.bundle` 的额外文件及链接。
@@ -27,16 +27,16 @@ Core 作为独立创意工坊 Mod 发布，仅 Karen 内嵌完整 Core；Junna �
 首次发布：
 
 ```powershell
-./prepare-release.ps1 -CorePackage dist/ShoujoKagekiAijoCore-1.0.1 `
-  -PreviewImage $PreviewPng -OutputDirectory out/releases/1.0.1 `
+./prepare-release.ps1 -CorePackage dist/ShoujoKagekiCore-2.0.0 `
+  -PreviewImage $PreviewPng -OutputDirectory out/releases/2.0.0 `
   -ChangeNote '首次发布'
 ```
 
 更新现有条目时传入已有 Core 工坊 ID，脚本将其写入新工作区的 `mod_id.txt`：
 
 ```powershell
-./prepare-release.ps1 -CorePackage dist/ShoujoKagekiAijoCore-1.0.1 `
-  -PreviewImage $PreviewPng -OutputDirectory out/releases/1.0.1-update `
+./prepare-release.ps1 -CorePackage dist/ShoujoKagekiCore-2.0.0 `
+  -PreviewImage $PreviewPng -OutputDirectory out/releases/2.0.0-update `
   -WorkshopId $CoreWorkshopId -ChangeNote $ReleaseNotes
 ```
 
@@ -44,7 +44,7 @@ Core 作为独立创意工坊 Mod 发布，仅 Karen 内嵌完整 Core；Junna �
 
 ```text
 out/releases/<release>/
-  ShoujoKagekiAijoCore-<version>.zip
+  ShoujoKagekiCore-<version>.zip
   checksums.sha256
   release.json
   workshop/
@@ -52,10 +52,10 @@ out/releases/<release>/
     image.png
     mod_id.txt               更新条目时存在
     content/
-      ShoujoKagekiAijoCore/   完整 Mod
+      ShoujoKagekiCore/   完整 Mod
 ```
 
-ZIP 内以 `ShoujoKagekiAijoCore/` 为顶层目录，可用于手动安装和 Karen 内嵌。`checksums.sha256` 记录 ZIP 与工坊内容中 `core.bundle` 的摘要，`release.json` 记录发行号、接口版本及游戏目标。工坊元数据、预览图和条目 ID 位于 `content/` 外，上传内容只包含完整 Core。
+ZIP 内以 `ShoujoKagekiCore/` 为顶层目录，可用于手动安装和 Karen 内嵌。`checksums.sha256` 记录 ZIP 与工坊内容中 `core.bundle` 的摘要，`release.json` 记录发行号、接口版本及游戏目标。工坊元数据、预览图和条目 ID 位于 `content/` 外，上传内容只包含完整 Core。
 
 ## 3. 上传或更新工坊条目
 
@@ -64,7 +64,7 @@ ZIP 内以 `ShoujoKagekiAijoCore/` 为顶层目录，可用于手动安装和 Ka
 首次创建条目：
 
 ```powershell
-./publish-workshop.ps1 -Workspace out/releases/1.0.1/workshop `
+./publish-workshop.ps1 -Workspace out/releases/2.0.0/workshop `
   -Uploader $ModUploader -CreateNew
 ```
 
@@ -73,20 +73,20 @@ ZIP 内以 `ShoujoKagekiAijoCore/` 为顶层目录，可用于手动安装和 Ka
 更新已有条目：
 
 ```powershell
-./publish-workshop.ps1 -Workspace out/releases/1.0.1-update/workshop `
+./publish-workshop.ps1 -Workspace out/releases/2.0.0-update/workshop `
   -Uploader $ModUploader
 ```
 
 更新要求工作区已有有效 `mod_id.txt`。`-CreateNew` 用于首次创建，有条目 ID 的工作区不能使用该参数。上传失败保留工作区和条目 ID，日志由官方上传器写入其目录。若上传器提示需要接受工坊协议，按提示完成后在工坊页面核对可见性。
 
-Core 的工坊必需物品为 [BaseLib](https://steamcommunity.com/sharedfiles/filedetails/?id=3737335127)。Junna 及其他角色在各自 `workshop.json` 的 `dependencies` 中填写 BaseLib 和 Core 的数字工坊 ID，同时在游戏 Mod 清单中保留 BaseLib、ShoujoKagekiAijoCore 的 Mod ID 与最低版本。
+Core 的工坊必需物品为 [BaseLib](https://steamcommunity.com/sharedfiles/filedetails/?id=3737335127)。Junna 及其他角色在各自 `workshop.json` 的 `dependencies` 中填写 BaseLib 和 Core 的数字工坊 ID，同时在游戏 Mod 清单中保留 BaseLib、ShoujoKagekiCore 的 Mod ID 与最低版本。
 
 ## 4. Karen 内嵌与发布核对
 
 Karen 构建使用本次完整 Core 包中的 SDK：
 
 ```powershell
-$CorePackage = 'dist/ShoujoKagekiAijoCore-1.0.1'
+$CorePackage = 'dist/ShoujoKagekiCore-2.0.0'
 & "$CorePackage/sdk/pack-character.ps1" -CorePackage $CorePackage `
   -CharacterDirectory $KarenModDirectory -OutputDirectory $KarenUploadContent `
   -ModId ShoujoKagekiAijoKaren

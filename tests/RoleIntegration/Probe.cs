@@ -63,9 +63,9 @@ public sealed class CoreRoleCommand : AbstractConsoleCmd
             return new(true, JsonSerializer.Serialize(new
             {
                 Settings = CoreApi.Configuration.Current,
-                ApiAssemblies = AppDomain.CurrentDomain.GetAssemblies().Count(a => a.GetName().Name == "ShoujoKagekiAijoCore.Api.V1"),
+                ApiAssemblies = AppDomain.CurrentDomain.GetAssemblies().Count(a => a.GetName().Name == "ShoujoKagekiCore.Api.V1"),
                 Runtimes = AppDomain.CurrentDomain.GetAssemblies().Select(a => a.GetName().Name)
-                    .Where(name => name?.StartsWith("ShoujoKagekiAijoCore.Runtime.", StringComparison.Ordinal) == true).ToArray(),
+                    .Where(name => name?.StartsWith("ShoujoKagekiCore.Runtime.", StringComparison.Ordinal) == true).ToArray(),
                 Diagnostics = CoreApi.Get<ICoreDiagnostics>().Snapshot(),
                 ModelSources = CoreApi.Get<ICoreDiscovery>().Models.GroupBy(model => model.ModId)
                     .Select(group => new { ModId = group.Key, Count = group.Count() }).ToArray(),
@@ -92,7 +92,7 @@ public sealed class CoreRoleCommand : AbstractConsoleCmd
     {
         if (player == null) return null;
         var runtime = AppDomain.CurrentDomain.GetAssemblies().Single(assembly =>
-            assembly.GetName().Name?.StartsWith("ShoujoKagekiAijoCore.Runtime.", StringComparison.Ordinal) == true);
+            assembly.GetName().Name?.StartsWith("ShoujoKagekiCore.Runtime.", StringComparison.Ordinal) == true);
         return runtime.GetType("ShoujoKageki.Core.Runtime.Modules.Shine.ShineArchive", throwOnError: true)!
             .GetMethod("GetRules")!.Invoke(null, [player]);
     }
@@ -122,7 +122,7 @@ public sealed class CoreRoleCommand : AbstractConsoleCmd
         try
         {
             var runtime = AppDomain.CurrentDomain.GetAssemblies().Single(assembly =>
-                assembly.GetName().Name?.StartsWith("ShoujoKagekiAijoCore.Runtime.", StringComparison.Ordinal) == true);
+                assembly.GetName().Name?.StartsWith("ShoujoKagekiCore.Runtime.", StringComparison.Ordinal) == true);
             var export = runtime.GetType("ShoujoKageki.Core.Exports.CardPngExportUtil", throwOnError: true)!
                 .GetMethod("ExportSingleAsync")!;
             var model = CoreApi.Get<ICoreDiscovery>().Models.First(item => item.ModelType.Name == "KarenShineStrike");

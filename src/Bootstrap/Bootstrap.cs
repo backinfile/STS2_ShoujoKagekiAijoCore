@@ -20,8 +20,10 @@ namespace ShoujoKageki.Core.Bootstrap;
 public static class Bootstrap
 {
     public const int BootstrapProtocol = 1;
-    public const string ModId = "ShoujoKagekiAijoCore";
+    public const string ModId = "ShoujoKagekiCore";
+    private const string LegacyModId = "ShoujoKagekiAijoCore";
     internal const string CoordinationKey = "ShoujoKagekiAijoCore.BootstrapProtocol1";
+    private const string IdentityKey = CoordinationKey + ".ModId";
     private static readonly MegaCrit.Sts2.Core.Logging.Logger Log = new(ModId, LogType.Generic);
     private const string BridgeId = ModId + ".Discovery";
     internal static Type[] RuntimeTypes { get; private set; } = [];
@@ -47,19 +49,23 @@ public static class Bootstrap
         lock (AppDomain.CurrentDomain)
         {
             var prior = AppDomain.CurrentDomain.GetData(CoordinationKey) as string;
-            if (prior == "ready") return;
-            if (prior != null) throw new InvalidOperationException($"Core bootstrap is {prior}. Restart after correcting the reported error.");
-            AppDomain.CurrentDomain.SetData(CoordinationKey, "initializing");
+            if (prior == "ready" && AppDomain.CurrentDomain.GetData(IdentityKey) as string == ModId) return;
             var startup = new Startup();
             var bridges = new Harmony(BridgeId);
             try
             {
+                if (prior == "ready" || ModManager.Mods.Any(x => x.manifest?.id == LegacyModId && (Eligible(x) || x.state == ModLoadState.Loaded)))
+                    throw new InvalidOperationException($"旧版 {LegacyModId} 仍在加载列表中。请移除旧 Core 和旧角色包，再安装新版 Core 与角色包。");
+                if (prior != null)
+                    throw new InvalidOperationException($"Core bootstrap is {prior}. Restart after correcting the reported error.");
+                AppDomain.CurrentDomain.SetData(CoordinationKey, "initializing");
                 InitializeOnce(startup, bridges);
+                AppDomain.CurrentDomain.SetData(IdentityKey, ModId);
                 AppDomain.CurrentDomain.SetData(CoordinationKey, "ready");
             }
             catch (Exception error)
             {
-                AppDomain.CurrentDomain.SetData(CoordinationKey, "failed");
+                if (prior != "ready") AppDomain.CurrentDomain.SetData(CoordinationKey, "failed");
                 RuntimeTypes = [];
                 // The native loader assigns Loaded after an initializer exception, then raises this event.
                 ModManager.OnModDetected += MarkFailed;

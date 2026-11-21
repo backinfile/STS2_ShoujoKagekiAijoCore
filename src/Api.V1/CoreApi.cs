@@ -3,8 +3,8 @@ namespace ShoujoKageki.Core.V1;
 public static class CoreApi
 {
     public const int ApiMajor = 1;
-    public const string ModId = "ShoujoKagekiAijoCore";
-    public const string ResourceRoot = "res://ShoujoKagekiAijoCore/";
+    public const string ModId = "ShoujoKagekiCore";
+    public const string ResourceRoot = "res://ShoujoKagekiCore/";
     private static IServiceProvider? _services;
     public static bool IsReady => _services != null;
     public static T Get<T>() where T : class => (_services?.GetService(typeof(T)) as T)

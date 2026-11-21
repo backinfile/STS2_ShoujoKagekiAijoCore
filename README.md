@@ -1,6 +1,8 @@
-# ShoujoKagekiAijoCore 使用说明
+# ShoujoKagekiCore 使用说明
 
-本文面向使用 Core 的玩家和 Mod 作者，说明 Core 1.9.8 的能力、配置与 API V1 接入方式。SDK 随完整 Core 构建产物提供。
+本文面向使用 Core 的玩家和 Mod 作者，说明 Core 2.0.0 的能力、配置与 API V1 接入方式。SDK 随完整 Core 构建产物提供。
+
+从 1.x 升级时，请移除旧 `ShoujoKagekiAijoCore` 包，并同步更新依赖 Core 的角色包。首次启动会在新配置缺失时继承旧配置，保留已有对局的 Core 存档字段。角色作者需要用 `ShoujoKagekiCore.Api.V1.dll` 重新编译，并将游戏清单的 Core 依赖改为 `ShoujoKagekiCore` 2.0.0 或更新版本。
 
 引导、服务端、存档与发布方面的实现约定见 [Core 实现文档](docs/IMPLEMENTATION.md)。[GitHub 仓库](https://github.com/backinfile/STS2_ShoujoKagekiCore)
 
@@ -30,17 +32,17 @@ Core 支持《杀戮尖塔 2》正式版与测试版。当前适配正式版 0.1
 
 ## 2. 安装、加载顺序与更新
 
-使用 Karen 时，更新 Karen 订阅即可取得内嵌 Core。使用 Junna 或其他依赖 Core 的 Mod 时，订阅该条目列出的 Core 和 BaseLib 必需物品。手动安装时，将完整 `ShoujoKagekiAijoCore` 目录与角色目录放入游戏 mods 目录，并安装该发行版要求的 BaseLib。
+使用 Karen 时，更新 Karen 订阅即可取得内嵌 Core。使用 Junna 或其他依赖 Core 的 Mod 时，订阅该条目列出的 Core 和 BaseLib 必需物品。手动安装时，将完整 `ShoujoKagekiCore` 目录与角色目录放入游戏 mods 目录，并安装该发行版要求的 BaseLib。
 
 ### 2.1 加载顺序
 
-**BaseLibCompatibilityHelper → BaseLib → ShoujoKagekiAijoCore → 角色 Mod。**
+**BaseLibCompatibilityHelper → BaseLib → ShoujoKagekiCore → 角色 Mod。**
 
 | 先后 | Mod |
 | --- | --- |
 | 1 | BaseLibCompatibilityHelper |
 | 2 | BaseLib |
-| 3 | ShoujoKagekiAijoCore |
+| 3 | ShoujoKagekiCore |
 | 4 | ShoujoKagekiAijoKaren、ShoujoKagekiJunna 或其他依赖 Core 的角色 |
 
 依赖 Core 的角色在清单中声明 Core 依赖，Core 在自己的清单中声明 BaseLib 依赖。本体按清单关系排列加载顺序，手动调整列表时也遵循上表。角色额外依赖其他库时，将这些库放在该角色之前。
@@ -49,7 +51,7 @@ Core 支持《杀戮尖塔 2》正式版与测试版。当前适配正式版 0.1
 
 ### 2.2 多角色与更新
 
-独立 Core 与 Karen 内嵌 Core 同时安装时，引导器选择满足已启用角色要求的共同兼容版本。Core 的逻辑 Mod ID 固定为 `ShoujoKagekiAijoCore`，公共配置和共享状态按这个身份管理。
+独立 Core 与 Karen 内嵌 Core 同时安装时，引导器选择满足已启用角色要求的共同兼容版本。Core 的逻辑 Mod ID 固定为 `ShoujoKagekiCore`，公共配置和共享状态按这个身份管理。
 
 独立 Core 随其工坊订阅更新，Karen 内嵌 Core 随 Karen 订阅更新。游戏启动后，本次进程使用选定的 Core 业务版本，更新在下次启动时采用。角色与 Core 的接口要求在启动阶段检查，版本信息和具体缺失能力通过诊断状态提供。
 
@@ -97,7 +99,7 @@ Core 使用 Karen 现行发行配置中的接收地址，Web 页面入口由对�
 
 ## 4. Mod 作者使用方式
 
-以下接口使用 ShoujoKagekiAijoCore.Api.V1。可编译示例与打包工具见 sdk/。
+以下接口使用 ShoujoKagekiCore.Api.V1。可编译示例与打包工具见 sdk/。
 
 ### 4.1 引用与工坊依赖
 
@@ -108,8 +110,8 @@ Core 使用 Karen 现行发行配置中的接收地址，Web 页面入口由对�
 5. 除 Karen 外，在角色工坊配置的 `dependencies` 中声明独立 Core 条目和 BaseLib 的工坊 ID。Karen 的上传目录内嵌完整 Core，工坊依赖为 BaseLib。
 
 ```xml
-<Reference Include="ShoujoKagekiAijoCore.Api.V1">
-  <HintPath>vendor/core-sdk/api/ShoujoKagekiAijoCore.Api.V1.dll</HintPath>
+<Reference Include="ShoujoKagekiCore.Api.V1">
+  <HintPath>vendor/core-sdk/api/ShoujoKagekiCore.Api.V1.dll</HintPath>
   <Private>false</Private>
 </Reference>
 ```
@@ -125,7 +127,7 @@ Core 使用 Karen 现行发行配置中的接收地址，Web 页面入口由对�
   "affects_gameplay": true,
   "dependencies": [
     { "id": "BaseLib", "min_version": "3.4.8" },
-    { "id": "ShoujoKagekiAijoCore", "min_version": "1.0.0" }
+    { "id": "ShoujoKagekiCore", "min_version": "2.0.0" }
   ]
 }
 ```

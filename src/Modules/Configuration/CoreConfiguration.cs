@@ -7,16 +7,33 @@ public sealed class CoreConfiguration : ICoreConfiguration
 {
     public static CoreConfiguration Instance { get; private set; } = null!;
     private CoreSettings _current = new();
-    internal ShoujoKagekiAijoCore.CoreModConfig? View;
+    internal ShoujoKagekiCore.CoreModConfig? View;
     public CoreSettings Current => _current;
     public event Action<CoreSettings, CoreSettings>? Changed;
     public CoreConfiguration() => Instance = this;
     internal void Initialize()
     {
-        View = new ShoujoKagekiAijoCore.CoreModConfig();
+        MigrateLegacyConfig(Path.Combine(Godot.OS.GetUserDataDir(), "mod_configs"));
+        View = new ShoujoKagekiCore.CoreModConfig();
         if (Current.FormatVersion > 1) throw new InvalidDataException($"Core config format {Current.FormatVersion} requires a newer Core.");
         Update(Current with { FormatVersion = 1 });
         View.Save();
+    }
+
+    internal static void MigrateLegacyConfig(string directory)
+    {
+        var current = Path.Combine(directory, CoreApi.ModId + ".cfg");
+        var legacy = Path.Combine(directory, "ShoujoKagekiAijoCore.cfg");
+        if (File.Exists(current) || !File.Exists(legacy)) return;
+
+        var temporary = Path.Combine(directory, $".{CoreApi.ModId}-{Guid.NewGuid():N}.tmp");
+        try
+        {
+            File.Copy(legacy, temporary);
+            File.Move(temporary, current);
+        }
+        catch (IOException) when (File.Exists(current)) { }
+        finally { File.Delete(temporary); }
     }
 
     internal void RegisterView() => ModConfigRegistry.Register(CoreApi.ModId, View!);

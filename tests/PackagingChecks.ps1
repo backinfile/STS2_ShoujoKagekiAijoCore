@@ -31,12 +31,12 @@ $pack = Join-Path $fixture 'sdk/pack-character.ps1'
 foreach ($modId in @('ShoujoKagekiAijoKaren', 'ShoujoKagekiJunna', 'ExampleCharacterMod')) {
     $source = Join-Path $scratch "sources/$modId"
     New-Item -ItemType Directory -Path $source -Force | Out-Null
-    [ordered]@{ id=$modId; dependencies=@(@{id='BaseLib'; min_version='3.4.7'}, @{id='ShoujoKagekiAijoCore'; min_version='1.0.0'}) } |
+    [ordered]@{ id=$modId; dependencies=@(@{id='BaseLib'; min_version='3.4.7'}, @{id='ShoujoKagekiCore'; min_version='1.0.0'}) } |
         ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $source "$modId.json") -Encoding UTF8
     $upload = Join-Path $scratch "uploads/$modId"
     & $pack -CorePackage $fixture -CharacterDirectory $source -OutputDirectory $upload -ModId $modId
     $role = Join-Path $upload $modId
-    $embedded = Join-Path $upload 'ShoujoKagekiAijoCore'
+    $embedded = Join-Path $upload 'ShoujoKagekiCore'
     Check ((Test-Path -LiteralPath $embedded) -eq ($modId -eq 'ShoujoKagekiAijoKaren')) "$modId distribution"
     $requirements = Get-Content -LiteralPath (Join-Path $role 'core.requirements') -Raw -Encoding UTF8 | ConvertFrom-Json
     Check ($requirements.modId -eq $modId -and $requirements.requiredFeatures -contains 'shine@1') "$modId requirements"
@@ -66,9 +66,9 @@ $summary = Get-Content (Join-Path $release 'release.json') -Raw -Encoding UTF8 |
 Check ($summary.archiveSha256 -eq (Get-FileHash (Join-Path $release $summary.archive)).Hash.ToLowerInvariant()) 'archive checksum'
 $archive = [IO.Compression.ZipFile]::OpenRead((Join-Path $release $summary.archive))
 try {
-    Check (@($archive.Entries | Where-Object { -not $_.FullName.StartsWith('ShoujoKagekiAijoCore/') }).Count -eq 0) 'ZIP installation directory'
+    Check (@($archive.Entries | Where-Object { -not $_.FullName.StartsWith('ShoujoKagekiCore/') }).Count -eq 0) 'ZIP installation directory'
     foreach ($entry in $archive.Entries | Where-Object Length -gt 0) {
-        $relative = $entry.FullName.Substring('ShoujoKagekiAijoCore/'.Length)
+        $relative = $entry.FullName.Substring('ShoujoKagekiCore/'.Length)
         $stream = $entry.Open()
         try { $hash = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($stream)) } finally { $stream.Dispose() }
         Check ($hash -eq (Get-FileHash (Join-Path $fixture $relative)).Hash) "ZIP file integrity: $relative"

@@ -13,15 +13,18 @@ $bundle = $checked.Bundle
 foreach ($feature in $RequiredFeatures) { if ($bundle.features -notcontains $feature) { throw "Core lacks required feature $feature" } }
 $source = [IO.Path]::GetFullPath($CharacterDirectory)
 $upload = [IO.Path]::GetFullPath($OutputDirectory)
-if ($ModId -ne [IO.Path]::GetFileName($ModId) -or $ModId -eq 'ShoujoKagekiAijoCore') { throw 'Invalid character mod ID.' }
+if ($ModId -ne [IO.Path]::GetFileName($ModId) -or $ModId -eq 'ShoujoKagekiCore') { throw 'Invalid character mod ID.' }
 $manifest = Get-Content -LiteralPath (Join-Path $source ($ModId + '.json')) -Raw -Encoding UTF8 | ConvertFrom-Json
 if ($manifest.id -ne $ModId) { throw 'Character manifest ID mismatch.' }
-$coreDependency = @($manifest.dependencies | Where-Object { $_.id -eq 'ShoujoKagekiAijoCore' })
+$coreDependency = @($manifest.dependencies | Where-Object { $_.id -eq 'ShoujoKagekiCore' })
 if ($coreDependency.Count -ne 1 -or -not $coreDependency[0].min_version) { throw 'Character manifest must declare the Core minimum version.' }
 if ([Version]($bundle.releaseVersion.Split('-')[0]) -lt [Version]($coreDependency[0].min_version.Split('-')[0])) { throw 'Core package is older than the character dependency.' }
 if (@($manifest.dependencies | Where-Object { $_.id -eq 'BaseLib' }).Count -ne 1) { throw 'Character manifest must declare BaseLib.' }
 $embedCore = $ModId -eq 'ShoujoKagekiAijoKaren'
-$destination = Join-Path $upload 'ShoujoKagekiAijoCore'
+$destination = Join-Path $upload 'ShoujoKagekiCore'
+if (Test-Path -LiteralPath (Join-Path $upload 'ShoujoKagekiAijoCore')) {
+    throw 'Output contains a legacy Core package. Choose a fresh upload directory.'
+}
 if (-not $embedCore -and (Test-Path -LiteralPath $destination)) {
     throw 'Only Karen embeds Core. Use a fresh upload directory and declare the Core Workshop dependency for this mod.'
 }

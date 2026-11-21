@@ -1,4 +1,4 @@
-# ShoujoKagekiAijoCore 实现文档
+# ShoujoKagekiCore 实现文档
 
 本文面向 Core 开发、部署和维护者，记录 Core 1.2.0 的实现约定，整理日期为 2026-11-08。使用方式与作者接入示例见 [Core 使用说明](../README.md)。
 
@@ -10,7 +10,7 @@ Core 作为独立游戏 Mod 维护并发布到创意工坊。仅 Karen 的角色
 
 共同约定如下。
 
-- 逻辑 Mod ID 固定为 `ShoujoKagekiAijoCore`。
+- 逻辑 Mod ID 固定为 `ShoujoKagekiCore`。
 - 角色使用官方 Core SDK，构建时记录所采用的发行版本与文件摘要；仅 Karen 随包携带完整 Core。
 - 一个游戏进程使用一份已选定的 Core 业务实现、一份公共配置和一组共享机制状态。
 - 引导 DLL 维持固定加载协议，业务代码、配置界面、资源和游戏版本适配在外置业务包中更新。
@@ -51,7 +51,7 @@ Core 作为独立游戏 Mod 维护并发布到创意工坊。仅 Karen 的角色
 
 ```text
 STS2_ShoujoKagekiCore/
-  ShoujoKagekiAijoCore.json  正式 Mod 清单
+  ShoujoKagekiCore.json  正式 Mod 清单
   workshop.json            独立 Core 工坊配置
   build.ps1                多目标构建与完整 Mod 目录
   prepare-release.ps1      ZIP、哈希与工坊工作区
@@ -83,15 +83,15 @@ workshop/
   image.png
   mod_id.txt                 首次成功上传后生成，更新时沿用
   content/
-    ShoujoKagekiAijoCore/
-      ShoujoKagekiAijoCore.json
-      ShoujoKagekiAijoCore.dll
+    ShoujoKagekiCore/
+      ShoujoKagekiCore.json
+      ShoujoKagekiCore.dll
       core.bundle
       lib/1.2.0/
-        api/ShoujoKagekiAijoCore.Api.V1.dll
-        stable/ShoujoKagekiAijoCore.Runtime.Stable.dll
-        main/ShoujoKagekiAijoCore.Runtime.Main.dll
-        beta/ShoujoKagekiAijoCore.Runtime.Beta.dll
+        api/ShoujoKagekiCore.Api.V1.dll
+        stable/ShoujoKagekiCore.Runtime.Stable.dll
+        main/ShoujoKagekiCore.Runtime.Main.dll
+        beta/ShoujoKagekiCore.Runtime.Beta.dll
       resources/1.2.0/Core.Resources.pck
       sdk/...
 ```
@@ -108,7 +108,7 @@ KarenWorkshop/content/
     ShoujoKagekiAijoKaren.pck
     core.requirements
     core.package.lock
-  ShoujoKagekiAijoCore/        与独立条目相同的完整官方发行包
+  ShoujoKagekiCore/        与独立条目相同的完整官方发行包
 
 OtherRoleWorkshop/content/
   ShoujoKagekiJunna/
@@ -124,7 +124,7 @@ OtherRoleWorkshop/content/
 
 `core.bundle` 与 `core.requirements` 使用 JSON 内容和上述固定扩展名。游戏递归扫描 `.json` 作为潜在 Mod 清单，这两类元数据使用专用扩展名以表达各自用途。
 
-Core 的游戏清单声明 `has_dll`，公共资源包由选中版本的引导流程挂载。资源包与业务程序集作为同一个发行单元校验、选择和加载。角色资源使用各自的资源根目录，Core 资源统一位于 `res://ShoujoKagekiAijoCore/`。
+Core 的游戏清单声明 `has_dll`，公共资源包由选中版本的引导流程挂载。资源包与业务程序集作为同一个发行单元校验、选择和加载。角色资源使用各自的资源根目录，Core 资源统一位于 `res://ShoujoKagekiCore/`。
 
 ## 4. 分层架构
 
@@ -160,7 +160,7 @@ BaseLib 提供现有的配置、枚举、牌堆、存档与钩子基础。Core �
 
 ### 5.1 引导协议
 
-固定入口文件名为 `ShoujoKagekiAijoCore.dll`。第一版引导协议使用 `BootstrapProtocol = 1`，包含以下稳定约定。
+固定入口文件名为 `ShoujoKagekiCore.dll`。第一版引导协议使用 `BootstrapProtocol = 1`，包含以下稳定约定。
 
 - 入口类型、初始化方法和反射调用签名。
 - `core.bundle`、`core.requirements` 的查找位置和必需字段。
@@ -182,7 +182,7 @@ BaseLib 提供现有的配置、枚举、牌堆、存档与钩子基础。Core �
 6. 先校验选中发行包的全部必需文件，再加载公开接口、当前游戏目标的业务程序集和公共资源。
 7. 在内存中将当前 Core 条目的有效版本同步为选中版本，同时维护本体读取的清单版本与已解析版本字段。
 8. 将其余符合重复定义的 Core 条目标为重复禁用，并保证依赖查找首先命中当前逻辑条目。
-9. 将选中的业务程序集归属关联到 `ShoujoKagekiAijoCore`。在模型、枚举、本地化与联机类型缓存建立前完成反射发现接入。
+9. 将选中的业务程序集归属关联到 `ShoujoKagekiCore`。在模型、枚举、本地化与联机类型缓存建立前完成反射发现接入。
 10. 初始化核心状态和公共默认模块，建立唯一配置入口。角色按本体流程初始化模型，Core 在模型发现阶段自动识别角色、牌池、资料与闪耀声明。
 
 业务初始化结果在进程内固定。进程重启时重新执行候选选择。工坊在磁盘上的后续更新供下次启动使用。
@@ -202,7 +202,7 @@ BaseLib 提供现有的配置、枚举、牌堆、存档与钩子基础。Core �
   "affects_gameplay": true,
   "dependencies": [
     { "id": "BaseLib", "min_version": "3.4.7" },
-    { "id": "ShoujoKagekiAijoCore", "min_version": "1.0.0" }
+    { "id": "ShoujoKagekiCore", "min_version": "2.0.0" }
   ]
 }
 ```
@@ -239,7 +239,7 @@ Karen 发行包携带满足自身需求的完整 Core。其他角色通过独立
 
 ### 5.5 加载顺序与初始化前检查
 
-依赖顺序固定为 BaseLib → ShoujoKagekiAijoCore → 角色 Mod。Core 清单声明 BaseLib 依赖，角色清单声明 Core 及其余实际依赖，加载器按依赖关系处理顺序。
+依赖顺序固定为 BaseLib → ShoujoKagekiCore → 角色 Mod。Core 清单声明 BaseLib 依赖，角色清单声明 Core 及其余实际依赖，加载器按依赖关系处理顺序。
 
 在引导流程中核对 BaseLib 和选中 Core 的有效版本、角色最低要求、依赖环、已发现依赖的状态及反射缓存初始化阶段。单个清单中依赖项的书写顺序只描述关系，实际加载顺序取决于完整依赖图。
 
@@ -303,7 +303,7 @@ Core 发布时优先保持外部接口稳定。以下内容属于公开契约。
 
 Core 1.2 可以继续提供接口 V1。未来提供 V2 时，发行包同时保留仍受支持的 V1 接入层，由兼容层连接同一个业务内核。一个关键字的状态写入和结算仍有唯一负责模块。
 
-面向作者的程序集名称拟为 `ShoujoKagekiAijoCore.Api.V1.dll`，命名空间拟为 `ShoujoKageki.Core.V1`。同一接口主版本内保持稳定的 `AssemblyVersion`，发行细节记录在信息版本和发行清单中。
+面向作者的程序集名称拟为 `ShoujoKagekiCore.Api.V1.dll`，命名空间拟为 `ShoujoKageki.Core.V1`。同一接口主版本内保持稳定的 `AssemblyVersion`，发行细节记录在信息版本和发行清单中。
 
 ### 7.3 保护现有玩法
 
@@ -487,7 +487,7 @@ AttackCounter 当前在 BeforeDamageReceived 中按伤害回调累计，群体�
 
 ## 9. Core 独立配置
 
-Core 使用 BaseLib 的 ModConfigRegistry 和配置界面，以固定逻辑 Mod ID 注册一次。配置文件使用固定文件名 ShoujoKagekiAijoCore.cfg，位于 BaseLib 的用户配置目录。
+Core 使用 BaseLib 的 ModConfigRegistry 和配置界面，以固定逻辑 Mod ID 注册一次。配置文件使用固定文件名 ShoujoKagekiCore.cfg，位于 BaseLib 的用户配置目录。
 
 配置读取范围限定为 Core 自身配置。首次运行创建 Core 默认配置，后续启动读取该配置。Core 配置身份与物理安装目录、工坊来源及发行版本分开保存。
 

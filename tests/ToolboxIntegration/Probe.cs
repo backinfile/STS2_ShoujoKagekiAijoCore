@@ -24,7 +24,7 @@ public sealed class ToolboxCheckCommand : AbstractConsoleCmd
     public override CmdResult Process(Player? player, string[] args)
     {
         if (player == null) return new(false, "Run required.");
-        var runtime = AppDomain.CurrentDomain.GetAssemblies().Single(a => a.GetName().Name?.StartsWith("ShoujoKagekiAijoCore.Runtime.", StringComparison.Ordinal) == true);
+        var runtime = AppDomain.CurrentDomain.GetAssemblies().Single(a => a.GetName().Name?.StartsWith("ShoujoKagekiCore.Runtime.", StringComparison.Ordinal) == true);
         var shellType = runtime.GetType("ShoujoKageki.Core.Runtime.Modules.Shine.CoreEmptyShell", true)!;
         var shell = ModelDb.GetById<CardModel>(ModelDb.GetId(shellType));
         // This is Toolbox.BeforeHandDraw's exact candidate source, including unlock and multiplayer filtering.
@@ -35,7 +35,7 @@ public sealed class ToolboxCheckCommand : AbstractConsoleCmd
         var comparisonTitle = ModelDb.GetById<CardModel>(new ModelId("CARD", "KAREN_SHINE_REPRODUCE")).Title;
         var packagedLocalizations = new[] { "zhs", "eng", "jpn" }.Select(language =>
         {
-            using var document = JsonDocument.Parse(Godot.FileAccess.GetFileAsString($"res://ShoujoKagekiAijoCore/localization/{language}/cards.json"));
+            using var document = JsonDocument.Parse(Godot.FileAccess.GetFileAsString($"res://ShoujoKagekiCore/localization/{language}/cards.json"));
             var entries = document.RootElement;
             bool present = entries.TryGetProperty(shell.Id.Entry + ".title", out var localizedTitle)
                 && entries.TryGetProperty(shell.Id.Entry + ".description", out var localizedDescription)
