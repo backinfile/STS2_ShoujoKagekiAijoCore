@@ -19,3 +19,120 @@
 @media(max-width:1100px){.body-layout.is-relics.has-relic-selection{grid-template-columns:180px minmax(0,1fr) 310px}.relic-open{gap:16px}.relic-body{margin-left:112px}}
 @media(max-width:800px){.body-layout.is-relics,.body-layout.is-relics.has-relic-selection{grid-template-columns:160px minmax(0,1fr)}.body-layout.is-relics.has-relic-selection{grid-template-rows:minmax(0,1fr) minmax(0,1fr)}.is-relics .sidebar{grid-row:1/-1}.is-relics .workspace{grid-column:2;grid-row:1}.is-relics.has-relic-selection .inspector{grid-column:2;grid-row:2;border-top:1px solid var(--line)}}
 @media(max-width:650px){.body-layout.is-relics{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr)}.body-layout.is-relics.has-relic-selection{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) minmax(0,1.15fr)}.is-relics .sidebar{display:none}.is-relics .workspace,.is-relics.has-relic-selection .inspector{grid-column:1}.relic-icon{width:72px;height:72px}.relic-name{font-size:18px}.relic-body{margin:8px 0 0}.relic-effect{font-size:14px}.relic-relation .text-button{min-height:44px}}
+
+.relic-filters .filter-options {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.relic-filters .filter-option {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.relic-grid {
+  --relic-column: 196px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--relic-column)), 1fr));
+  column-gap: 16px;
+}
+.relic-grid .relic-entry {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0;
+  border-bottom: 1px solid var(--line);
+}
+.relic-grid .relic-entry.selected {
+  border-color: var(--gold);
+  background: var(--surface);
+}
+.relic-grid .relic-open {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  align-items: start;
+  flex: 1;
+  width: 100%;
+  min-height: 112px;
+  padding: 12px;
+  gap: 8px;
+}
+.relic-grid .relic-open:hover {
+  background: var(--surface);
+}
+.relic-grid .relic-open:focus-visible {
+  outline-offset: -2px;
+}
+.relic-tile-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 40px;
+}
+.relic-grid .relic-icon {
+  width: 40px;
+  height: 40px;
+}
+.relic-grid .relic-heading {
+  gap: 2px;
+}
+.relic-grid .relic-name,
+.relic-grid .relic-effect {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  overflow-wrap: anywhere;
+}
+.relic-grid .relic-name {
+  -webkit-line-clamp: 2;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.relic-grid .relic-rarity {
+  font-size: 11px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.relic-grid .relic-effect {
+  -webkit-line-clamp: 3;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+.relic-restore {
+  align-self: flex-start;
+  margin: 0 12px 12px;
+}
+#editor-form .relic-relation {
+  gap: 0 12px;
+  margin: -8px 0 12px;
+}
+#editor-form .relic-relation .text-button {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1100px) {
+  .has-relic-selection .relic-grid {
+    --relic-column: 136px;
+  }
+}
+
+@media (max-width: 760px) {
+  .relic-grid {
+    --relic-column: 136px;
+    column-gap: 8px;
+  }
+  .relic-grid .relic-open {
+    padding: 10px 8px;
+  }
+  .relic-grid .relic-icon {
+    width: 32px;
+    height: 32px;
+  }
+  .relic-restore {
+    min-height: 44px;
+    margin-left: 8px;
+  }
+}
