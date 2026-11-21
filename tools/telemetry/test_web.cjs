@@ -93,6 +93,9 @@ console.log('PASS language distribution labels, counts, percentages, escaping an
   assert.ok((await context.saved.text()).includes('"character","SILENT"'));
   run('syncURL()');
   assert.ok(context.savedHash.includes('character=SILENT'));
+  run("updateCharacters([],'all')");
+  assert.ok(node('character').innerHTML.includes('<option value="JUNNA">星见纯那</option>'));
+  assert.equal(run("characterName('CHARACTER.JUNNA')"),'星见纯那');
   run("updateCharacters(['CUSTOM_CLASS'],'CUSTOM_CLASS')");
   assert.equal(node('character').value,'CUSTOM_CLASS');
   assert.ok(node('character').innerHTML.includes('value="CUSTOM_CLASS"'));

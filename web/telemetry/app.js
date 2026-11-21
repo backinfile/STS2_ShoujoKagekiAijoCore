@@ -1,5 +1,6 @@
 'use strict';
 const $ = id => document.getElementById(id);
+const assetQuery = document.currentScript?.src.match(/\?v=[a-f0-9]{16}$/)?.[0] ?? '';
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pct = value => value == null ? '—' : (value * 100).toFixed(1) + '%';
 const num = value => new Intl.NumberFormat('zh-CN').format(value ?? 0);
@@ -9,9 +10,9 @@ const languageName=value=>LANGUAGES[value]??value;
 const OUTCOME = {win:'胜利',death:'死亡',abandon:'放弃'};
 const RUN_MODES = {standard:'标准',daily:'每日挑战',dread:'Dread',blitz:'Blitz',custom:'自定义',none:'未知'};
 const modeName = mode => Object.hasOwn(RUN_MODES,mode) ? RUN_MODES[mode] : mode || '未知';
-const CHARACTERS={KAREN:'爱城华恋',IRONCLAD:'铁甲战士',SILENT:'静默猎手',DEFECT:'故障机器人',REGENT:'储君',NECROBINDER:'亡灵契约师',WATCHER:'观者'};
+const CHARACTERS={KAREN:'爱城华恋',JUNNA:'星见纯那',IRONCLAD:'铁甲战士',SILENT:'静默猎手',DEFECT:'故障机器人',REGENT:'储君',NECROBINDER:'亡灵契约师',WATCHER:'观者'};
 const RARITIES=['基础','普通','罕见','稀有','先古','衍生','诅咒','状态','特殊','事件','任务','未知'];
-const OWNERS=['karen','ironclad','silent','defect','regent','necrobinder','colorless','curse','status','event','token','quest','unknown'];
+const OWNERS=['karen','junna','ironclad','silent','defect','regent','necrobinder','colorless','curse','status','event','token','quest','unknown'];
 const STARTER_CURSES=new Set(['ASCENDERS_BANE','KAREN_SLEEPY']);
 const CARD_SORTS={name:'卡牌名称',cost:'基础费用',type:'卡牌类型',pick_rate:'记录选中率',win_rate:'曾持有胜率',hold_rate:'持有覆盖率',recorded_offers:'选牌记录',picked:'记录选中次数',offered:'已知结果记录数',held:'持有席位',wins:'胜利席位',unknown_picked:'结果缺失数'};
 const characterName=value=>CHARACTERS[model(value)]??model(value);
@@ -156,7 +157,7 @@ function selectCard(id,scope=primary){
 function renderRuns(){
  const r=state.runs;if(!r)return;
  if(!r.items.some(run=>run.id===state.run))state.run=r.items[0]?.id??null;
- $('runs').innerHTML=r.items.length?'<table><caption hidden>已接收对局</caption><thead><tr><th>职业 / 人数</th><th>结果</th><th>进度</th><th>版本 / 模式 / 进阶</th><th>对局 ID / 接收时间</th><th></th></tr></thead><tbody>'+r.items.map(run=>'<tr data-run="'+run.id+'" class="'+(run.id===state.run?'selected':'')+'"><td><button class="run-players" data-run="'+run.id+'">'+run.players.map(p=>esc(characterName(p.character))).join(' / ')+'</button><span class="fraction">'+run.player_count+' 人</span></td><td>'+tag(run.outcome)+'</td><td>'+run.floor+' 层</td><td>'+esc(run.build)+'<span class="fraction">'+esc(modeName(run.mode))+' · 进阶 '+run.ascension+'</span></td><td><button data-run="'+run.id+'">'+run.id.slice(0,12)+'</button><span class="fraction">'+date(run.received_at)+'</span></td><td><button data-history="'+run.id+'" aria-label="查看对局详情 '+run.id.slice(0,12)+'">↗</button></td></tr>').join('')+'</tbody></table>':($('character').value!=='all'||$('outcome').value!=='all'?empty('没有匹配的对局','调整职业、结果或上方筛选'):empty());
+ $('runs').innerHTML=r.items.length?'<table><caption hidden>已接收对局</caption><thead><tr><th>职业 / 人数</th><th>结果</th><th>进度</th><th>版本 / 模式 / 进阶</th><th>对局 ID / 接收时间</th><th></th></tr></thead><tbody>'+r.items.map(run=>'<tr data-run="'+run.id+'" class="'+(run.id===state.run?'selected':'')+'"><td><button class="run-players" data-run="'+run.id+'">'+run.players.map(p=>esc(characterName(p.character))).join(' / ')+'</button><span class="fraction">'+run.player_count+' 人</span></td><td>'+tag(run.outcome)+'</td><td>'+run.floor+' 层</td><td>'+esc(run.build)+'<span class="fraction">'+esc(modeName(run.mode))+' · 进阶 '+run.ascension+'</span></td><td><button data-run="'+run.id+'">'+run.id.slice(0,12)+'</button><span class="fraction">'+date(run.received_at)+'</span></td><td><button data-history="'+run.id+'" aria-label="查看对局详情 '+run.id.slice(0,12)+'">↗</button></td></tr>').join('')+'</tbody></table>':($('character').value!=='all'||$('outcome').value!=='all'?empty('没有匹配的对局','扩大接收时间范围或调整筛选'):empty());
  renderRunDetail();
  const pages=Math.max(1,Math.ceil(r.total/r.page_size));
  $('pagination').innerHTML='<span>'+num(r.total)+' 局</span><div><button data-page="'+(state.page-1)+'" '+(state.page<=1?'disabled':'')+'>上一页</button><span>'+state.page+' / '+pages+'</span><button data-page="'+(state.page+1)+'" '+(state.page>=pages?'disabled':'')+'>下一页</button></div>';
@@ -179,7 +180,10 @@ function rules(){openModal('统计规则',[
 async function openHistory(id,restored=false){
  const version=++historyVersion;primary.historyController?.abort();primary.historyController=new AbortController();
  $('historyTitle').textContent='对局详情';$('historyBody').textContent='加载中';if(!$('history').open)$('history').showModal();
- try{const [data]=await Promise.all([api('api/runs/'+id,primary.historyController.signal),historyCatalog()]);if(version!==historyVersion)return;state.history=data;state.historyId=id;state.seat=restored?Math.min(state.seat,Math.max(0,data.history.players.length-1)):Math.max(0,data.history.players.findIndex(p=>model(p.character)==='KAREN'));if(!restored)state.floor=1;renderHistory();if(!$('history').open)$('history').showModal();syncURL();}
+ try{const [data]=await Promise.all([api('api/runs/'+id,primary.historyController.signal),historyCatalog()]);if(version!==historyVersion)return;state.history=data;state.historyId=id;
+  const players=data.history.players;
+  const preferred=players.findIndex(p=>model(p.character)===$('character').value);
+  state.seat=restored?Math.min(state.seat,Math.max(0,players.length-1)):Math.max(0,preferred>=0?preferred:players.findIndex(p=>model(p.character)==='KAREN'));if(!restored)state.floor=1;renderHistory();if(!$('history').open)$('history').showModal();syncURL();}
  catch(error){if(version===historyVersion&&error.name!=='AbortError')$('historyBody').textContent=error.message;}
 }
 function floors(){let floor=0;return listOf(state.history?.history.map_point_history).flatMap((entries,act)=>listOf(entries).filter(entry=>entry&&typeof entry==='object').map(entry=>({entry,act:act+1,floor:++floor})));}
@@ -450,12 +454,12 @@ state.card=urlState.get('card');state.run=urlState.get('run');state.seat=Math.mi
 let catalogPromise;
 async function historyCatalog(){
  if(state.catalogReady)return;
- catalogPromise??=Promise.all([api('catalog.json'),api('relics.json')]).then(([catalog,relics])=>{state.catalog=catalog;state.relics=relics;state.catalogReady=true;}).catch(error=>{catalogPromise=null;throw error;});
+ catalogPromise??=Promise.all([api('catalog.json'+assetQuery),api('relics.json'+assetQuery)]).then(([catalog,relics])=>{state.catalog=catalog;state.relics=relics;state.catalogReady=true;}).catch(error=>{catalogPromise=null;throw error;});
  return catalogPromise;
 }
 async function boot(){
  render();const loading=load();
- api('characters.json').then(characters=>{Object.assign(CHARACTERS,characters);if(state.view==='runs')renderRuns();}).catch(()=>{});
+ api('characters.json'+assetQuery).then(characters=>{Object.assign(CHARACTERS,characters);if(state.view==='runs')renderRuns();}).catch(()=>{});
  await loading;const historyId=urlState.get('history');if(/^[0-9a-f]{32}$/.test(historyId??''))await openHistory(historyId,true);
 }
 boot();

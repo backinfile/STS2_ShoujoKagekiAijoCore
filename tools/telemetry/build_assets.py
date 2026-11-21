@@ -6,7 +6,7 @@ from pathlib import Path
 from PIL import Image
 
 
-def build(exports, web):
+def build(exports, web, source_mods=()):
     web.mkdir(parents=True, exist_ok=True)
     assets = web / "assets"
     assets.mkdir(exist_ok=True)
@@ -14,24 +14,47 @@ def build(exports, web):
         path = web / name
         return json.loads(path.read_text(encoding="utf-8-sig")) if path.exists() else {}
     catalog, relics, characters = read("catalog.json"), read("relics.json"), read("characters.json")
-    catalog.update(read("native_catalog.json"))
+    if not source_mods:
+        catalog.update(read("native_catalog.json"))
     card_alias_sources, relic_alias_sources = {}, {}
     for folder in exports:
         game = json.loads((folder / "game_info.json").read_text(encoding="utf-8-sig"))
+        owners_by_mod = {}
         for character in game.get("characters", []):
-            characters[character["id"].split(".")[-1].upper()] = character["name"]
+            source = character.get("sourceMod")
+            if source_mods and source not in source_mods:
+                continue
+            role = character["id"].split(".")[-1].upper()
+            characters[role] = character["name"]
+            if source:
+                owners_by_mod.setdefault(source, set()).add(role)
         for relic in game.get("relics", []):
+            if source_mods and relic.get("sourceMod") not in source_mods:
+                continue
             relics[relic["id"]] = {"name": relic["name"], "source_mod": relic.get("sourceMod", "unknown"), "source_version": relic.get("sourceVersion", "unknown")}
             alias = relic["id"].split(".")[-1].upper()
             if relic_alias_sources.setdefault(alias, relic["id"]) == relic["id"]:
                 relics[alias] = relics[relic["id"]]
         manifest = json.loads((folder / "cards.json").read_text(encoding="utf-8-sig"))
         for card in manifest["cards"]:
+            source_mod = card.get("sourceMod", "unknown")
+            if source_mods and source_mod not in source_mods:
+                continue
             cid = card["id"]
-            owner = (card.get("playerId") or "unknown").split(".")[-1].lower()
-            item = {"name": card["name"], "cost": card.get("cost"), "rarity": card.get("rarity", "未知"),
+            alias = cid.split(".")[-1].upper()
+            previous = catalog.get(cid, catalog.get(alias, {}))
+            if previous.get("full_id", cid) != cid:
+                previous = {}
+            source_owners = owners_by_mod.get(source_mod, ())
+            default_owner = next(iter(source_owners)) if len(source_owners) == 1 else "unknown"
+            owner = (card.get("playerId") or previous.get("owner") or default_owner).rsplit(".", 1)[-1].lower()
+            cost = card.get("cost")
+            if isinstance(cost, str):
+                cost = int(cost) if cost.isdecimal() else -1
+            rarity = card.get("rarity", "未知")
+            item = {"name": card["name"], "cost": cost, "rarity": "先古" if rarity == "远古" else rarity,
                     "type": card.get("type", "未知"), "owner": owner, "owner_name": characters.get(owner.upper(), owner),
-                    "full_id": cid, "source_mod": card.get("sourceMod", "unknown"), "source_version": card.get("sourceVersion", "unknown")}
+                    "full_id": cid, "source_mod": source_mod, "source_version": card.get("sourceVersion", "unknown")}
             image = (folder / card["images"]["base"]).resolve()
             if not image.is_relative_to(folder.resolve()):
                 raise ValueError("Image path escapes author export directory")
@@ -41,8 +64,9 @@ def build(exports, web):
                     bitmap.thumbnail((420, 600))
                     bitmap.save(destination, "WEBP", quality=82)
                 item["image"] = "assets/" + destination.name
+            elif previous.get("image"):
+                item["image"] = previous["image"]
             catalog[cid] = item
-            alias = cid.split(".")[-1].upper()
             if card_alias_sources.setdefault(alias, cid) == cid:
                 catalog[alias] = item
     for name, value in (("catalog.json", catalog), ("relics.json", relics), ("characters.json", characters)):
@@ -53,6 +77,7 @@ def build(exports, web):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--export", dest="exports", type=Path, action="append", required=True)
+    parser.add_argument("--source-mod", action="append", default=[], help="Update only models from this Mod ID; may be repeated")
     parser.add_argument("--web", type=Path, default=Path(__file__).resolve().parents[2] / "web/telemetry")
     args = parser.parse_args()
-    print("Built", build(args.exports, args.web), "catalogue entries")
+    print("Built", build(args.exports, args.web, args.source_mod), "catalogue entries")

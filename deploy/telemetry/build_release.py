@@ -5,6 +5,21 @@ from pathlib import Path
 import shutil
 
 
+def stamp_web_assets(web):
+    # Version metadata requests as well as the worker so an older active worker
+    # can load the current dashboard and catalogues immediately on navigation.
+    digest = hashlib.sha256()
+    for path in sorted(web.rglob("*")):
+        if path.is_file() and path.name != "sw.js":
+            digest.update(path.relative_to(web).as_posix().encode())
+            digest.update(path.read_bytes())
+    version = digest.hexdigest()[:16]
+    for name in ("index.html", "sw.js"):
+        path = web / name
+        path.write_text(path.read_text(encoding="utf-8").replace("__ASSET_VERSION__", version), encoding="utf-8")
+    return version
+
+
 def build(output):
     root = Path(__file__).resolve().parents[2]
     if output.exists():
@@ -13,14 +28,7 @@ def build(output):
     for name in ("app.py", "error_reports.py", "error_retention.py", "protocol.py", "raw_archive.py"):
         shutil.copy2(root / "services/telemetry" / name, output / name)
     shutil.copytree(root / "web/telemetry", output / "web")
-    # Every release gives the worker a new cache when any web asset changes.
-    digest = hashlib.sha256()
-    for path in sorted((output / "web").rglob("*")):
-        if path.is_file() and path.name != "sw.js":
-            digest.update(path.relative_to(output / "web").as_posix().encode())
-            digest.update(path.read_bytes())
-    worker = output / "web/sw.js"
-    worker.write_text(worker.read_text(encoding="utf-8").replace("__ASSET_VERSION__", digest.hexdigest()[:16]), encoding="utf-8")
+    stamp_web_assets(output / "web")
     for name in ("install.py", "domain_config.py"):
         shutil.copy2(root / "deploy/telemetry" / name, output / name)
     print("Release assembled")

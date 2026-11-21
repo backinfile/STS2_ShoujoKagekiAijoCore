@@ -933,36 +933,126 @@
     "name": "涅奥的牺牲"
   },
   "KAREN_HAIRPIN_RELIC": {
-    "name": "发夹"
+    "name": "发夹",
+    "source_mod": "ShoujoKagekiAijoKaren",
+    "source_version": "v1.0.1"
   },
   "KAREN_HAIRPIN2_RELIC": {
-    "name": "发夹-立体版"
+    "name": "发夹-立体版",
+    "source_mod": "ShoujoKagekiAijoKaren",
+    "source_version": "v1.0.1"
   },
   "KAREN_LOCK_RELIC": {
-    "name": "上锁的遗物"
+    "name": "上锁的遗物",
+    "source_mod": "ShoujoKagekiAijoKaren",
+    "source_version": "v1.0.1"
   },
   "KAREN_WATER_BOTTLE_RELIC": {
-    "name": "华恋的水壶"
+    "name": "华恋的水壶",
+    "source_mod": "ShoujoKagekiAijoKaren",
+    "source_version": "v1.0.1"
   },
   "KAREN_COOKIE_RELIC": {
-    "name": "饼干"
+    "name": "饼干",
+    "source_mod": "ShoujoKagekiAijoKaren",
+    "source_version": "v1.0.1"
   },
   "KAREN_STAR_HAIRCLIP_RELIC": {
-    "name": "星形发饰"
+    "name": "星形发饰",
+    "source_mod": "ShoujoKagekiAijoKaren",
+    "source_version": "v1.0.1"
   },
   "KAREN_BASEBALL_CAT_RELIC": {
-    "name": "棒球猫"
+    "name": "棒球猫",
+    "source_mod": "ShoujoKagekiAijoKaren",
+    "source_version": "v1.0.1"
   },
   "KAREN_MR_WHITE_RELIC": {
-    "name": "Mr. White"
+    "name": "Mr. White",
+    "source_mod": "ShoujoKagekiAijoKaren",
+    "source_version": "v1.0.1"
   },
   "KAREN_LITTLE_STAR_RELIC": {
-    "name": "小小星"
+    "name": "小小星",
+    "source_mod": "ShoujoKagekiAijoKaren",
+    "source_version": "v1.0.1"
   },
   "KAREN_STAR_TIARA_RELIC": {
-    "name": "星之皇冠"
+    "name": "星之皇冠",
+    "source_mod": "ShoujoKagekiAijoKaren",
+    "source_version": "v1.0.1"
   },
   "KAREN_FLOWER_RELIC": {
     "name": "花朵"
+  },
+  "RELIC.JUNNA_BURNING_GEM": {
+    "name": "燃烧宝石",
+    "source_mod": "ShoujoKagekiJunna",
+    "source_version": "0.1.0"
+  },
+  "JUNNA_BURNING_GEM": {
+    "name": "燃烧宝石",
+    "source_mod": "ShoujoKagekiJunna",
+    "source_version": "0.1.0"
+  },
+  "RELIC.JUNNA_GREEN_GEM": {
+    "name": "绿色宝石",
+    "source_mod": "ShoujoKagekiJunna",
+    "source_version": "0.1.0"
+  },
+  "JUNNA_GREEN_GEM": {
+    "name": "绿色宝石",
+    "source_mod": "ShoujoKagekiJunna",
+    "source_version": "0.1.0"
+  },
+  "RELIC.KAREN_BASEBALL_CAT_RELIC": {
+    "name": "棒球猫",
+    "source_mod": "ShoujoKagekiAijoKaren",
+    "source_version": "v1.0.1"
+  },
+  "RELIC.KAREN_COOKIE_RELIC": {
+    "name": "饼干",
+    "source_mod": "ShoujoKagekiAijoKaren",
+    "source_version": "v1.0.1"
+  },
+  "RELIC.KAREN_HAIRPIN2_RELIC": {
+    "name": "发夹-立体版",
+    "source_mod": "ShoujoKagekiAijoKaren",
+    "source_version": "v1.0.1"
+  },
+  "RELIC.KAREN_HAIRPIN_RELIC": {
+    "name": "发夹",
+    "source_mod": "ShoujoKagekiAijoKaren",
+    "source_version": "v1.0.1"
+  },
+  "RELIC.KAREN_LITTLE_STAR_RELIC": {
+    "name": "小小星",
+    "source_mod": "ShoujoKagekiAijoKaren",
+    "source_version": "v1.0.1"
+  },
+  "RELIC.KAREN_LOCK_RELIC": {
+    "name": "上锁的遗物",
+    "source_mod": "ShoujoKagekiAijoKaren",
+    "source_version": "v1.0.1"
+  },
+  "RELIC.KAREN_MR_WHITE_RELIC": {
+    "name": "Mr. White",
+    "source_mod": "ShoujoKagekiAijoKaren",
+    "source_version": "v1.0.1"
+  },
+  "RELIC.KAREN_STAR_HAIRCLIP_RELIC": {
+    "name": "星形发饰",
+    "source_mod": "ShoujoKagekiAijoKaren",
+    "source_version": "v1.0.1"
+  },
+  "RELIC.KAREN_STAR_TIARA_RELIC": {
+    "name": "星之皇冠",
+    "source_mod": "ShoujoKagekiAijoKaren",
+    "source_version": "v1.0.1"
+  },
+  "RELIC.KAREN_WATER_BOTTLE_RELIC": {
+    "name": "华恋的水壶",
+    "source_mod": "ShoujoKagekiAijoKaren",
+    "source_version": "v1.0.1"
   }
 }

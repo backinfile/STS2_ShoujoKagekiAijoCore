@@ -32,7 +32,7 @@ python3 install.py --public-origin https://<page-host> --upload-origin https://<
 python tools/telemetry/build_assets.py --export <author-export-directory>
 ```
 
-可重复提供 --export 合并多个来源，或通过 --web 指向隔离资料目录。原生资料可使用 export_native_metadata.ps1 从本体程序集生成定义，再通过 build_native_assets.py 读取本体 PCK 生成图片。所有模型渲染与图片处理均发生在作者资料构建阶段。
+可重复提供 --export 合并多个来源，或通过 --web 指向隔离资料目录。只更新华恋和纯那时，可附加 `--source-mod ShoujoKagekiAijoKaren --source-mod ShoujoKagekiJunna`。原生资料可使用 export_native_metadata.ps1 从本体程序集生成定义，再通过 build_native_assets.py 读取本体 PCK 生成图片。所有模型渲染与图片处理均发生在作者资料构建阶段。
 
 ## 页面加载与 PWA
 
