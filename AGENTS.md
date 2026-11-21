@@ -35,7 +35,7 @@
 ## 项目概况
 
 - `ShoujoKagekiAijoCore` 是少女歌剧系列 Mod 共用的基础 Mod，逻辑 Mod ID 固定为 `ShoujoKagekiAijoCore`。
-- 仓库地址为 https://github.com/backinfile/STS2_ShoujoKagekiAijoCore 。文档中的项目入口使用 GitHub 地址，工作路径使用仓库相对路径。
+- 仓库地址为 https://github.com/backinfile/STS2_ShoujoKagekiCore 。文档中的项目入口使用 GitHub 地址，工作路径使用仓库相对路径。
 - 技术栈为 C# / .NET 9、Godot 4.5.1（MegaDot）、Harmony、BaseLib 3.4.8。当前适配正式版 v0.111.1、旧正式版 v0.107.1 和测试版 v0.113.0。
 - Core 独立维护并作为创意工坊 Mod 发布。仅 Karen 内嵌完整 Core；Junna 及其他 Mod 通过创意工坊依赖独立 Core 条目。
 - 读取与修改源码、本地化和文档统一使用 UTF-8。机制扩展优先复用游戏原生 Model、Hook、Cmd 和 BaseLib。
@@ -124,7 +124,7 @@
 
 ## Git 与隐私
 
-- 修改任务使用 `$worktree-task`，工作树位于 `../worktrees/STS2_ShoujoKagekiAijoCore/<task-slug>`，保留原检出与原有未提交状态。
+- 修改任务使用 `$worktree-task`，工作树位于 `../worktrees/STS2_ShoujoKagekiCore/<task-slug>`，保留原检出与原有未提交状态。
 - 任务记录放入 `docs/worktree-tasks/<task-slug>/README.md`，记录用户原始要求、简要计划、实际变更和验证结果。合并与清理分别遵循 skill 的确认流程。
 - 文档和证据清单使用仓库相对路径，仓库外资源使用用途占位符。凭据、日志、存档、数据库、抓包及本地连接配置放入忽略目录。
 - 提交前检查完整暂存索引、压缩包内文本及提交身份中的私人信息与凭据。图片、视频和音频内容按交付需要另行复核。

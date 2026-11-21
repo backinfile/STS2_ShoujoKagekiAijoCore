@@ -2,7 +2,7 @@
 
 本文面向 Core 开发、部署和维护者，记录 Core 1.2.0 的实现约定，整理日期为 2026-11-08。使用方式与作者接入示例见 [Core 使用说明](../README.md)。
 
-源码与文档位于 Core 的 GitHub 仓库，SDK 随正式发行提供。工程示例采用相对路径。[GitHub 仓库](https://github.com/backinfile/STS2_ShoujoKagekiAijoCore)
+源码与文档位于 Core 的 GitHub 仓库，SDK 随正式发行提供。工程示例采用相对路径。[GitHub 仓库](https://github.com/backinfile/STS2_ShoujoKagekiCore)
 
 ## 1. 项目定位与发布决策
 
@@ -50,7 +50,7 @@ Core 作为独立游戏 Mod 维护并发布到创意工坊。仅 Karen 的角色
 ### 3.1 Core 仓库
 
 ```text
-STS2_ShoujoKagekiAijoCore/
+STS2_ShoujoKagekiCore/
   ShoujoKagekiAijoCore.json  正式 Mod 清单
   workshop.json            独立 Core 工坊配置
   build.ps1                多目标构建与完整 Mod 目录
